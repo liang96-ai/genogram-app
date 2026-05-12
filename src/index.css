@@ -1,0 +1,43 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'PingFang TC',
+    'Noto Sans TC',
+    sans-serif;
+  background: #ffffff;
+  color: #1d1d1f;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tab2 關係線 mini 按鈕 — 強制把 SymbolGallery 黑色 STROKE 改成藍色 */
+.relation-mini-svg line,
+.relation-mini-svg path,
+.relation-mini-svg polyline,
+.relation-mini-svg polygon,
+.relation-mini-svg circle,
+.relation-mini-svg rect {
+  stroke: #007aff !important;
+}
+.relation-mini-svg marker path,
+.relation-mini-svg marker polygon,
+.relation-mini-svg text {
+  fill: #007aff !important;
+}

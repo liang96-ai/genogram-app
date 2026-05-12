@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <!-- maskable:整片背景填滿(無圓角),主體縮在中央 60% safe zone -->
+  <rect width="192" height="192" fill="#007aff"/>
+  <!-- 主體區域:48~144(中央 96px) -->
+  <g stroke="#ffffff" stroke-width="5" fill="none">
+    <line x1="68" y1="86" x2="124" y2="86"/>
+    <line x1="96" y1="86" x2="96" y2="118"/>
+  </g>
+  <rect x="56" y="72" width="28" height="28" stroke="#ffffff" stroke-width="5" fill="none"/>
+  <circle cx="124" cy="86" r="14" stroke="#ffffff" stroke-width="5" fill="none"/>
+  <rect x="82" y="118" width="28" height="28" stroke="#ffffff" stroke-width="5" fill="none"/>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="32" fill="#007aff"/>
+  <!-- 家系圖 mini: 父親 + 母親 + 子女,連線 -->
+  <g stroke="#ffffff" stroke-width="6" fill="none">
+    <!-- 父母婚姻線 -->
+    <line x1="62" y1="68" x2="130" y2="68"/>
+    <!-- 親子線 (T 字) -->
+    <line x1="96" y1="68" x2="96" y2="118"/>
+    <line x1="96" y1="118" x2="96" y2="124"/>
+  </g>
+  <!-- 父親 (方) -->
+  <rect x="44" y="50" width="36" height="36" stroke="#ffffff" stroke-width="6" fill="none"/>
+  <!-- 母親 (圓) -->
+  <circle cx="130" cy="68" r="18" stroke="#ffffff" stroke-width="6" fill="none"/>
+  <!-- 子女 (方) -->
+  <rect x="78" y="124" width="36" height="36" stroke="#ffffff" stroke-width="6" fill="none"/>
+</svg>
