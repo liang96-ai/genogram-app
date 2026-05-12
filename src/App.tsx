@@ -21,6 +21,13 @@ import {
   getScalesByCategory,
 } from './components/Scales/registry';
 import { db } from './services/database';
+import {
+  loadRootDirHandle,
+  selectRootFolder,
+  isFileSystemAccessSupported,
+  writeCaseJson,
+  loadAllCasesFromFolder,
+} from './services/fileSystem';
 import { useGenogramStore } from './store/genogramStore';
 
 export default function App() {
@@ -55,9 +62,14 @@ export default function App() {
   );
 
   const [loaded, setLoaded] = useState(false);
+  const [showFolderSetup, setShowFolderSetup] = useState(false);
   const saveTimer = useRef<number | null>(null);
 
-  // 初始化:只載歷史 + 個案清單,使用者自選要編哪個或新增
+  // 初始化:
+  //   1. 載歷史 + 個案清單(IndexedDB)
+  //   2. 嘗試還原使用者選過的資料夾權限
+  //   3. 從資料夾掃出 IndexedDB 沒有的個案 → 補進來(資料救援)
+  //   4. 若 FSA 支援且還沒設過資料夾 → 跳設定 prompt
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -68,6 +80,29 @@ export default function App() {
           loadAttributeHistory(),
           loadCaseList(),
         ]);
+
+        // 嘗試還原資料夾權限(若使用者已選過且權限還在)
+        const dirHandle = await loadRootDirHandle();
+
+        if (dirHandle) {
+          // 掃資料夾 → 找 IndexedDB 沒有的個案補進去(救回瀏覽器清掉的資料)
+          try {
+            const cases = await loadAllCasesFromFolder();
+            for (const g of cases) {
+              const exists = await db.cases.get(g.id);
+              if (!exists) await db.cases.put(g);
+            }
+            if (cases.length > 0) {
+              // 重新載個案清單(可能有新還原進來的)
+              await loadCaseList();
+            }
+          } catch (err) {
+            console.error('scan folder failed:', err);
+          }
+        } else if (isFileSystemAccessSupported()) {
+          // 支援 FSA 但還沒設過資料夾 → 顯示設定提示
+          if (!cancelled) setShowFolderSetup(true);
+        }
       } catch (err) {
         console.error('Initial load failed:', err);
       } finally {
@@ -91,13 +126,19 @@ export default function App() {
     if (!hasTutorialBeenSeen()) setShowTutorial(true);
   }, [loaded, appMode, setShowTutorial]);
 
-  // 自動儲存
+  // 自動儲存(write-through):
+  //   1. 寫 IndexedDB(快,必有)
+  //   2. 寫 case.json 到使用者資料夾(若有設過,best effort,失敗不影響)
   useEffect(() => {
     if (!loaded || !currentCase) return;
     if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
-      db.cases.put(currentCase).catch((err) =>
-        console.error('Auto save failed:', err),
+      db.cases
+        .put(currentCase)
+        .catch((err) => console.error('Auto save (IndexedDB) failed:', err));
+      // 同時寫一份到資料夾(best effort,沒設或失敗都不影響主流程)
+      writeCaseJson(currentCase).catch((err) =>
+        console.error('Auto save (folder) failed:', err),
       );
     }, 800);
     return () => {
@@ -226,6 +267,22 @@ export default function App() {
       <>
         <CaseList />
         <ConfirmDialog />
+        {showFolderSetup && (
+          <FolderSetupModal
+            onClose={() => setShowFolderSetup(false)}
+            onSelected={async () => {
+              setShowFolderSetup(false);
+              // 選好資料夾後,把目前 IndexedDB 的個案全部寫一份進去(初始備份)
+              try {
+                const allCases = await db.cases.toArray();
+                for (const g of allCases) await writeCaseJson(g);
+                await loadCaseList();
+              } catch (err) {
+                console.error('initial sync to folder failed:', err);
+              }
+            }}
+          />
+        )}
         {showTutorial && (
           <Tutorial onClose={() => setShowTutorial(false)} level="basic" />
         )}
@@ -260,6 +317,21 @@ export default function App() {
       </div>
       <ConfirmDialog />
       <HoverTooltip />
+      {showFolderSetup && (
+        <FolderSetupModal
+          onClose={() => setShowFolderSetup(false)}
+          onSelected={async () => {
+            setShowFolderSetup(false);
+            try {
+              const allCases = await db.cases.toArray();
+              for (const g of allCases) await writeCaseJson(g);
+              await loadCaseList();
+            } catch (err) {
+              console.error('initial sync to folder failed:', err);
+            }
+          }}
+        />
+      )}
       {showTutorial && (
         <Tutorial onClose={() => setShowTutorial(false)} level="basic" />
       )}
@@ -497,6 +569,23 @@ function Toolbar({
               }}
             />
           ))}
+          <MenuDivider />
+          <MenuItem
+            icon="📁"
+            label={t('menu.folderSetup')}
+            onClick={async () => {
+              setOpen(false);
+              const h = await selectRootFolder();
+              if (h) {
+                try {
+                  const allCases = await db.cases.toArray();
+                  for (const g of allCases) await writeCaseJson(g);
+                } catch (err) {
+                  console.error('sync to folder failed:', err);
+                }
+              }
+            }}
+          />
           <MenuDivider />
           <MenuItem
             icon="📖"
@@ -792,4 +881,138 @@ const hamburgerBtnStyle: React.CSSProperties = {
   justifyContent: 'center',
   fontFamily: 'inherit',
 };
+
+// ============================================================
+// 首次進入時跳的「選資料夾」設定畫面
+//   說明:為何需要選資料夾 + 選好之後好處 + 可暫時略過
+// ============================================================
+function FolderSetupModal({
+  onClose,
+  onSelected,
+}: {
+  onClose: () => void;
+  onSelected: () => void;
+}) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 250,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: 480,
+          maxWidth: 'calc(100vw - 40px)',
+          background: '#ffffff',
+          borderRadius: 14,
+          padding: 24,
+          boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
+          fontFamily: 'inherit',
+        }}
+      >
+        <div style={{ fontSize: 28, marginBottom: 4 }}>📁</div>
+        <div
+          style={{
+            fontSize: 18,
+            fontWeight: 600,
+            color: '#1d1d1f',
+            marginBottom: 12,
+          }}
+        >
+          選一個資料夾,讓資料安全地存在你電腦
+        </div>
+        <p
+          style={{
+            fontSize: 13,
+            color: '#3a3a3c',
+            lineHeight: 1.7,
+            margin: '0 0 12px',
+          }}
+        >
+          <strong style={{ color: '#007aff' }}>強烈建議現在設定。</strong>
+          設好後,你的所有個案會自動寫一份到資料夾備份。
+          就算瀏覽器資料被清掉,只要這個資料夾還在,個案就救得回來。
+        </p>
+        <ul
+          style={{
+            fontSize: 12,
+            color: '#3a3a3c',
+            lineHeight: 1.8,
+            margin: '0 0 16px',
+            paddingLeft: 18,
+          }}
+        >
+          <li>每個個案會在資料夾裡有獨立子資料夾(<code>case_xxx/</code>)</li>
+          <li>個案資料存 <code>case.json</code> · 附件存 <code>attachments/</code></li>
+          <li>換電腦時:複製資料夾 → 新電腦選同樣資料夾 → 個案全回來</li>
+          <li>之後想換資料夾:漢堡選單 → 📁 設定資料夾</li>
+        </ul>
+        <div
+          style={{
+            fontSize: 11,
+            color: '#86868b',
+            lineHeight: 1.6,
+            background: '#f5f5f7',
+            padding: '8px 10px',
+            borderRadius: 6,
+            marginBottom: 16,
+          }}
+        >
+          ⚠️ 此功能需要桌面 Chrome / Edge。
+          手機 / Safari 不支援,只能用瀏覽器內建儲存(可手動匯出 .json 備份)。
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            justifyContent: 'flex-end',
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              padding: '8px 16px',
+              fontSize: 13,
+              background: '#ffffff',
+              border: '1px solid #d2d2d7',
+              borderRadius: 6,
+              cursor: 'pointer',
+              color: '#86868b',
+              fontFamily: 'inherit',
+            }}
+          >
+            暫時不要
+          </button>
+          <button
+            onClick={async () => {
+              const h = await selectRootFolder();
+              if (h) onSelected();
+            }}
+            style={{
+              padding: '8px 18px',
+              fontSize: 13,
+              background: '#007aff',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              fontWeight: 500,
+            }}
+          >
+            選資料夾
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 

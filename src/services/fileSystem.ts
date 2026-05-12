@@ -1,8 +1,14 @@
 // File System Access API 包裝
-// B 模式:使用者選 root 資料夾,App 自動在裡面建 case_<id>/attachments/
-// 不支援(iOS Safari)→ 自動降級到 C 模式(只存連結)
+//
+// 三層儲存策略:
+//   1. IndexedDB    — 主要編輯儲存,讀寫快(必有)
+//   2. 使用者資料夾  — 持久備份,瀏覽器資料清掉也救得回(桌面 Chrome/Edge,write-through)
+//   3. 附件         — case_<id>/attachments/ 下,實體檔案
+//
+// 不支援 FSA 的瀏覽器(iOS Safari) → 自動降級只用 IndexedDB(等同舊行為)
 
 import { db } from './database';
+import type { Genogram } from '../types/genogram';
 
 let rootDirHandle: FileSystemDirectoryHandle | null = null;
 
@@ -152,6 +158,97 @@ export async function deleteAttachmentFile(
     await dir.removeEntry(filename);
     return true;
   } catch {
+    return false;
+  }
+}
+
+// ==================== 個案 JSON 寫入 / 讀取 / 列舉 ====================
+//
+// 每個個案結構:
+//   case_<id>/
+//     case.json          ← 整個 Genogram 資料(write-through)
+//     attachments/       ← 附件實體檔案
+//
+
+/** 寫入個案 JSON 到 case_<id>/case.json — write-through 用 */
+export async function writeCaseJson(g: Genogram): Promise<boolean> {
+  if (!rootDirHandle) return false;
+  if (!(await ensureRootPermission())) return false;
+  try {
+    const caseDir = await rootDirHandle.getDirectoryHandle(`case_${g.id}`, {
+      create: true,
+    });
+    const fileHandle = await caseDir.getFileHandle('case.json', {
+      create: true,
+    });
+    const writable = await fileHandle.createWritable();
+    await writable.write(
+      new Blob([JSON.stringify(g, null, 2)], { type: 'application/json' }),
+    );
+    await writable.close();
+    return true;
+  } catch (err) {
+    console.error('writeCaseJson failed:', err);
+    return false;
+  }
+}
+
+/** 讀取 case_<id>/case.json — 啟動時掃資料夾用 */
+export async function readCaseJson(caseId: string): Promise<Genogram | null> {
+  if (!rootDirHandle) return null;
+  try {
+    const caseDir = await rootDirHandle.getDirectoryHandle(`case_${caseId}`);
+    const fileHandle = await caseDir.getFileHandle('case.json');
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+    return JSON.parse(text) as Genogram;
+  } catch {
+    return null;
+  }
+}
+
+/** 列出資料夾裡所有個案 ID(掃 case_* 子資料夾) */
+export async function listCaseIdsInFolder(): Promise<string[]> {
+  if (!rootDirHandle) return [];
+  if (!(await ensureRootPermission())) return [];
+  const ids: string[] = [];
+  try {
+    for await (const [name, handle] of (
+      rootDirHandle as unknown as {
+        entries: () => AsyncIterable<[string, FileSystemHandle]>;
+      }
+    ).entries()) {
+      if (handle.kind !== 'directory') continue;
+      if (typeof name === 'string' && name.startsWith('case_')) {
+        ids.push(name.slice(5)); // 去掉 'case_' prefix
+      }
+    }
+  } catch (err) {
+    console.error('listCaseIdsInFolder failed:', err);
+  }
+  return ids;
+}
+
+/** 列出資料夾裡所有個案的完整資料(掃 + 讀 case.json) */
+export async function loadAllCasesFromFolder(): Promise<Genogram[]> {
+  const ids = await listCaseIdsInFolder();
+  const cases: Genogram[] = [];
+  for (const id of ids) {
+    const g = await readCaseJson(id);
+    if (g) cases.push(g);
+  }
+  return cases;
+}
+
+/** 刪除整個個案資料夾(case_<id>/ + 內含 case.json + attachments/) */
+export async function deleteCaseFolder(caseId: string): Promise<boolean> {
+  if (!rootDirHandle) return false;
+  if (!(await ensureRootPermission())) return false;
+  try {
+    await rootDirHandle.removeEntry(`case_${caseId}`, { recursive: true });
+    return true;
+  } catch (err) {
+    console.error('deleteCaseFolder failed:', err);
     return false;
   }
 }

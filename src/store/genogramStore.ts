@@ -12,6 +12,7 @@ import type {
   RelationSubType,
 } from '../types/genogram';
 import { db } from '../services/database';
+import { deleteCaseFolder, writeCaseJson } from '../services/fileSystem';
 
 const MAX_INSTITUTION_HISTORY = 30;
 const MAX_MEDICAL_HISTORY = 60;
@@ -816,6 +817,10 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const fresh = createEmptyCase(trimmed);
     try {
       await db.cases.put(fresh);
+      // 同步建立資料夾(best effort)
+      writeCaseJson(fresh).catch((err) =>
+        console.error('create writeCaseJson failed:', err),
+      );
       set({
         currentCase: fresh,
         appMode: 'edit',
@@ -838,16 +843,21 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     if (!trimmed) return;
     const cur = get().currentCase;
     try {
+      let updated;
       if (cur && cur.id === id) {
-        const updated = touch({ ...cur, caseName: trimmed });
+        updated = touch({ ...cur, caseName: trimmed });
         await db.cases.put(updated);
         set({ currentCase: updated });
       } else {
         const c = await db.cases.get(id);
         if (!c) return;
-        const updated = touch({ ...c, caseName: trimmed });
+        updated = touch({ ...c, caseName: trimmed });
         await db.cases.put(updated);
       }
+      // 同步寫到資料夾 case.json(best effort)
+      writeCaseJson(updated).catch((err) =>
+        console.error('rename writeCaseJson failed:', err),
+      );
       // 重整清單(若在列表頁)
       if (get().appMode === 'list') {
         await get().loadCaseList();
@@ -859,6 +869,10 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   deleteCase: async (id) => {
     try {
       await db.cases.delete(id);
+      // 同時刪除使用者資料夾裡對應的 case_<id>/(best effort)
+      deleteCaseFolder(id).catch((err) =>
+        console.error('deleteCaseFolder failed:', err),
+      );
       const cur = get().currentCase;
       if (cur && cur.id === id) {
         // 目前正在編這筆 → 切回列表
