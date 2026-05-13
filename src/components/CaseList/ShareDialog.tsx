@@ -48,11 +48,13 @@ export default function ShareDialog({ onClose }: { onClose: () => void }) {
 
   const nativeShare = async () => {
     if (!canNativeShare) return;
+    // 讀現在 textarea 裡的最新文案(使用者可能編輯過)
+    const currentText = msgRef.current?.value ?? message;
     try {
+      // 只傳 text(內含 URL),不另外傳 url 避免某些 App 重複貼
       await navigator.share({
         title: t('share.shareTitle'),
-        text: message,
-        url,
+        text: currentText,
       });
     } catch {
       // 使用者取消,沒事
@@ -275,17 +277,8 @@ export default function ShareDialog({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {/* Footer hint */}
-        <div
-          style={{
-            padding: '0 20px 20px',
-            fontSize: 11,
-            color: '#86868b',
-            lineHeight: 1.5,
-          }}
-        >
-          💡 {t('share.footerHint')}
-        </div>
+        {/* bottom padding */}
+        <div style={{ height: 12 }} />
       </div>
     </div>
   );

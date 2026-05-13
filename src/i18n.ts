@@ -384,7 +384,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'share.footerHint':
       '建議:LINE / Email / 社群貼文 都可以貼。配 QR Code 海報效果最好。',
     'share.template':
-      '🌳 家系圖工具(社工/心理師用)\n{url}\n\n特色:\n✓ 只要按上下左右、拉動線條,快速畫,好上手。\n✓ 100% 在地儲存,個案資料不上雲端,離線可用。\n✓ 方便交流傳送,可傳送完整檔其他人接手,或是隱匿個資傳送。\n✓ 符號字典、關係線、醫療資訊、附件好存放。',
+      '🌳 家系圖工具\n{url}\n\n特色:\n✓ 只要按上下左右、拉動線條,快速畫,好上手。\n✓ 100% 在地儲存,個案資料不上雲端,離線可用。\n✓ 方便交流傳送,可傳送完整檔其他人接手,或是隱匿個資傳送。\n✓ 符號字典、關係線、醫療資訊、附件好存放。',
     'caseList.addCase': '新增個案',
     'caseList.import': '匯入',
     'caseList.backupTitle': '全備份(包含所有個案 + 設定)',
@@ -827,7 +827,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'share.footerHint':
       'Tips: Works for LINE / Email / social media posts. Pair with the QR code for posters.',
     'share.template':
-      '🌳 Genogram Tool (for social workers / therapists)\n{url}\n\nFeatures:\n✓ Click the arrows, drag the lines — quick to draw, easy to learn.\n✓ 100% local storage, never uploaded, works offline.\n✓ Easy to share — send the full file for handoff, or strip private data first.\n✓ Built-in symbol dictionary, relation lines, medical info, and attachments.',
+      '🌳 Genogram Tool\n{url}\n\nFeatures:\n✓ Click the arrows, drag the lines — quick to draw, easy to learn.\n✓ 100% local storage, never uploaded, works offline.\n✓ Easy to share — send the full file for handoff, or strip private data first.\n✓ Built-in symbol dictionary, relation lines, medical info, and attachments.',
     'caseList.addCase': 'New case',
     'caseList.import': 'Import',
     'caseList.backupTitle': 'Full backup (all cases + settings)',
