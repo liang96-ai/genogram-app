@@ -175,6 +175,14 @@ export default function CaseList() {
                   }}
                 />
                 <HomeMenuItem
+                  icon="📖"
+                  label={t('menu.tutorialBasic')}
+                  onClick={() => {
+                    setShowTutorial(true);
+                    setMenuOpen(false);
+                  }}
+                />
+                <HomeMenuItem
                   icon="📘"
                   label={t('menu.tutorialAdvanced')}
                   onClick={() => {
@@ -185,7 +193,11 @@ export default function CaseList() {
                 {fsaSupported && (
                   <HomeMenuItem
                     icon="📁"
-                    label={t('menu.folderSetup')}
+                    label={
+                      folderName
+                        ? `${t('caseList.folderLabel')}: ${folderName} · ${t('caseList.folderSwitch')}`
+                        : t('menu.folderSetup')
+                    }
                     onClick={async () => {
                       setMenuOpen(false);
                       const h = await selectRootFolder();
@@ -275,61 +287,34 @@ export default function CaseList() {
             >
               📤 {t('caseList.share')}
             </button>
-            <button
-              onClick={() => setShowTutorial(true)}
-              style={{
-                padding: '6px 12px',
-                fontSize: 12,
-                background: 'transparent',
-                border: '1px solid #d2d2d7',
-                borderRadius: 6,
-                cursor: 'pointer',
-                color: '#1d1d1f',
-                fontFamily: 'inherit',
-              }}
-              title={t('caseList.tutorialTitle')}
-            >
-              {t('caseList.tutorial')}
-            </button>
           </div>
         </div>
 
-        {/* 資料夾資訊區塊(僅 FSA 支援的平台顯示) */}
-        {fsaSupported && (
+        {/* 資料夾警告區塊 — 只在「FSA 支援 + 還沒選資料夾」時顯示
+            選了資料夾後就完全隱藏(資料夾名稱在主選單裡看) */}
+        {fsaSupported && !folderName && (
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 8,
               padding: '10px 14px',
-              background: folderName ? '#e8f4ff' : '#fff5e6',
-              border: `1px solid ${folderName ? '#bedcfa' : '#ffd9a3'}`,
+              background: '#fff5e6',
+              border: '1px solid #ffd9a3',
               borderRadius: 8,
               marginBottom: 16,
               fontSize: 13,
             }}
           >
             <span style={{ fontSize: 16 }}>📁</span>
-            <span style={{ flex: 1, color: '#1d1d1f' }}>
-              {folderName ? (
-                <>
-                  <span style={{ color: '#86868b' }}>
-                    {t('caseList.folderLabel')}:
-                  </span>{' '}
-                  <strong>{folderName}</strong>
-                </>
-              ) : (
-                <span style={{ color: '#8a6d3b' }}>
-                  {t('caseList.folderNotSet')}
-                </span>
-              )}
+            <span style={{ flex: 1, color: '#8a6d3b' }}>
+              {t('caseList.folderNotSet')}
             </span>
             <button
               onClick={async () => {
                 const h = await selectRootFolder();
                 if (h) {
                   setFolderName(h.name);
-                  // 把目前 IndexedDB 的個案全部寫一份到新資料夾
                   try {
                     const allCases = await db.cases.toArray();
                     for (const g of allCases) await writeCaseJson(g);
@@ -352,9 +337,7 @@ export default function CaseList() {
               }}
               title={t('caseList.folderSwitchTitle')}
             >
-              {folderName
-                ? t('caseList.folderSwitch')
-                : t('caseList.folderSelect')}
+              {t('caseList.folderSelect')}
             </button>
           </div>
         )}
