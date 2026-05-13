@@ -64,6 +64,7 @@ export default function App() {
   const loadAttributeHistory = useGenogramStore(
     (s) => s.loadAttributeHistory,
   );
+  const loadLanguage = useGenogramStore((s) => s.loadLanguage);
 
   const [loaded, setLoaded] = useState(false);
   const [showFolderSetup, setShowFolderSetup] = useState(false);
@@ -83,6 +84,7 @@ export default function App() {
           loadMedicalHistory(),
           loadAttributeHistory(),
           loadCaseList(),
+          loadLanguage(),
         ]);
 
         // 嘗試還原資料夾權限(若使用者已選過且權限還在)
@@ -121,6 +123,7 @@ export default function App() {
     loadMedicalHistory,
     loadAttributeHistory,
     loadCaseList,
+    loadLanguage,
   ]);
 
   // 第一次「進編輯模式」→ 自動跳教學(在清單頁不跳,等使用者真的開始編輯才教)

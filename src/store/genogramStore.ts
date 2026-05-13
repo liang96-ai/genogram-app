@@ -520,6 +520,8 @@ type GenogramStore = {
   /** UI 語言(極簡 i18n) */
   language: 'zh' | 'en';
   setLanguage: (lang: 'zh' | 'en') => void;
+  /** App 啟動時叫 — 1. 若有存過語言偏好就還原 2. 沒存過 → 偵測 navigator.language(zh* 給中文,其他給英文)+ 寫入 */
+  loadLanguage: () => Promise<void>;
 
   privacyEnabled: boolean;
   privateFields: Record<PrivacyField, boolean>;
@@ -927,6 +929,31 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     db.settings
       .put({ key: 'language', value: lang })
       .catch(() => undefined);
+  },
+  loadLanguage: async () => {
+    try {
+      const rec = await db.settings.get('language');
+      if (rec && typeof rec === 'object' && 'value' in rec) {
+        const saved = (rec as { value: unknown }).value;
+        if (saved === 'zh' || saved === 'en') {
+          set({ language: saved });
+          return;
+        }
+      }
+      // 沒存過 → 偵測瀏覽器語言(zh* 給中文 / 其他給英文)
+      const navLang =
+        typeof navigator !== 'undefined'
+          ? (navigator.language || '').toLowerCase()
+          : '';
+      const detected: 'zh' | 'en' = navLang.startsWith('zh') ? 'zh' : 'en';
+      set({ language: detected });
+      // 持久化(下次直接走 saved 那條,不用再偵測)
+      db.settings
+        .put({ key: 'language', value: detected })
+        .catch(() => undefined);
+    } catch (err) {
+      console.error('loadLanguage failed:', err);
+    }
   },
 
   expandMultiIdentity: false,
