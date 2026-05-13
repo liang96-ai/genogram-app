@@ -1,61 +1,33 @@
 import { useEffect, useState } from 'react';
 import { useT } from '../i18n';
+import { usePwaInstall } from '../services/pwaInstall';
 
 const STORAGE_KEY = 'genogram_install_banner_dismissed';
 
-// BeforeInstallPromptEvent 型別(Chrome/Edge 才有)
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
-
 export default function InstallBanner() {
   const t = useT();
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
-  const [show, setShow] = useState(false);
+  const { canInstall, isIOS, isStandalone, triggerInstall } = usePwaInstall();
+  const [dismissed, setDismissed] = useState(true); // 預設不顯示,等檢查
 
   useEffect(() => {
-    if (localStorage.getItem(STORAGE_KEY)) return;
-
-    // Chrome/Edge 觸發 — 提示「可加到桌面/Dock」
-    const onBefore = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setShow(true);
-    };
-
-    // iOS Safari 沒有 beforeinstallprompt event,要靠 user agent 偵測
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      // @ts-expect-error iOS only
-      window.navigator.standalone === true;
-    if (isIOS && !isStandalone) {
-      setShow(true); // 只顯示說明,不能 prompt
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      setDismissed(false);
     }
-
-    window.addEventListener('beforeinstallprompt', onBefore);
-    return () => window.removeEventListener('beforeinstallprompt', onBefore);
   }, []);
 
-  if (!show) return null;
-
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  // 已經是 standalone(已安裝)或使用者按過「不再顯示」→ 不顯示
+  if (isStandalone || dismissed) return null;
+  // 兩種情境才顯示:Chrome 可安裝 / iOS Safari 看說明
+  if (!canInstall && !isIOS) return null;
 
   const dismiss = () => {
     localStorage.setItem(STORAGE_KEY, '1');
-    setShow(false);
+    setDismissed(true);
   };
 
-  const install = async () => {
-    if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    const choice = await deferredPrompt.userChoice;
-    if (choice.outcome === 'accepted') {
-      dismiss();
-    }
-    setDeferredPrompt(null);
+  const onInstall = async () => {
+    const result = await triggerInstall();
+    if (result === 'accepted') dismiss();
   };
 
   return (
@@ -125,7 +97,7 @@ export default function InstallBanner() {
             {t('install.desktop')}
           </div>
           <button
-            onClick={install}
+            onClick={onInstall}
             style={{
               width: '100%',
               padding: '8px 12px',

@@ -1,9 +1,247 @@
 import type { ReactNode } from 'react';
+import { usePwaInstall } from '../../services/pwaInstall';
 
 export interface TutorialStep {
   icon: string;
   title: string;
   content: ReactNode;
+}
+
+// ============================================================
+// 共用元件:加家人小箭頭示意圖(基礎教學 #4 / 進階參考用)
+// ============================================================
+function SmallArrowsIllustration() {
+  return (
+    <svg
+      viewBox="-80 -80 160 160"
+      width="200"
+      height="200"
+      style={{ display: 'block', margin: '12px auto' }}
+      aria-label="人物選中時周圍四個藍色小箭頭"
+    >
+      {/* 中間人物方框(代表選中的人物) */}
+      <rect
+        x="-30"
+        y="-30"
+        width="60"
+        height="60"
+        fill="#ffffff"
+        stroke="#007aff"
+        strokeWidth="3"
+      />
+      {/* 上箭頭 ▲ */}
+      <polygon points="0,-50 -12,-35 12,-35" fill="#4a90ff" />
+      {/* 下箭頭 ▼ */}
+      <polygon points="0,50 -12,35 12,35" fill="#4a90ff" />
+      {/* 左箭頭 ◀ */}
+      <polygon points="-50,0 -35,-12 -35,12" fill="#4a90ff" />
+      {/* 右箭頭 ▶ */}
+      <polygon points="50,0 35,-12 35,12" fill="#4a90ff" />
+      {/* 右上紅色 × 刪除按鈕(從畫布原始 UI 模擬) */}
+      <circle
+        cx="32"
+        cy="-32"
+        r="10"
+        fill="#ff3b30"
+        stroke="#ffffff"
+        strokeWidth="1.5"
+      />
+      <line
+        x1="27"
+        y1="-37"
+        x2="37"
+        y2="-27"
+        stroke="#ffffff"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <line
+        x1="37"
+        y1="-37"
+        x2="27"
+        y2="-27"
+        stroke="#ffffff"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// ============================================================
+// 共用元件:基礎教學 #8 的 PWA 安裝按鈕
+//   依平台/狀態自動切換內容:
+//     - 已安裝 → 提示已安裝
+//     - 可安裝(Chrome/Edge) → 大按鈕直接觸發安裝
+//     - iOS Safari → 文字說明分享 → 加到主畫面
+//     - 都不行(桌面 Safari 等) → 提示去網址列找
+// ============================================================
+function InstallButtonZH() {
+  const { canInstall, isIOS, isStandalone, triggerInstall } = usePwaInstall();
+  if (isStandalone) {
+    return (
+      <div
+        style={{
+          background: '#e8f5e9',
+          color: '#34c759',
+          padding: '10px 12px',
+          borderRadius: 8,
+          fontSize: 13,
+          fontWeight: 500,
+          textAlign: 'center',
+          margin: '10px 0',
+        }}
+      >
+        ✓ 已安裝為 App,你正在 standalone 模式中
+      </div>
+    );
+  }
+  if (canInstall) {
+    return (
+      <button
+        onClick={() => triggerInstall()}
+        style={{
+          width: '100%',
+          padding: '12px 16px',
+          background: '#007aff',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: 8,
+          fontSize: 14,
+          fontWeight: 600,
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          margin: '10px 0',
+          boxShadow: '0 2px 8px rgba(0,122,255,0.3)',
+        }}
+      >
+        📲 點此一鍵安裝到桌面
+      </button>
+    );
+  }
+  if (isIOS) {
+    return (
+      <div
+        style={{
+          background: '#f5f5f7',
+          color: '#1d1d1f',
+          padding: '10px 12px',
+          borderRadius: 8,
+          fontSize: 12,
+          lineHeight: 1.7,
+          margin: '10px 0',
+        }}
+      >
+        📱 <strong>iPhone/iPad 安裝步驟:</strong>
+        <br />
+        1. 按 Safari 下方 <strong>分享 ↑</strong>
+        <br />
+        2. 選「<strong>加入主畫面</strong>」
+        <br />
+        3. 之後從主畫面點 icon 開啟,離線可用
+      </div>
+    );
+  }
+  return (
+    <div
+      style={{
+        background: '#fff5e6',
+        color: '#86868b',
+        padding: '10px 12px',
+        borderRadius: 8,
+        fontSize: 12,
+        lineHeight: 1.6,
+        margin: '10px 0',
+      }}
+    >
+      💡 此瀏覽器不支援一鍵安裝。建議用 <strong>Chrome 或 Edge</strong>
+      開啟以獲得完整 App 體驗。
+    </div>
+  );
+}
+
+function InstallButtonEN() {
+  const { canInstall, isIOS, isStandalone, triggerInstall } = usePwaInstall();
+  if (isStandalone) {
+    return (
+      <div
+        style={{
+          background: '#e8f5e9',
+          color: '#34c759',
+          padding: '10px 12px',
+          borderRadius: 8,
+          fontSize: 13,
+          fontWeight: 500,
+          textAlign: 'center',
+          margin: '10px 0',
+        }}
+      >
+        ✓ Already installed — running in standalone mode
+      </div>
+    );
+  }
+  if (canInstall) {
+    return (
+      <button
+        onClick={() => triggerInstall()}
+        style={{
+          width: '100%',
+          padding: '12px 16px',
+          background: '#007aff',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: 8,
+          fontSize: 14,
+          fontWeight: 600,
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          margin: '10px 0',
+          boxShadow: '0 2px 8px rgba(0,122,255,0.3)',
+        }}
+      >
+        📲 Click here to install as an App
+      </button>
+    );
+  }
+  if (isIOS) {
+    return (
+      <div
+        style={{
+          background: '#f5f5f7',
+          color: '#1d1d1f',
+          padding: '10px 12px',
+          borderRadius: 8,
+          fontSize: 12,
+          lineHeight: 1.7,
+          margin: '10px 0',
+        }}
+      >
+        📱 <strong>iPhone/iPad install:</strong>
+        <br />
+        1. Tap Safari's <strong>Share ↑</strong> button
+        <br />
+        2. Choose <strong>"Add to Home Screen"</strong>
+        <br />
+        3. Tap the new icon on your home screen — works offline
+      </div>
+    );
+  }
+  return (
+    <div
+      style={{
+        background: '#fff5e6',
+        color: '#86868b',
+        padding: '10px 12px',
+        borderRadius: 8,
+        fontSize: 12,
+        lineHeight: 1.6,
+        margin: '10px 0',
+      }}
+    >
+      💡 This browser doesn't support one-click install. Use{' '}
+      <strong>Chrome or Edge</strong> for the full App experience.
+    </div>
+  );
 }
 
 // 平台偵測 — Mac 顯示 ⌘ 符號;Windows/Linux 顯示 Ctrl
@@ -100,6 +338,28 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
     ),
   },
   {
+    icon: '➕',
+    title: '加家人 — 小箭頭擴展',
+    content: (
+      <>
+        <P>選中人物 → 周圍出現 4 個藍色小三角:</P>
+        <SmallArrowsIllustration />
+        <P>
+          • <Strong>▲ 上</Strong> → 加爸媽(自動畫婚姻線 + 親子線)
+          <br />
+          • <Strong>◀ 左 / ▶ 右</Strong> → 加配偶(自動切相反性別形狀)
+          <br />
+          • <Strong>▼ 下</Strong> → 若已有配偶就加子女;沒配偶就先加配偶
+          <br />
+          • <Strong>▼ 下長按 1 秒</Strong> → 開啟多胞胎設定視窗(2-15 胞胎 / 分卵 / 同卵)
+        </P>
+        <P>
+          選中婚姻線中央會出現 ↓ 按鈕:<Strong>短按</Strong> = 加 1 子女 / <Strong>長按 1 秒</Strong> = 多胞胎。
+        </P>
+      </>
+    ),
+  },
+  {
     icon: '🔄',
     title: '切換形狀(雙擊)',
     content: (
@@ -114,27 +374,6 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         </P>
         <P>
           多元身份(Trans / 同性戀 / 雙性戀)在右側面板細部選,雙擊不切換這些。
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '➕',
-    title: '加家人 — 小箭頭擴展',
-    content: (
-      <>
-        <P>選中人物 → 周圍出現 4 個藍色小三角:</P>
-        <P>
-          • <Strong>▲ 上</Strong> → 加爸媽(自動畫婚姻線 + 親子線)
-          <br />
-          • <Strong>◀ 左 / ▶ 右</Strong> → 加配偶(自動切相反性別形狀)
-          <br />
-          • <Strong>▼ 下</Strong> → 若已有配偶就加子女;沒配偶就先加配偶
-          <br />
-          • <Strong>▼ 下長按 1 秒</Strong> → 開啟多胞胎設定視窗(2-15 胞胎 / 分卵 / 同卵)
-        </P>
-        <P>
-          選中婚姻線中央會出現 ↓ 按鈕:<Strong>短按</Strong> = 加 1 子女 / <Strong>長按 1 秒</Strong> = 多胞胎。
         </P>
       </>
     ),
@@ -177,14 +416,14 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
   },
   {
     icon: '🎉',
-    title: '完成 + 加到 Dock',
+    title: '完成 + 安裝為 App',
     content: (
       <>
         <P>
-          基礎教學結束。建議在 Chrome/Edge 把 App
-          <Strong>「加到 Dock」</Strong>(網址列右側 ⊕ 按鈕)。
+          基礎教學結束 🎉 強烈建議把它<Strong>安裝為 App</Strong>:像桌面應用一樣點 icon 就開,
+          且可<Strong>完全離線使用</Strong>。
         </P>
-        <P>安裝後可<Strong>完全離線使用</Strong>,像桌面 app 一樣點 icon 就開。</P>
+        <InstallButtonZH />
         <P>
           想深入?漢堡 <Code>☰</Code> → <Strong>「看進階教學」</Strong>(10 步教全部功能)。
         </P>
@@ -251,6 +490,28 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
     ),
   },
   {
+    icon: '➕',
+    title: 'Add Family — Small Arrows',
+    content: (
+      <>
+        <P>Select a person → 4 blue triangle arrows appear around them:</P>
+        <SmallArrowsIllustration />
+        <P>
+          • <Strong>▲ Up</Strong> → Add parents (auto-draws marriage + parent-child line)
+          <br />
+          • <Strong>◀ Left / ▶ Right</Strong> → Add spouse (auto-swaps to opposite shape)
+          <br />
+          • <Strong>▼ Down</Strong> → If spouse exists, add child; if not, add spouse first
+          <br />
+          • <Strong>▼ Long-press 1 sec</Strong> → Open multiple-birth dialog (2-15 / fraternal / identical)
+        </P>
+        <P>
+          Selecting a marriage line shows a ↓ button at its center: <Strong>tap</Strong> = +1 child / <Strong>long-press 1 sec</Strong> = multiple birth.
+        </P>
+      </>
+    ),
+  },
+  {
     icon: '🔄',
     title: 'Switch Shape (Double-click)',
     content: (
@@ -265,27 +526,6 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
         </P>
         <P>
           Gender variants (Trans / Gay / Bisexual) are set in the right panel; double-click does NOT toggle them.
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '➕',
-    title: 'Add Family — Small Arrows',
-    content: (
-      <>
-        <P>Select a person → 4 blue triangle arrows appear around them:</P>
-        <P>
-          • <Strong>▲ Up</Strong> → Add parents (auto-draws marriage + parent-child line)
-          <br />
-          • <Strong>◀ Left / ▶ Right</Strong> → Add spouse (auto-swaps to opposite shape)
-          <br />
-          • <Strong>▼ Down</Strong> → If spouse exists, add child; if not, add spouse first
-          <br />
-          • <Strong>▼ Long-press 1 sec</Strong> → Open multiple-birth dialog (2-15 / fraternal / identical)
-        </P>
-        <P>
-          Selecting a marriage line shows a ↓ button at its center: <Strong>tap</Strong> = +1 child / <Strong>long-press 1 sec</Strong> = multiple birth.
         </P>
       </>
     ),
@@ -328,14 +568,14 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
   },
   {
     icon: '🎉',
-    title: 'Done + Add to Dock',
+    title: 'Done + Install as App',
     content: (
       <>
         <P>
-          Basic tutorial complete. We recommend
-          <Strong>"Add to Dock"</Strong> (⊕ button next to URL bar in Chrome/Edge).
+          Basic tutorial complete 🎉 We strongly recommend
+          <Strong>installing this as an App</Strong> — click an icon to open, works <Strong>fully offline</Strong>.
         </P>
-        <P>Once installed, the app works <Strong>fully offline</Strong> like a desktop app.</P>
+        <InstallButtonEN />
         <P>
           Want to learn more? Hamburger <Code>☰</Code> → <Strong>"Advanced Tutorial"</Strong> (10 steps covering all features).
         </P>

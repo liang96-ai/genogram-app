@@ -28,7 +28,11 @@ import {
   writeCaseJson,
   loadAllCasesFromFolder,
 } from './services/fileSystem';
+import { setupPwaInstallListener } from './services/pwaInstall';
 import { useGenogramStore } from './store/genogramStore';
+
+// 啟動時就註冊 beforeinstallprompt 監聽(全域,只執行一次)
+setupPwaInstallListener();
 
 export default function App() {
   const appMode = useGenogramStore((s) => s.appMode);
