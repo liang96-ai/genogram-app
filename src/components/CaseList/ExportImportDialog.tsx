@@ -21,6 +21,10 @@ import {
   type ImageFormat,
   type ImageRange,
 } from '../../services/imageExport';
+import {
+  writeBackupToFolder,
+  getRootFolderName,
+} from '../../services/fileSystem';
 
 /* ==================== Export Dialog ==================== */
 
@@ -120,6 +124,22 @@ export function ExportDialog({
         // backup 模式(可能是子集 + 設定)
         const bundle = await buildBackupExport();
         bundle.cases = cases;
+        // 優先寫到使用者選的資料夾的 _backups/ 子資料夾
+        // 沒設資料夾時才退回下載到 Downloads
+        const folderName = getRootFolderName();
+        if (folderName) {
+          const filename = await writeBackupToFolder(
+            JSON.stringify(bundle, null, 2),
+          );
+          if (filename) {
+            alert(
+              `✓ 備份已存到「${folderName}/_backups/${filename}」\n\n下次要復原:漢堡 → 匯入 → 選那個 .json`,
+            );
+            onClose();
+            return;
+          }
+          // 寫資料夾失敗 → fallback 下載
+        }
         downloadJSON(bundle, dataFilename);
       } else if (cases.length === 1) {
         downloadJSON(buildSingleExport(cases[0]));

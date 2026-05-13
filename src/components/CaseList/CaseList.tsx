@@ -3,6 +3,14 @@ import type { Genogram } from '../../types/genogram';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import { ExportDialog, ImportDialog } from './ExportImportDialog';
+import { usePwaInstall } from '../../services/pwaInstall';
+import {
+  selectRootFolder,
+  getRootFolderName,
+  isFileSystemAccessSupported,
+  writeCaseJson,
+} from '../../services/fileSystem';
+import { db } from '../../services/database';
 
 export default function CaseList() {
   const t = useT();
@@ -18,9 +26,14 @@ export default function CaseList() {
   const [showNew, setShowNew] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [exportTarget, setExportTarget] = useState<string | null>(null);
+  const [folderName, setFolderName] = useState<string | null>(null);
+  const { canInstall, isIOS, isStandalone, triggerInstall } = usePwaInstall();
+  const fsaSupported = isFileSystemAccessSupported();
 
   useEffect(() => {
     loadCaseList();
+    // 讀現有 root folder 名稱(載入後可能 App.tsx 已經 loadRootDirHandle)
+    setFolderName(getRootFolderName());
   }, [loadCaseList]);
 
   return (
@@ -64,23 +77,118 @@ export default function CaseList() {
               {t('caseList.subtitle')}
             </div>
           </div>
-          <button
-            onClick={() => setShowTutorial(true)}
-            style={{
-              padding: '6px 12px',
-              fontSize: 12,
-              background: 'transparent',
-              border: '1px solid #d2d2d7',
-              borderRadius: 6,
-              cursor: 'pointer',
-              color: '#1d1d1f',
-              fontFamily: 'inherit',
-            }}
-            title={t('caseList.tutorialTitle')}
-          >
-            {t('caseList.tutorial')}
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {/* 安裝按鈕:依平台/狀態自動切換 */}
+            {!isStandalone && (canInstall || isIOS) && (
+              <button
+                onClick={async () => {
+                  if (canInstall) {
+                    await triggerInstall();
+                  } else if (isIOS) {
+                    alert(
+                      '📱 iPhone/iPad 安裝步驟:\n\n1. 按 Safari 下方分享 ↑\n2. 選「加入主畫面」\n3. 之後從主畫面點 icon 開啟,離線可用',
+                    );
+                  }
+                }}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: 12,
+                  background: '#007aff',
+                  border: '1px solid #007aff',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  color: '#ffffff',
+                  fontFamily: 'inherit',
+                  fontWeight: 500,
+                }}
+                title={t('caseList.installTitle')}
+              >
+                📲 {t('caseList.install')}
+              </button>
+            )}
+            <button
+              onClick={() => setShowTutorial(true)}
+              style={{
+                padding: '6px 12px',
+                fontSize: 12,
+                background: 'transparent',
+                border: '1px solid #d2d2d7',
+                borderRadius: 6,
+                cursor: 'pointer',
+                color: '#1d1d1f',
+                fontFamily: 'inherit',
+              }}
+              title={t('caseList.tutorialTitle')}
+            >
+              {t('caseList.tutorial')}
+            </button>
+          </div>
         </div>
+
+        {/* 資料夾資訊區塊(僅 FSA 支援的平台顯示) */}
+        {fsaSupported && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 14px',
+              background: folderName ? '#e8f4ff' : '#fff5e6',
+              border: `1px solid ${folderName ? '#bedcfa' : '#ffd9a3'}`,
+              borderRadius: 8,
+              marginBottom: 16,
+              fontSize: 13,
+            }}
+          >
+            <span style={{ fontSize: 16 }}>📁</span>
+            <span style={{ flex: 1, color: '#1d1d1f' }}>
+              {folderName ? (
+                <>
+                  <span style={{ color: '#86868b' }}>
+                    {t('caseList.folderLabel')}:
+                  </span>{' '}
+                  <strong>{folderName}</strong>
+                </>
+              ) : (
+                <span style={{ color: '#8a6d3b' }}>
+                  {t('caseList.folderNotSet')}
+                </span>
+              )}
+            </span>
+            <button
+              onClick={async () => {
+                const h = await selectRootFolder();
+                if (h) {
+                  setFolderName(h.name);
+                  // 把目前 IndexedDB 的個案全部寫一份到新資料夾
+                  try {
+                    const allCases = await db.cases.toArray();
+                    for (const g of allCases) await writeCaseJson(g);
+                    await loadCaseList();
+                  } catch (err) {
+                    console.error('sync to new folder failed:', err);
+                  }
+                }
+              }}
+              style={{
+                padding: '4px 12px',
+                fontSize: 12,
+                background: '#ffffff',
+                border: '1px solid #d2d2d7',
+                borderRadius: 4,
+                cursor: 'pointer',
+                color: '#007aff',
+                fontFamily: 'inherit',
+                fontWeight: 500,
+              }}
+              title={t('caseList.folderSwitchTitle')}
+            >
+              {folderName
+                ? t('caseList.folderSwitch')
+                : t('caseList.folderSelect')}
+            </button>
+          </div>
+        )}
 
         {/* New Case + Import Buttons */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 28 }}>

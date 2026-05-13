@@ -20,17 +20,26 @@ export function getRootDirHandle(): FileSystemDirectoryHandle | null {
   return rootDirHandle;
 }
 
-/** 第一次設定 root 資料夾(顯示 picker) */
+/** 第一次設定 root 資料夾(顯示 picker)
+ *  若已有 rootDirHandle,picker 會自動定位到那個位置(方便「切換資料夾」場景)
+ */
 export async function selectRootFolder(): Promise<
   FileSystemDirectoryHandle | null
 > {
   if (!isFileSystemAccessSupported()) return null;
   try {
-    // @ts-expect-error showDirectoryPicker 不在 lib.dom 的標準 type
-    const handle = (await window.showDirectoryPicker({
+    const options: Record<string, unknown> = {
       mode: 'readwrite',
       id: 'genogram-root',
-    })) as FileSystemDirectoryHandle;
+    };
+    if (rootDirHandle) {
+      // 自動把 picker 定位到上次選的位置(使用者按確認就能再選同一個)
+      options.startIn = rootDirHandle;
+    }
+    // @ts-expect-error showDirectoryPicker 不在 lib.dom 的標準 type
+    const handle = (await window.showDirectoryPicker(
+      options,
+    )) as FileSystemDirectoryHandle;
     rootDirHandle = handle;
     await db.settings.put({ key: 'rootDirHandle', value: handle });
     return handle;
@@ -39,6 +48,11 @@ export async function selectRootFolder(): Promise<
     console.warn('select root folder cancelled or failed:', err);
     return null;
   }
+}
+
+/** 取得目前 root 資料夾名稱(給 UI 顯示用,沒設過回 null) */
+export function getRootFolderName(): string | null {
+  return rootDirHandle?.name ?? null;
 }
 
 /** App 啟動時嘗試載回上次選的資料夾 */
@@ -238,6 +252,43 @@ export async function loadAllCasesFromFolder(): Promise<Genogram[]> {
     if (g) cases.push(g);
   }
   return cases;
+}
+
+/** 把「全備份 JSON」寫到資料夾的 _backups/ 子資料夾
+ *  - 檔名格式:2026-05-13_15-30-00.json(時間戳,不會蓋舊備份)
+ *  - 放在 _backups/ 子資料夾跟 case_ 個案資料夾隔離(不污染掃描)
+ *  - 回傳實際寫的檔名(失敗則 null)
+ */
+export async function writeBackupToFolder(
+  jsonContent: string,
+): Promise<string | null> {
+  if (!rootDirHandle) return null;
+  if (!(await ensureRootPermission())) return null;
+  try {
+    const backupsDir = await rootDirHandle.getDirectoryHandle('_backups', {
+      create: true,
+    });
+    // 生成檔名:2026-05-13_15-30-00.json
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const filename =
+      `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}` +
+      `_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(
+        now.getSeconds(),
+      )}.json`;
+    const fileHandle = await backupsDir.getFileHandle(filename, {
+      create: true,
+    });
+    const writable = await fileHandle.createWritable();
+    await writable.write(
+      new Blob([jsonContent], { type: 'application/json' }),
+    );
+    await writable.close();
+    return filename;
+  } catch (err) {
+    console.error('writeBackupToFolder failed:', err);
+    return null;
+  }
 }
 
 /** 刪除整個個案資料夾(case_<id>/ + 內含 case.json + attachments/) */
