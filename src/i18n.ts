@@ -368,6 +368,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'caseList.folderSwitchTitle': '重新開啟資料夾選擇器(自動定位到之前的位置)',
     'caseList.share': '分享',
     'caseList.shareTitle': '分享給其他社工/心理師同行',
+    'caseList.menuTitle': '主選單',
 
     // ===== Share Dialog =====
     'share.title': '分享家系圖工具',
@@ -390,6 +391,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'caseList.backupTitle': '全備份(包含所有個案 + 設定)',
     'caseList.backup': '備份',
     'caseList.allCases': '全部個案',
+    'caseList.groupWeek': '一週內',
+    'caseList.groupMonth': '一個月內',
+    'caseList.groupOlder': '更早',
     'caseList.empty': '還沒有個案',
     'caseList.emptyHint': '點上方「新增個案」開始第一筆',
     'caseList.deleteConfirm': '確定要刪除「{name}」嗎?此動作無法復原。',
@@ -811,6 +815,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'caseList.folderSwitchTitle': 'Re-open folder picker (auto-positioned to previous location)',
     'caseList.share': 'Share',
     'caseList.shareTitle': 'Share with other social workers / therapists',
+    'caseList.menuTitle': 'Main menu',
 
     // ===== Share Dialog =====
     'share.title': 'Share Genogram Tool',
@@ -833,6 +838,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'caseList.backupTitle': 'Full backup (all cases + settings)',
     'caseList.backup': 'Backup',
     'caseList.allCases': 'All cases',
+    'caseList.groupWeek': 'Past Week',
+    'caseList.groupMonth': 'Past Month',
+    'caseList.groupOlder': 'Older',
     'caseList.empty': 'No cases yet',
     'caseList.emptyHint': 'Tap "New case" above to start',
     'caseList.deleteConfirm': 'Delete "{name}"? This cannot be undone.',

@@ -14,8 +14,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icon.svg', 'icon-maskable.svg'],
       manifest: {
-        name: 'GenogramProject 家系圖工具',
-        short_name: '家系圖',
+        name: 'genogram-tool 家系圖工具',
+        short_name: '家系圖工具',
         description: '家系圖工具 PWA — 100% 在地儲存,永不上傳,離線可用',
         theme_color: '#007aff',
         background_color: '#ffffff',

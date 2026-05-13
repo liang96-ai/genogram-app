@@ -12,6 +12,7 @@ import {
   writeCaseJson,
 } from '../../services/fileSystem';
 import { db } from '../../services/database';
+import SymbolGallery from '../Gallery/SymbolGallery';
 
 export default function CaseList() {
   const t = useT();
@@ -23,12 +24,38 @@ export default function CaseList() {
   const deleteCase = useGenogramStore((s) => s.deleteCase);
   const showConfirm = useGenogramStore((s) => s.showConfirm);
   const setShowTutorial = useGenogramStore((s) => s.setShowTutorial);
+  const setShowTutorialAdvanced = useGenogramStore(
+    (s) => s.setShowTutorialAdvanced,
+  );
+  const language = useGenogramStore((s) => s.language);
+  const setLanguage = useGenogramStore((s) => s.setLanguage);
 
   const [showNew, setShowNew] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [exportTarget, setExportTarget] = useState<string | null>(null);
   const [folderName, setFolderName] = useState<string | null>(null);
   const [showShare, setShowShare] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // 點外面關 menu
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[data-home-menu]')) return;
+      setMenuOpen(false);
+    };
+    const id = window.setTimeout(
+      () => document.addEventListener('pointerdown', onDown, true),
+      0,
+    );
+    return () => {
+      window.clearTimeout(id);
+      document.removeEventListener('pointerdown', onDown, true);
+    };
+  }, [menuOpen]);
   const { canInstall, isIOS, isStandalone, triggerInstall } = usePwaInstall();
   const fsaSupported = isFileSystemAccessSupported();
 
@@ -63,21 +90,132 @@ export default function CaseList() {
             marginBottom: 28,
           }}
         >
-          <div>
-            <h1
+          <div
+            data-home-menu
+            ref={menuRef}
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 12,
+              position: 'relative',
+            }}
+          >
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              title={t('caseList.menuTitle')}
               style={{
-                fontSize: 28,
-                fontWeight: 600,
-                color: '#1d1d1f',
-                margin: 0,
-                marginBottom: 4,
+                marginTop: 6,
+                width: 36,
+                height: 36,
+                padding: 0,
+                background: '#ffffff',
+                border: '1px solid #d2d2d7',
+                borderRadius: 8,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'inherit',
               }}
             >
-              {t('caseList.title')}
-            </h1>
-            <div style={{ fontSize: 13, color: '#86868b' }}>
-              {t('caseList.subtitle')}
+              <svg width="18" height="14" viewBox="0 0 18 14">
+                <line x1="0" y1="1" x2="18" y2="1" stroke="#1d1d1f" strokeWidth="2" strokeLinecap="round" />
+                <line x1="0" y1="7" x2="18" y2="7" stroke="#1d1d1f" strokeWidth="2" strokeLinecap="round" />
+                <line x1="0" y1="13" x2="18" y2="13" stroke="#1d1d1f" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+            <div>
+              <h1
+                style={{
+                  fontSize: 28,
+                  fontWeight: 600,
+                  color: '#1d1d1f',
+                  margin: 0,
+                  marginBottom: 4,
+                }}
+              >
+                {t('caseList.title')}
+              </h1>
+              <div style={{ fontSize: 13, color: '#86868b' }}>
+                {t('caseList.subtitle')}
+              </div>
             </div>
+
+            {/* 主選單 dropdown */}
+            {menuOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 50,
+                  left: 0,
+                  minWidth: 240,
+                  padding: 4,
+                  background: '#ffffff',
+                  border: '1px solid #e5e4e7',
+                  borderRadius: 8,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                  zIndex: 100,
+                }}
+              >
+                <HomeMenuItem
+                  icon="🌐"
+                  label={`${t('menu.language')}: ${language === 'zh' ? '中文' : 'English'}`}
+                  onClick={() => {
+                    setLanguage(language === 'zh' ? 'en' : 'zh');
+                  }}
+                />
+                <HomeMenuItem
+                  icon="📖"
+                  label={t('menu.symbolGallery')}
+                  onClick={() => {
+                    setGalleryOpen(true);
+                    setMenuOpen(false);
+                  }}
+                />
+                <HomeMenuItem
+                  icon="📘"
+                  label={t('menu.tutorialAdvanced')}
+                  onClick={() => {
+                    setShowTutorialAdvanced(true);
+                    setMenuOpen(false);
+                  }}
+                />
+                {fsaSupported && (
+                  <HomeMenuItem
+                    icon="📁"
+                    label={t('menu.folderSetup')}
+                    onClick={async () => {
+                      setMenuOpen(false);
+                      const h = await selectRootFolder();
+                      if (h) {
+                        setFolderName(h.name);
+                        try {
+                          const allCases = await db.cases.toArray();
+                          for (const g of allCases) await writeCaseJson(g);
+                        } catch (err) {
+                          console.error('sync to folder failed:', err);
+                        }
+                      }
+                    }}
+                  />
+                )}
+                <div
+                  style={{ height: 1, background: '#e5e4e7', margin: '4px 4px' }}
+                />
+                <div
+                  style={{
+                    padding: '8px 10px',
+                    fontSize: 10,
+                    color: '#86868b',
+                    lineHeight: 1.6,
+                    maxWidth: 220,
+                    whiteSpace: 'normal',
+                  }}
+                >
+                  {t('menu.copyrightNotice')}
+                </div>
+              </div>
+            )}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             {/* 安裝按鈕:依平台/狀態自動切換 */}
@@ -280,18 +418,7 @@ export default function CaseList() {
           )}
         </div>
 
-        {/* Case List */}
-        <div
-          style={{
-            fontSize: 13,
-            color: '#86868b',
-            marginBottom: 12,
-            paddingLeft: 4,
-          }}
-        >
-          {t('caseList.allCases')} ({caseList.length})
-        </div>
-
+        {/* Case List — 依最近使用分三階(1週內 / 1月內 / 更早) */}
         {caseList.length === 0 ? (
           <div
             style={{
@@ -312,31 +439,84 @@ export default function CaseList() {
             </div>
           </div>
         ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-              gap: 12,
-            }}
-          >
-            {caseList.map((c) => (
-              <CaseCard
-                key={c.id}
-                genogram={c}
-                onOpen={() => openCase(c.id)}
-                onRename={async (newName) => {
-                  await renameCase(c.id, newName);
-                }}
-                onDelete={async () => {
-                  const ok = await showConfirm(
-                    t('caseList.deleteConfirm', { name: c.caseName }),
-                  );
-                  if (ok) await deleteCase(c.id);
-                }}
-                onExport={() => setExportTarget(c.id)}
-              />
-            ))}
-          </div>
+          (() => {
+            // 分組:依 lastModifiedAt 切三階
+            const now = Date.now();
+            const ONE_DAY = 24 * 60 * 60 * 1000;
+            const W = 7 * ONE_DAY; // 1 週
+            const M = 30 * ONE_DAY; // 1 個月
+            const groups: {
+              key: 'week' | 'month' | 'older';
+              labelKey: string;
+              items: typeof caseList;
+            }[] = [
+              { key: 'week', labelKey: 'caseList.groupWeek', items: [] },
+              { key: 'month', labelKey: 'caseList.groupMonth', items: [] },
+              { key: 'older', labelKey: 'caseList.groupOlder', items: [] },
+            ];
+            // 各組內按時間倒序排
+            const sorted = [...caseList].sort((a, b) => {
+              const ta = new Date(a.lastModifiedAt).getTime();
+              const tb = new Date(b.lastModifiedAt).getTime();
+              return tb - ta;
+            });
+            for (const c of sorted) {
+              const t = new Date(c.lastModifiedAt).getTime();
+              const age = now - t;
+              if (age <= W) groups[0].items.push(c);
+              else if (age <= M) groups[1].items.push(c);
+              else groups[2].items.push(c);
+            }
+            return (
+              <>
+                {groups.map((g) =>
+                  g.items.length === 0 ? null : (
+                    <div key={g.key} style={{ marginBottom: 24 }}>
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: '#86868b',
+                          marginBottom: 10,
+                          paddingLeft: 4,
+                          fontWeight: 500,
+                        }}
+                      >
+                        {t(g.labelKey)} ({g.items.length})
+                      </div>
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns:
+                            'repeat(auto-fill, minmax(220px, 1fr))',
+                          gap: 12,
+                        }}
+                      >
+                        {g.items.map((c) => (
+                          <CaseCard
+                            key={c.id}
+                            genogram={c}
+                            onOpen={() => openCase(c.id)}
+                            onRename={async (newName) => {
+                              await renameCase(c.id, newName);
+                            }}
+                            onDelete={async () => {
+                              const ok = await showConfirm(
+                                t('caseList.deleteConfirm', {
+                                  name: c.caseName,
+                                }),
+                              );
+                              if (ok) await deleteCase(c.id);
+                            }}
+                            onExport={() => setExportTarget(c.id)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ),
+                )}
+              </>
+            );
+          })()
         )}
       </div>
 
@@ -362,7 +542,45 @@ export default function CaseList() {
         />
       )}
       {showShare && <ShareDialog onClose={() => setShowShare(false)} />}
+      {galleryOpen && <SymbolGallery onClose={() => setGalleryOpen(false)} />}
     </div>
+  );
+}
+
+/* ==================== 首頁主選單項目 ==================== */
+function HomeMenuItem({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: string;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        width: '100%',
+        padding: '8px 10px',
+        background: 'transparent',
+        border: 'none',
+        borderRadius: 4,
+        cursor: 'pointer',
+        color: '#1d1d1f',
+        fontSize: 13,
+        fontFamily: 'inherit',
+        textAlign: 'left',
+        gap: 8,
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f0f5')}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+    >
+      <span style={{ width: 18, textAlign: 'center' }}>{icon}</span>
+      <span style={{ flex: 1 }}>{label}</span>
+    </button>
   );
 }
 
