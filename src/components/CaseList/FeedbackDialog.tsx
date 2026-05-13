@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useT } from '../../i18n';
 
-// 收件信箱(用 + 別名,方便 Gmail 過濾)
-const FEEDBACK_EMAIL = 'liang96+genogram@gmail.com';
+// 收件信箱(專案專屬,不用個人 gmail)
+const FEEDBACK_EMAIL = 'genogram.feedback@gmail.com';
 const APP_VERSION = '1.0';
 
 type FeedbackType = 'bug' | 'suggestion' | 'question';
