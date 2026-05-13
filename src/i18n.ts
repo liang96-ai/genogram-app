@@ -366,6 +366,25 @@ const dict: Record<Lang, Record<string, string>> = {
     'caseList.folderSelect': '選資料夾',
     'caseList.folderSwitch': '切換資料夾',
     'caseList.folderSwitchTitle': '重新開啟資料夾選擇器(自動定位到之前的位置)',
+    'caseList.share': '分享',
+    'caseList.shareTitle': '分享給其他社工/心理師同行',
+
+    // ===== Share Dialog =====
+    'share.title': '分享家系圖工具',
+    'share.qrHint': '掃 QR Code 直接開啟,或右鍵儲存圖片',
+    'share.urlLabel': '網址',
+    'share.copy': '複製',
+    'share.copied': '已複製',
+    'share.messageLabel': '分享文案(可編輯)',
+    'share.copyMessage': '複製分享文案',
+    'share.copiedMessage': '已複製文案',
+    'share.nativeShare': '系統分享',
+    'share.nativeShareTitle': '用作業系統內建分享功能(手機常用)',
+    'share.shareTitle': '家系圖工具',
+    'share.footerHint':
+      '建議:LINE / Email / 社群貼文 都可以貼。配 QR Code 海報效果最好。',
+    'share.template':
+      '🌳 家系圖工具(社工/心理師用)\n{url}\n\n特色:\n✓ 100% 在地儲存,個案資料不上雲\n✓ 14 個內建量表(PHQ-9 / GAD-7 / Family APGAR 等)\n✓ McGoldrick 完整符號 + 15 種關係線\n✓ 中英雙語 · 離線可用 · 完全免費\n\n第一次用會自動跳教學,8 步快速上手。',
     'caseList.addCase': '新增個案',
     'caseList.import': '匯入',
     'caseList.backupTitle': '全備份(包含所有個案 + 設定)',
@@ -790,6 +809,25 @@ const dict: Record<Lang, Record<string, string>> = {
     'caseList.folderSelect': 'Pick folder',
     'caseList.folderSwitch': 'Switch folder',
     'caseList.folderSwitchTitle': 'Re-open folder picker (auto-positioned to previous location)',
+    'caseList.share': 'Share',
+    'caseList.shareTitle': 'Share with other social workers / therapists',
+
+    // ===== Share Dialog =====
+    'share.title': 'Share Genogram Tool',
+    'share.qrHint': 'Scan QR code to open, or right-click to save image',
+    'share.urlLabel': 'URL',
+    'share.copy': 'Copy',
+    'share.copied': 'Copied',
+    'share.messageLabel': 'Share message (editable)',
+    'share.copyMessage': 'Copy share message',
+    'share.copiedMessage': 'Message copied',
+    'share.nativeShare': 'Native Share',
+    'share.nativeShareTitle': 'Use OS built-in share (common on mobile)',
+    'share.shareTitle': 'Genogram Tool',
+    'share.footerHint':
+      'Tips: Works for LINE / Email / social media posts. Pair with the QR code for posters.',
+    'share.template':
+      '🌳 Genogram Tool (for social workers / therapists)\n{url}\n\nFeatures:\n✓ 100% local storage, never uploaded\n✓ 14 built-in scales (PHQ-9 / GAD-7 / Family APGAR, etc.)\n✓ Complete McGoldrick symbols + 15 relation lines\n✓ Bilingual · Works offline · Free\n\nFirst-time tutorial auto-starts in 8 quick steps.',
     'caseList.addCase': 'New case',
     'caseList.import': 'Import',
     'caseList.backupTitle': 'Full backup (all cases + settings)',

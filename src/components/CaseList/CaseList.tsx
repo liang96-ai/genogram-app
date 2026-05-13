@@ -3,6 +3,7 @@ import type { Genogram } from '../../types/genogram';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import { ExportDialog, ImportDialog } from './ExportImportDialog';
+import ShareDialog from './ShareDialog';
 import { usePwaInstall } from '../../services/pwaInstall';
 import {
   selectRootFolder,
@@ -27,6 +28,7 @@ export default function CaseList() {
   const [showImport, setShowImport] = useState(false);
   const [exportTarget, setExportTarget] = useState<string | null>(null);
   const [folderName, setFolderName] = useState<string | null>(null);
+  const [showShare, setShowShare] = useState(false);
   const { canInstall, isIOS, isStandalone, triggerInstall } = usePwaInstall();
   const fsaSupported = isFileSystemAccessSupported();
 
@@ -106,6 +108,22 @@ export default function CaseList() {
                 📲 {t('caseList.install')}
               </button>
             )}
+            <button
+              onClick={() => setShowShare(true)}
+              style={{
+                padding: '6px 12px',
+                fontSize: 12,
+                background: 'transparent',
+                border: '1px solid #d2d2d7',
+                borderRadius: 6,
+                cursor: 'pointer',
+                color: '#1d1d1f',
+                fontFamily: 'inherit',
+              }}
+              title={t('caseList.shareTitle')}
+            >
+              📤 {t('caseList.share')}
+            </button>
             <button
               onClick={() => setShowTutorial(true)}
               style={{
@@ -343,6 +361,7 @@ export default function CaseList() {
           onClose={() => setExportTarget(null)}
         />
       )}
+      {showShare && <ShareDialog onClose={() => setShowShare(false)} />}
     </div>
   );
 }
