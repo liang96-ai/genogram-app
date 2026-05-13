@@ -21,8 +21,7 @@
 
 ## 🚀 立即試用 Try It
 
-> 部署網址待補(deploy URL to be added)
-> e.g. https://genogram.example.com
+👉 **[https://genogram-tool.vercel.app/](https://genogram-tool.vercel.app/)**
 
 ### 安裝到桌面 / 主畫面 Install
 - **Chrome / Edge (桌面)**:網址列右側 ⊕ 圖示 → 安裝
