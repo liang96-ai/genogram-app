@@ -133,7 +133,7 @@ export function ExportDialog({
           );
           if (filename) {
             alert(
-              `✓ 備份已存到「${folderName}/_backups/${filename}」\n\n下次要復原:漢堡 → 匯入 → 選那個 .json`,
+              `✓ 備份已存到「${folderName}/_backups/${filename}」\n\n下次要復原:首頁 → 匯入 → 選那個 .json`,
             );
             onClose();
             return;

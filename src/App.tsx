@@ -957,7 +957,7 @@ function FolderSetupModal({
           <li>每個個案會在資料夾裡有獨立子資料夾(<code>case_xxx/</code>)</li>
           <li>個案資料存 <code>case.json</code> · 附件存 <code>attachments/</code></li>
           <li>換電腦時:複製資料夾 → 新電腦選同樣資料夾 → 個案全回來</li>
-          <li>之後想換資料夾:漢堡選單 → 📁 設定資料夾</li>
+          <li>之後想換資料夾:首頁 → 📁 切換資料夾 或 主選單 → 📁 設定資料夾</li>
         </ul>
         <div
           style={{

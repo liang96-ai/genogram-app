@@ -326,13 +326,21 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
       <>
         <P>進入個案後:</P>
         <P>
-          • 中央:畫布(可拖人物、加家人)
+          • 中央:<Strong>畫布</Strong> — 可拖人物、加家人
+          <br />
+          &nbsp;&nbsp;&nbsp;⤷ 在空白處<Strong>拖框</Strong> = 圈選多人一起搬位置
+          <br />
+          &nbsp;&nbsp;&nbsp;⤷ 拖<Strong>親子線端點到別人</Strong> = 該人變次要父母(收養 / 出養關係)
           <br />
           • 右側:<Strong>屬性面板</Strong>(共 4 個分頁)
           <br />
-          • 左上:返回鍵 <Code>←</Code> + 漢堡選單 <Code>☰</Code>
+          • 左上:返回鍵 <Code>←</Code> + 主選單 <Code>☰</Code>
           <br />
-          • 右下角:浮動工具列(縮放/適應/畫筆)
+          • 右下角浮動工具列:
+          <br />
+          &nbsp;&nbsp;&nbsp;縮放(+ / − / 適應視窗)
+          <br />
+          &nbsp;&nbsp;&nbsp;<Strong>✏️ 畫筆 = 畫「生態圖」</Strong>(圈起家族子群組)
         </P>
       </>
     ),
@@ -393,7 +401,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
           <br />
           • <Strong>附件</Strong>:量表分數、訪談筆記、文件
         </P>
-        <P>詳細功能可看「📘 看進階教學」(漢堡選單)。</P>
+        <P>詳細功能可看「📘 看進階教學」(主選單)。</P>
       </>
     ),
   },
@@ -425,7 +433,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         </P>
         <InstallButtonZH />
         <P>
-          想深入?漢堡 <Code>☰</Code> → <Strong>「看進階教學」</Strong>(10 步教全部功能)。
+          想深入?主選單 <Code>☰</Code> → <Strong>「看進階教學」</Strong>(10 步教全部功能)。
         </P>
         <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: '#86868b', lineHeight: 1.6 }}>
           祝你使用順利 🌳
@@ -478,13 +486,21 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
       <>
         <P>Once you open a case:</P>
         <P>
-          • Center: canvas (drag persons, add family)
+          • Center: <Strong>Canvas</Strong> — drag persons, add family
+          <br />
+          &nbsp;&nbsp;&nbsp;⤷ <Strong>Drag-select</Strong> on empty area = pick multiple to move at once
+          <br />
+          &nbsp;&nbsp;&nbsp;⤷ Drag a <Strong>parent-child line endpoint</Strong> onto someone = adoption/foster relationship
           <br />
           • Right: <Strong>Property Panel</Strong> (4 tabs)
           <br />
-          • Top-left: back <Code>←</Code> + hamburger menu <Code>☰</Code>
+          • Top-left: back <Code>←</Code> + main menu <Code>☰</Code>
           <br />
-          • Bottom-right: floating toolbar (zoom / fit / pen)
+          • Bottom-right floating toolbar:
+          <br />
+          &nbsp;&nbsp;&nbsp;Zoom (+ / − / fit to window)
+          <br />
+          &nbsp;&nbsp;&nbsp;<Strong>✏️ Pen = draw "Ecosystems"</Strong> (enclose family subgroups)
         </P>
       </>
     ),
@@ -545,7 +561,7 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           <br />
           • <Strong>Attachments</Strong>: Scale scores, interview notes, documents
         </P>
-        <P>For details see "📘 Advanced Tutorial" in the hamburger menu.</P>
+        <P>For details see "📘 Advanced Tutorial" in the main menu.</P>
       </>
     ),
   },
@@ -577,7 +593,7 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
         </P>
         <InstallButtonEN />
         <P>
-          Want to learn more? Hamburger <Code>☰</Code> → <Strong>"Advanced Tutorial"</Strong> (10 steps covering all features).
+          Want to learn more? Main menu <Code>☰</Code> → <Strong>"Advanced Tutorial"</Strong> (10 steps covering all features).
         </P>
         <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: '#86868b', lineHeight: 1.6 }}>
           Happy charting 🌳
@@ -678,7 +694,7 @@ export const ADVANCED_STEPS_ZH: TutorialStep[] = [
     title: '評估工具 — 14 量表',
     content: (
       <>
-        <P>漢堡 <Code>☰</Code> → <Strong>評估工具</Strong> → 7 分類(滑鼠移上去會彈出子選單):</P>
+        <P>主選單 <Code>☰</Code> → <Strong>評估工具</Strong> → 7 分類(滑鼠移上去會彈出子選單):</P>
         <P>
           👫 家庭功能 / 🧠 心理評估 / 🍶 物質使用 / 🚨 暴力創傷 / 👴 老人長照 / 🩼 身障失能 / 🔗 外部連結
         </P>
@@ -794,14 +810,14 @@ export const ADVANCED_STEPS_ZH: TutorialStep[] = [
     title: '匯出 + 完成',
     content: (
       <>
-        <P>漢堡 <Code>☰</Code> → <Strong>匯出成檔案</Strong>:</P>
+        <P>主選單 <Code>☰</Code> → <Strong>匯出成檔案</Strong>:</P>
         <P>
           • <Strong>📷 圖片</Strong>:PNG / JPG + 解析度(1x/2x/3x)+ 自動裁切 / 目前畫面 + 不畫網點背景 + 隱藏關係細節(私密線整條移除)
           <br />
           • <Strong>📄 資料 .json</Strong>:單筆 / 多選 / 全備份 + 可帶設定 + 歷史
         </P>
         <P>
-          進階教學結束。漢堡選單還有:
+          進階教學結束。主選單 <Code>☰</Code> 還有:
           <br />
           • 🌐 中英文一鍵切換
           <br />
@@ -906,7 +922,7 @@ export const ADVANCED_STEPS_EN: TutorialStep[] = [
     title: 'Assessment Tools — 14 Scales',
     content: (
       <>
-        <P>Hamburger <Code>☰</Code> → <Strong>Assessment Tools</Strong> → 7 categories (hover to expand submenu):</P>
+        <P>Main menu <Code>☰</Code> → <Strong>Assessment Tools</Strong> → 7 categories (hover to expand submenu):</P>
         <P>
           👫 Family / 🧠 Mental / 🍶 Substance Use / 🚨 Violence-Trauma / 👴 Elderly Care / 🩼 Disability / 🔗 External Links
         </P>
@@ -1022,14 +1038,14 @@ export const ADVANCED_STEPS_EN: TutorialStep[] = [
     title: 'Export + Done',
     content: (
       <>
-        <P>Hamburger <Code>☰</Code> → <Strong>Export to file</Strong>:</P>
+        <P>Main menu <Code>☰</Code> → <Strong>Export to file</Strong>:</P>
         <P>
           • <Strong>📷 Image</Strong>: PNG / JPG + resolution (1x/2x/3x) + auto-crop / current view + no dot background + hide relation details (private lines removed)
           <br />
           • <Strong>📄 Data .json</Strong>: Single / multi-select / full backup + optional settings + history
         </P>
         <P>
-          Advanced tutorial complete. The hamburger menu also has:
+          Advanced tutorial complete. The main menu <Code>☰</Code> also has:
           <br />
           • 🌐 One-click language toggle (Chinese / English)
           <br />

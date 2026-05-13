@@ -30,7 +30,7 @@ const dict: Record<Lang, Record<string, string>> = {
     // ===== Confirm Dialog =====
     'confirm.shortcut': '按 Enter 確認 · Esc 取消 · 下次想跳過此視窗:{mod} + Delete',
 
-    // ===== 漢堡 menu =====
+    // ===== 主選單 =====
     'menu.undo': '復原',
     'menu.redo': '重做',
     'menu.symbolGallery': '符號圖例',
@@ -236,7 +236,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'scaleDialog.haveCondition': '有此狀況',
 
     // ===== Scale Summary =====
-    'scaleSummary.empty': '尚無施測紀錄。漢堡 ☰ → 評估工具 開始',
+    'scaleSummary.empty': '尚無施測紀錄。主選單 ☰ → 評估工具 開始',
     'scaleSummary.latest': '最新',
     'scaleSummary.points': '分',
     'scaleSummary.times': '次',
@@ -384,7 +384,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'share.footerHint':
       '建議:LINE / Email / 社群貼文 都可以貼。配 QR Code 海報效果最好。',
     'share.template':
-      '🌳 家系圖工具(社工/心理師用)\n{url}\n\n特色:\n✓ 100% 在地儲存,個案資料不上雲\n✓ 14 個內建量表(PHQ-9 / GAD-7 / Family APGAR 等)\n✓ McGoldrick 完整符號 + 15 種關係線\n✓ 中英雙語 · 離線可用 · 完全免費\n\n第一次用會自動跳教學,8 步快速上手。',
+      '🌳 家系圖工具(社工/心理師用)\n{url}\n\n特色:\n✓ 只要按上下左右、拉動線條,快速畫,好上手。\n✓ 100% 在地儲存,個案資料不上雲端,離線可用。\n✓ 方便交流傳送,可傳送完整檔其他人接手,或是隱匿個資傳送。\n✓ 符號字典、關係線、醫療資訊、附件好存放。',
     'caseList.addCase': '新增個案',
     'caseList.import': '匯入',
     'caseList.backupTitle': '全備份(包含所有個案 + 設定)',
@@ -473,7 +473,7 @@ const dict: Record<Lang, Record<string, string>> = {
     // ===== Confirm Dialog =====
     'confirm.shortcut': 'Enter to confirm · Esc to cancel · Skip next time: {mod} + Delete',
 
-    // ===== Hamburger menu =====
+    // ===== Main menu =====
     'menu.undo': 'Undo',
     'menu.redo': 'Redo',
     'menu.symbolGallery': 'Symbol Legend',
@@ -679,7 +679,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'scaleDialog.haveCondition': 'Yes, applies',
 
     // ===== Scale Summary =====
-    'scaleSummary.empty': 'No scale results yet. Hamburger ☰ → Assessment Tools',
+    'scaleSummary.empty': 'No scale results yet. Menu ☰ → Assessment Tools',
     'scaleSummary.latest': 'Latest',
     'scaleSummary.points': 'pts',
     'scaleSummary.times': 'times',
@@ -827,7 +827,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'share.footerHint':
       'Tips: Works for LINE / Email / social media posts. Pair with the QR code for posters.',
     'share.template':
-      '🌳 Genogram Tool (for social workers / therapists)\n{url}\n\nFeatures:\n✓ 100% local storage, never uploaded\n✓ 14 built-in scales (PHQ-9 / GAD-7 / Family APGAR, etc.)\n✓ Complete McGoldrick symbols + 15 relation lines\n✓ Bilingual · Works offline · Free\n\nFirst-time tutorial auto-starts in 8 quick steps.',
+      '🌳 Genogram Tool (for social workers / therapists)\n{url}\n\nFeatures:\n✓ Click the arrows, drag the lines — quick to draw, easy to learn.\n✓ 100% local storage, never uploaded, works offline.\n✓ Easy to share — send the full file for handoff, or strip private data first.\n✓ Built-in symbol dictionary, relation lines, medical info, and attachments.',
     'caseList.addCase': 'New case',
     'caseList.import': 'Import',
     'caseList.backupTitle': 'Full backup (all cases + settings)',

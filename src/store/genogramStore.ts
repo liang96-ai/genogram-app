@@ -478,7 +478,7 @@ type GenogramStore = {
   // 教學
   showTutorial: boolean;
   setShowTutorial: (v: boolean) => void;
-  /** 進階教學:從漢堡 menu 觸發,不會自動跳 */
+  /** 進階教學:從主選單觸發,不會自動跳 */
   showTutorialAdvanced: boolean;
   setShowTutorialAdvanced: (v: boolean) => void;
 
