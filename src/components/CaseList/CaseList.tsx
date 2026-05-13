@@ -13,6 +13,7 @@ import {
 } from '../../services/fileSystem';
 import { db } from '../../services/database';
 import SymbolGallery from '../Gallery/SymbolGallery';
+import FeedbackDialog from './FeedbackDialog';
 
 export default function CaseList() {
   const t = useT();
@@ -37,6 +38,7 @@ export default function CaseList() {
   const [showShare, setShowShare] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 點外面關 menu
@@ -199,6 +201,17 @@ export default function CaseList() {
                     }}
                   />
                 )}
+                <div
+                  style={{ height: 1, background: '#e5e4e7', margin: '4px 4px' }}
+                />
+                <HomeMenuItem
+                  icon="✉️"
+                  label={t('menu.feedback')}
+                  onClick={() => {
+                    setFeedbackOpen(true);
+                    setMenuOpen(false);
+                  }}
+                />
                 <div
                   style={{ height: 1, background: '#e5e4e7', margin: '4px 4px' }}
                 />
@@ -543,6 +556,9 @@ export default function CaseList() {
       )}
       {showShare && <ShareDialog onClose={() => setShowShare(false)} />}
       {galleryOpen && <SymbolGallery onClose={() => setGalleryOpen(false)} />}
+      {feedbackOpen && (
+        <FeedbackDialog onClose={() => setFeedbackOpen(false)} />
+      )}
     </div>
   );
 }
