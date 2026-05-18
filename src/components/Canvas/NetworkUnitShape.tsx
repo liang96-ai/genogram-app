@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type {
   Ecosystem,
+  Line as LineType,
   NetworkConnector,
   NetworkUnit,
   Person,
@@ -8,6 +9,7 @@ import type {
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import DeleteButton from './DeleteButton';
+import Line from './Line';
 
 /**
  * 畫布上的網絡單位(長條形 + 頂部 ▲ 按鈕 + 使用者拉的 connectors)
@@ -179,6 +181,69 @@ export default function NetworkUnitShape({
             });
         if (!target) return null;
         const isConnSelected = selectedConnectorId === conn.id;
+
+        // 有 subType + target 是 person/unit → 用 Line 元件渲染(全 15 種視覺)
+        // 拖曳中跟 target 是 ecosystem 時 fall back 到下方的簡單線
+        const canUseLineComponent =
+          !dragging &&
+          conn.subType &&
+          (conn.target.type === 'person' || conn.target.type === 'unit');
+        if (canUseLineComponent) {
+          // 合成 Person 物件給 Line 元件吃 — 用 unit 中心 + institution 形狀,讓 edge clipping 自然在邊界
+          const synthFrom: Person = {
+            id: '__synth_unit_' + unit.id,
+            position: unit.position,
+            shape: 'institution',
+            basicInfo: { name: unit.name },
+          };
+          let synthTo: Person | null = null;
+          if (conn.target.type === 'person') {
+            synthTo = persons.find((p) => p.id === conn.target.id) ?? null;
+          } else if (conn.target.type === 'unit') {
+            const tu = units.find((u) => u.id === conn.target.id);
+            if (tu) {
+              synthTo = {
+                id: '__synth_unit_' + tu.id,
+                position: tu.position,
+                shape: 'institution',
+                basicInfo: { name: tu.name },
+              };
+            }
+          }
+          if (synthTo) {
+            const synthLine: LineType = {
+              id: conn.id,
+              fromPersonId: synthFrom.id,
+              toPersonId: synthTo.id,
+              category: 'relation',
+              subType: conn.subType!,
+              visual: { lineStyle: 'solid' },
+              note: conn.note,
+            };
+            return (
+              <g key={conn.id}>
+                <Line
+                  line={synthLine}
+                  from={synthFrom}
+                  to={synthTo}
+                  selected={isConnSelected}
+                  dragging={false}
+                  onLinePointerDown={(e) => {
+                    e.stopPropagation();
+                    onConnectorDown(e, unit.id, conn.id);
+                  }}
+                  onLineDoubleClick={(e) => e.stopPropagation()}
+                  onDelete={
+                    onConnectorDelete
+                      ? () => onConnectorDelete(conn.id)
+                      : undefined
+                  }
+                />
+              </g>
+            );
+          }
+        }
+
         // 套用 relation subType 視覺:
         //   有 subType → 藍色實線(整套關係線顏色),預設箭頭朝向 target
         //   無 subType → 灰虛線(legacy)

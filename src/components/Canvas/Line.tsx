@@ -12,6 +12,11 @@ import {
 } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import DeleteButton from './DeleteButton';
+import {
+  parallelBezierPath,
+  zigzagPathArc,
+  wavyPathArc,
+} from './relationVisual';
 
 // 哪些 RelationSubType 用「自訂幾何」渲染(取代預設 stroke/dasharray)
 const RELATION_GEOMETRY_TYPES = new Set<LineSubType>([
@@ -302,8 +307,8 @@ export default function Line({
 
   return (
     <g data-line-id={line.id}>
-      {arcEnabled && (
-        // 弧形繞過模式:單一 bezier 取代所有 line / 多線 / 幾何
+      {arcEnabled && !useGeometry && (
+        // 弧形 + 非幾何(focus-on 以外的單純線)
         <path
           d={arcPath}
           stroke={stroke}
@@ -323,6 +328,96 @@ export default function Line({
           strokeDasharray={dash}
         />
       )}
+      {arcEnabled && useGeometry &&
+        (() => {
+          // ===== 弧形 + 幾何 — 全 15 subtype 沿曲線渲染 =====
+          const cx = arcCtrlX;
+          const cy = arcCtrlY;
+          // 多線(connected/close/fused/close-hostile)用 parallelBezierPath
+          if (line.subType === 'connected') {
+            const off = 3;
+            return (
+              <>
+                <path d={parallelBezierPath(startX, startY, cx, cy, endX, endY, off)} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
+                <path d={parallelBezierPath(startX, startY, cx, cy, endX, endY, -off)} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
+              </>
+            );
+          }
+          if (line.subType === 'close') {
+            const off = 5;
+            return (
+              <>
+                <path d={arcPath} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
+                <path d={parallelBezierPath(startX, startY, cx, cy, endX, endY, off)} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
+                <path d={parallelBezierPath(startX, startY, cx, cy, endX, endY, -off)} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
+              </>
+            );
+          }
+          if (line.subType === 'fused') {
+            const o1 = 2;
+            const o2 = 6;
+            return (
+              <>
+                <path d={parallelBezierPath(startX, startY, cx, cy, endX, endY, o2)} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
+                <path d={parallelBezierPath(startX, startY, cx, cy, endX, endY, o1)} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
+                <path d={parallelBezierPath(startX, startY, cx, cy, endX, endY, -o1)} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
+                <path d={parallelBezierPath(startX, startY, cx, cy, endX, endY, -o2)} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
+              </>
+            );
+          }
+          if (line.subType === 'spiritual') {
+            const waves = Math.max(3, Math.floor(segLen / 18));
+            return (
+              <path
+                d={wavyPathArc(startX, startY, cx, cy, endX, endY, 5, waves)}
+                stroke={stroke}
+                strokeWidth={strokeWidth}
+                fill="none"
+              />
+            );
+          }
+          if (line.subType === 'close-hostile') {
+            const off = 5;
+            return (
+              <>
+                <path d={parallelBezierPath(startX, startY, cx, cy, endX, endY, off)} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
+                <path d={parallelBezierPath(startX, startY, cx, cy, endX, endY, -off)} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
+                <path d={zigzagPathArc(startX, startY, cx, cy, endX, endY, 3, 8)} stroke={stroke} strokeWidth={1.2} fill="none" strokeLinejoin="miter" />
+              </>
+            );
+          }
+          if (
+            line.subType === 'hostile' ||
+            line.subType === 'negative-focus' ||
+            line.subType === 'physical-abuse' ||
+            line.subType === 'emotional-abuse' ||
+            line.subType === 'sexual-abuse'
+          ) {
+            const zigW =
+              line.subType === 'emotional-abuse' ? 1
+                : line.subType === 'physical-abuse' ? 3
+                  : line.subType === 'sexual-abuse' ? 4
+                    : strokeWidth;
+            return (
+              <path
+                d={zigzagPathArc(startX, startY, cx, cy, arcLineEndX, arcLineEndY, 5, 10)}
+                stroke={stroke}
+                strokeWidth={zigW}
+                fill="none"
+                strokeLinejoin="miter"
+              />
+            );
+          }
+          // 其餘(focus-on / caregiver / cutoff / cutoff-repaired):單一 bezier
+          return (
+            <path
+              d={`M ${startX} ${startY} Q ${cx} ${cy} ${arcLineEndX} ${arcLineEndY}`}
+              stroke={stroke}
+              strokeWidth={strokeWidth}
+              fill="none"
+            />
+          );
+        })()}
       {!arcEnabled && useGeometry &&
         (() => {
           // #62 連結(connected)— 雙線
@@ -419,32 +514,45 @@ export default function Line({
             />
           );
         })()}
-      {/* 中央符號:cutoff(雙短橫)/ cutoff-repaired(菱形) */}
-      {useGeometry && line.subType === 'cutoff' && (
-        <g>
-          {[-3, 3].map((off) => (
-            <line
-              key={off}
-              x1={midX + ux * off + nx * 6}
-              y1={midY + uy * off + ny * 6}
-              x2={midX + ux * off - nx * 6}
-              y2={midY + uy * off - ny * 6}
+      {/* 中央符號:cutoff(雙短橫)/ cutoff-repaired(菱形)
+          Arc 模式時用 bezier midpoint(t=0.5) */}
+      {useGeometry && (line.subType === 'cutoff' || line.subType === 'cutoff-repaired') &&
+        (() => {
+          // Bezier 在 t=0.5 的點:0.25 start + 0.5 ctrl + 0.25 end
+          const mX = arcEnabled
+            ? 0.25 * startX + 0.5 * arcCtrlX + 0.25 * endX
+            : midX;
+          const mY = arcEnabled
+            ? 0.25 * startY + 0.5 * arcCtrlY + 0.25 * endY
+            : midY;
+          if (line.subType === 'cutoff') {
+            return (
+              <g>
+                {[-3, 3].map((off) => (
+                  <line
+                    key={off}
+                    x1={mX + ux * off + nx * 6}
+                    y1={mY + uy * off + ny * 6}
+                    x2={mX + ux * off - nx * 6}
+                    y2={mY + uy * off - ny * 6}
+                    stroke={stroke}
+                    strokeWidth={2}
+                  />
+                ))}
+              </g>
+            );
+          }
+          return (
+            <circle
+              cx={mX}
+              cy={mY}
+              r={5}
+              fill="#fff"
               stroke={stroke}
-              strokeWidth={2}
+              strokeWidth={1.6}
             />
-          ))}
-        </g>
-      )}
-      {useGeometry && line.subType === 'cutoff-repaired' && (
-        <circle
-          cx={midX}
-          cy={midY}
-          r={5}
-          fill="#fff"
-          stroke={stroke}
-          strokeWidth={1.6}
-        />
-      )}
+          );
+        })()}
       {/* 終點箭頭 — 全黑填滿,在藍色關係線上明顯 */}
       {!arcEnabled && useGeometry && needArrowEnd && (
         <polygon
