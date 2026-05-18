@@ -725,6 +725,9 @@ export default function Canvas() {
   // ==================== Line 直接拖 (document-level) ====================
   const onLinePointerDown = (e: React.PointerEvent, lineId: string) => {
     if (drawMode) return;
+    // 點線 = 切換到「編輯既有線」模式,把 pending(待創建新線)取消掉
+    // 否則上方藍色 banner 還會在,使用者以為按鈕沒效果
+    if (pendingRelation) setPendingRelation(null);
     e.stopPropagation();
     const startLocal = toSvgPoint(e.clientX, e.clientY);
 

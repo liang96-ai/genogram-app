@@ -133,7 +133,9 @@ export default function Tab2Network({ person, lineTarget }: Props) {
   //  - 選中 person → 進入 pending mode,等使用者點下一人完成
   const onPickRelation = (subType: RelationSubType) => {
     if (lineTarget) {
+      // 編輯既有線:直接切類型,並清掉 pending(避免之後還有殘留 banner)
       updateLine(lineTarget.id, { subType, category: 'relation' });
+      if (pendingRelation) setPendingRelation(null);
       return;
     }
     setPendingRelation(subType);
@@ -216,22 +218,25 @@ export default function Tab2Network({ person, lineTarget }: Props) {
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',
-            gap: 4,
+            gap: 8,
           }}
         >
-          {RELATION_GROUPS.map((group, gi) => (
+          {RELATION_GROUPS.map((group) => (
             <div
               key={group.groupKey}
               style={{
-                display: 'contents', // 讓 children 直接成為外層 flex 的成員,labels + buttons 一起流
+                // 整個 group 當原子單位:label + buttons 永遠在一起,
+                // 空間不夠時整組換行(不會在中間斷開)
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
               }}
             >
               <span
                 style={{
                   fontSize: 10,
                   color: '#86868b',
-                  padding: gi === 0 ? '0 4px 0 0' : '0 4px 0 6px',
-                  borderLeft: gi === 0 ? 'none' : '1px solid #e5e4e7',
+                  padding: '0 2px',
                   whiteSpace: 'nowrap',
                 }}
               >
