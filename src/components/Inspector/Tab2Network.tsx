@@ -146,7 +146,7 @@ export default function Tab2Network({ person, lineTarget }: Props) {
   //  - 選中現有 line → 直接改該線的 subType(自動切 category)
   //  - 選中 person → 進入 pending mode,等使用者點下一人完成
   const onPickRelation = (subType: RelationSubType) => {
-    // 優先順序:選中 connector > 選中 line > 進 pending mode
+    // 優先順序:選中 connector > 選中 relation line > 進 pending mode
     if (connectorTarget) {
       setConnectorSubType(
         connectorTarget.unit.id,
@@ -156,7 +156,10 @@ export default function Tab2Network({ person, lineTarget }: Props) {
       if (pendingRelation) setPendingRelation(null);
       return;
     }
-    if (lineTarget) {
+    // 安全閘:只有 relation line 才能被改 subType。
+    // member line(婚姻/親子)走另一個 toggle(solid/dashed),不歸 Tab2 管。
+    // Inspector 端已經過濾過一次,這裡是 defense-in-depth。
+    if (lineTarget && lineTarget.category === 'relation') {
       // 編輯既有線:直接切類型,並清掉 pending(避免之後還有殘留 banner)
       updateLine(lineTarget.id, { subType, category: 'relation' });
       if (pendingRelation) setPendingRelation(null);

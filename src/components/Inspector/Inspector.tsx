@@ -269,7 +269,13 @@ export default function Inspector() {
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {person && activeTab === 'basic' && <Tab1Basic person={person} />}
         {person && activeTab === 'network' && (
-          <Tab2Network person={person} lineTarget={line} />
+          <Tab2Network
+            person={person}
+            // 只有 relation line 才能被 Tab2 改 subType。
+            // member line(婚姻/親子)如果被傳進去,Tab2 會把它 updateLine 成 relation,
+            // 造成「黑色婚姻線變成藍色波浪 / 鋸齒」的災難。
+            lineTarget={line?.category === 'relation' ? line : null}
+          />
         )}
         {person && activeTab === 'medical' && <Tab3Medical person={person} />}
         {activeTab === 'custom' && <Tab4Custom />}
