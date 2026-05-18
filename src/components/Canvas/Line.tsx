@@ -153,6 +153,10 @@ type Props = {
   onLinePointerDown: (e: React.PointerEvent) => void;
   onLineDoubleClick: (e: React.MouseEvent) => void;
   onDelete?: () => void;
+  /** 「弧形繞過」模式 — 同一對人物之間已有 member 線(婚姻/親子),
+   *  關係線要避開壓在上面,改用弧形 quadratic bezier 繞過去
+   *  'up' = 往上凸(水平 member 用)  'right' = 往右凸(垂直 member 用) */
+  arcDetour?: 'up' | 'right' | null;
 };
 
 export default function Line({
@@ -165,6 +169,7 @@ export default function Line({
   onLinePointerDown,
   onLineDoubleClick,
   onDelete,
+  arcDetour,
 }: Props) {
   const t = useT();
   const updateLine = useGenogramStore((s) => s.updateLine);
@@ -268,9 +273,46 @@ export default function Line({
   const lineStartX = needArrowStart ? startX + ux * (arrowLen - arrowGap) : startX;
   const lineStartY = needArrowStart ? startY + uy * (arrowLen - arrowGap) : startY;
 
+  // ===== Arc detour 計算 =====
+  // 當同一對人物之間有 member 線(婚姻/親子),關係線改用弧形繞過
+  // v1 簡化:只繪單一 bezier(忽略多線/鋸齒/波浪細節),保留終點箭頭
+  const ARC_AMOUNT = 40;
+  const arcEnabled = !!arcDetour;
+  const arcMidX = (startX + endX) / 2;
+  const arcMidY = (startY + endY) / 2;
+  const arcCtrlX =
+    arcDetour === 'right' ? arcMidX + ARC_AMOUNT : arcMidX;
+  const arcCtrlY =
+    arcDetour === 'up' ? arcMidY - ARC_AMOUNT : arcMidY;
+  // bezier 在 t=1 的切線方向(P2-P1),給弧形終點箭頭轉向用
+  const arcEndTangentX = endX - arcCtrlX;
+  const arcEndTangentY = endY - arcCtrlY;
+  const arcEndTangentLen =
+    Math.hypot(arcEndTangentX, arcEndTangentY) || 1;
+  const arcEndUx = arcEndTangentX / arcEndTangentLen;
+  const arcEndUy = arcEndTangentY / arcEndTangentLen;
+  // arc 模式下,終點箭頭朝弧線結尾的切線方向
+  const arcLineEndX = needArrowEnd
+    ? endX - arcEndUx * (arrowLen - arrowGap)
+    : endX;
+  const arcLineEndY = needArrowEnd
+    ? endY - arcEndUy * (arrowLen - arrowGap)
+    : endY;
+  const arcPath = `M ${startX} ${startY} Q ${arcCtrlX} ${arcCtrlY} ${arcLineEndX} ${arcLineEndY}`;
+
   return (
     <g data-line-id={line.id}>
-      {!useGeometry && (
+      {arcEnabled && (
+        // 弧形繞過模式:單一 bezier 取代所有 line / 多線 / 幾何
+        <path
+          d={arcPath}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeDasharray={dash}
+          fill="none"
+        />
+      )}
+      {!arcEnabled && !useGeometry && (
         <line
           x1={startX}
           y1={startY}
@@ -281,7 +323,7 @@ export default function Line({
           strokeDasharray={dash}
         />
       )}
-      {useGeometry &&
+      {!arcEnabled && useGeometry &&
         (() => {
           // #62 連結(connected)— 雙線
           if (line.subType === 'connected') {
@@ -404,19 +446,30 @@ export default function Line({
         />
       )}
       {/* 終點箭頭 — 全黑填滿,在藍色關係線上明顯 */}
-      {useGeometry && needArrowEnd && (
+      {!arcEnabled && useGeometry && needArrowEnd && (
         <polygon
           points={`${endX},${endY} ${endX - ux * arrowLen - nx * arrowWid * 0.5},${endY - uy * arrowLen - ny * arrowWid * 0.5} ${endX - ux * arrowLen + nx * arrowWid * 0.5},${endY - uy * arrowLen + ny * arrowWid * 0.5}`}
           fill="#1d1d1f"
         />
       )}
       {/* 起點箭頭(只有 caregiver — 雙向)*/}
-      {useGeometry && needArrowStart && (
+      {!arcEnabled && useGeometry && needArrowStart && (
         <polygon
           points={`${startX},${startY} ${startX + ux * arrowLen - nx * arrowWid * 0.5},${startY + uy * arrowLen - ny * arrowWid * 0.5} ${startX + ux * arrowLen + nx * arrowWid * 0.5},${startY + uy * arrowLen + ny * arrowWid * 0.5}`}
           fill="#1d1d1f"
         />
       )}
+      {/* Arc 模式終點箭頭(用切線方向定向) */}
+      {arcEnabled && needArrowEnd && (() => {
+        const aNx = -arcEndUy;
+        const aNy = arcEndUx;
+        return (
+          <polygon
+            points={`${endX},${endY} ${endX - arcEndUx * arrowLen - aNx * arrowWid * 0.5},${endY - arcEndUy * arrowLen - aNy * arrowWid * 0.5} ${endX - arcEndUx * arrowLen + aNx * arrowWid * 0.5},${endY - arcEndUy * arrowLen + aNy * arrowWid * 0.5}`}
+            fill="#1d1d1f"
+          />
+        );
+      })()}
       <line
         x1={startX}
         y1={startY}

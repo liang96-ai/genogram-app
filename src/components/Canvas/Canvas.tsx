@@ -220,6 +220,10 @@ export default function Canvas() {
   );
   const commitEcosystemEdit = useGenogramStore((s) => s.commitEcosystemEdit);
   const addConnector = useGenogramStore((s) => s.addConnector);
+  const setConnectorSubType = useGenogramStore((s) => s.setConnectorSubType);
+  const findUnitConnectorByPerson = useGenogramStore(
+    (s) => s.findUnitConnectorByPerson,
+  );
   const removeConnector = useGenogramStore((s) => s.removeConnector);
   const updateConnectorTarget = useGenogramStore(
     (s) => s.updateConnectorTarget,
@@ -232,10 +236,10 @@ export default function Canvas() {
     y: number;
   } | null>(null);
   // 選中的 connector(短按時設定 → 顯示 ×;最多一個)
-  const [selectedConnector, setSelectedConnector] = useState<{
-    unitId: string;
-    connectorId: string;
-  } | null>(null);
+  const selectedConnector = useGenogramStore((s) => s.selectedConnector);
+  const setSelectedConnector = useGenogramStore(
+    (s) => s.setSelectedConnector,
+  );
 
   const svgRef = useRef<SVGSVGElement>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -864,11 +868,7 @@ export default function Canvas() {
       const sourceId =
         inspectorTarget?.type === 'person' ? inspectorTarget.id : null;
       if (sourceId && sourceId !== personId) {
-        createRelationLine(
-          sourceId,
-          { type: 'person', id: personId },
-          pendingRelation,
-        );
+        createRelationLine(sourceId, personId, pendingRelation);
       } else {
         setPendingRelation(null);
       }
@@ -1633,7 +1633,8 @@ export default function Canvas() {
             }}
             onPointerDown={(e) => {
               if (drawMode) return;
-              // 關係線 pending mode:點到單位 → 建立 person→unit 關係線
+              // 關係線 pending mode:點到單位 → 建立 person→unit connector(套 subType)
+              // 若該單位已有連到此 person 的 connector → 直接改它的 subType
               if (pendingRelation) {
                 e.stopPropagation();
                 const sourceId =
@@ -1641,11 +1642,24 @@ export default function Canvas() {
                     ? inspectorTarget.id
                     : null;
                 if (sourceId) {
-                  createRelationLine(
+                  const existing = findUnitConnectorByPerson(
+                    unit.id,
                     sourceId,
-                    { type: 'unit', id: unit.id },
-                    pendingRelation,
                   );
+                  if (existing) {
+                    setConnectorSubType(
+                      unit.id,
+                      existing.id,
+                      pendingRelation,
+                    );
+                  } else {
+                    addConnector(
+                      unit.id,
+                      { type: 'person', id: sourceId },
+                      pendingRelation,
+                    );
+                  }
+                  setPendingRelation(null);
                 } else {
                   setPendingRelation(null);
                 }
@@ -1768,36 +1782,27 @@ export default function Canvas() {
         ))}
 
       {looseLines.map((line) => {
-        // 解析 from 端點(person 或 unit) — unit 用「合成 Person」(institution 形狀)讓 Line 渲染共用邏輯
-        const from = line.fromUnitId
-          ? (() => {
-              const u = (currentCase.networkUnits ?? []).find(
-                (x) => x.id === line.fromUnitId,
-              );
-              if (!u) return null;
-              return {
-                id: u.id,
-                position: u.position,
-                shape: 'institution' as const,
-                basicInfo: { name: u.name },
-              } as Person;
-            })()
-          : currentCase.persons.find((p) => p.id === line.fromPersonId);
-        const to = line.toUnitId
-          ? (() => {
-              const u = (currentCase.networkUnits ?? []).find(
-                (x) => x.id === line.toUnitId,
-              );
-              if (!u) return null;
-              return {
-                id: u.id,
-                position: u.position,
-                shape: 'institution' as const,
-                basicInfo: { name: u.name },
-              } as Person;
-            })()
-          : currentCase.persons.find((p) => p.id === line.toPersonId);
+        const from = currentCase.persons.find((p) => p.id === line.fromPersonId);
+        const to = currentCase.persons.find((p) => p.id === line.toPersonId);
         if (!from || !to) return null;
+        // 同對人物之間是否有 member 線 → 關係線弧形繞過
+        let arcDetour: 'up' | 'right' | null = null;
+        if (line.category === 'relation') {
+          const memberBetween = currentCase.lines.find(
+            (m) =>
+              m.id !== line.id &&
+              m.category === 'member' &&
+              ((m.fromPersonId === line.fromPersonId &&
+                m.toPersonId === line.toPersonId) ||
+                (m.fromPersonId === line.toPersonId &&
+                  m.toPersonId === line.fromPersonId)),
+          );
+          if (memberBetween) {
+            const dx = Math.abs(to.position.x - from.position.x);
+            const dy = Math.abs(to.position.y - from.position.y);
+            arcDetour = dx >= dy ? 'up' : 'right';
+          }
+        }
         const dragEntry = handleDrag?.drags.find((d) => d.lineId === line.id);
         const override = dragEntry && handleDrag
           ? {
@@ -1822,6 +1827,7 @@ export default function Canvas() {
               e.stopPropagation();
             }}
             onDelete={() => removeLine(line.id)}
+            arcDetour={arcDetour}
           />
         );
       })}

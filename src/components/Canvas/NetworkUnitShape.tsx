@@ -179,17 +179,47 @@ export default function NetworkUnitShape({
             });
         if (!target) return null;
         const isConnSelected = selectedConnectorId === conn.id;
+        // 套用 relation subType 視覺:
+        //   有 subType → 藍色實線(整套關係線顏色),預設箭頭朝向 target
+        //   無 subType → 灰虛線(legacy)
+        const hasSubType = !!conn.subType;
+        // 暴力 / 負面類:紅色突顯(同 Line.tsx 慣例)
+        const isViolent =
+          conn.subType === 'physical-abuse' ||
+          conn.subType === 'emotional-abuse' ||
+          conn.subType === 'sexual-abuse';
+        // 顯示方向箭頭的 subType
+        const showArrow =
+          conn.subType === 'focus-on' ||
+          conn.subType === 'negative-focus' ||
+          isViolent ||
+          conn.subType === 'caregiver';
+        const baseColor = hasSubType
+          ? isViolent
+            ? '#ff3b30'
+            : '#007aff'
+          : '#8e8e93';
         const lineStroke = dragging
           ? '#ff9500'
           : isConnSelected
             ? '#007aff'
-            : '#8e8e93';
-        const lineWidth = dragging ? 2 : isConnSelected ? 2.5 : 1.4;
+            : baseColor;
+        const lineWidth = dragging ? 2 : isConnSelected ? 2.5 : 1.6;
+        // 點線(distant)、虛線(其他保留為灰虛)
+        const dashPattern = !hasSubType
+          ? '4 3'
+          : conn.subType === 'distant'
+            ? '2 4'
+            : undefined;
         const midX = (topAnchorX + target.x) / 2;
         const midY = (topAnchorY + target.y) / 2;
+        // 箭頭基本方向(從 topAnchor 指向 target)
+        const dx = target.x - topAnchorX;
+        const dy = target.y - topAnchorY;
+        const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
         return (
           <g key={conn.id}>
-            {/* 可見虛線 */}
+            {/* 可見線 */}
             <line
               x1={topAnchorX}
               y1={topAnchorY}
@@ -197,9 +227,18 @@ export default function NetworkUnitShape({
               y2={target.y}
               stroke={lineStroke}
               strokeWidth={lineWidth}
-              strokeDasharray="4 3"
+              strokeDasharray={dashPattern}
               style={{ pointerEvents: 'none' }}
             />
+            {/* 箭頭(focus / abuse / caregiver 等) */}
+            {showArrow && !dragging && (
+              <polygon
+                points="0,-5 0,5 8,0"
+                transform={`translate(${target.x}, ${target.y}) rotate(${angle})`}
+                fill={lineStroke}
+                style={{ pointerEvents: 'none' }}
+              />
+            )}
             {/* 透明 hit area:點/拖中段(跟拖線頭等同事件) */}
             {!dragging && (
               <line

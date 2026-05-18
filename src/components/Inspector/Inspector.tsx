@@ -56,10 +56,17 @@ export default function Inspector() {
   const person =
     targetPerson ?? lineFallbackPerson ?? currentCase?.persons[0];
 
+  const selectedConnector = useGenogramStore((s) => s.selectedConnector);
+
   // 選中線條時自動切到網絡關係 Tab(線條屬性顯示在那裡)
   useEffect(() => {
     if (line) setActiveTab('network');
   }, [line?.id]);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 選中 connector 時自動切到 Tab2(關係按鈕在這)
+  useEffect(() => {
+    if (selectedConnector) setActiveTab('network');
+  }, [selectedConnector]);
 
   // 選中機構時自動切到網絡關係 Tab(機構主要資料在 Tab2)
   useEffect(() => {

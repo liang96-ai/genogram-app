@@ -187,11 +187,6 @@ export type Line = {
   id: string;
   fromPersonId: string;
   toPersonId: string;
-  /** 若設定 → from 端是 NetworkUnit(取代 fromPersonId 的解讀);
-   *  目前只支援 category='relation' 的關係線 */
-  fromUnitId?: string;
-  /** 若設定 → to 端是 NetworkUnit;目前只支援 category='relation' */
-  toUnitId?: string;
   category: LineCategory;
   subType: LineSubType;
   visual: LineVisual;
@@ -292,6 +287,12 @@ export type ConnectorTarget =
 export type NetworkConnector = {
   id: string;
   target: ConnectorTarget;
+  /** 連線的關係類型(套用 15 種關係線之一)
+   *  - 預設 'focus-on' (#67,單位專注於對方)
+   *  - 使用者可在 Tab2 改成任何關係 subType */
+  subType?: RelationSubType;
+  /** 線條備注(雙擊線可編輯) */
+  note?: string;
 };
 
 export type NetworkUnit = {

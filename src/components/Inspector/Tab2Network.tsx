@@ -120,6 +120,20 @@ export default function Tab2Network({ person, lineTarget }: Props) {
   const toggleAllRelationLinesPrivate = useGenogramStore(
     (s) => s.toggleAllRelationLinesPrivate,
   );
+  const selectedConnector = useGenogramStore((s) => s.selectedConnector);
+  const setConnectorSubType = useGenogramStore((s) => s.setConnectorSubType);
+  // 取得目前選中 connector 物件(若有)
+  const connectorTarget = (() => {
+    if (!selectedConnector) return null;
+    const unit = currentCase?.networkUnits?.find(
+      (u) => u.id === selectedConnector.unitId,
+    );
+    if (!unit) return null;
+    const conn = (unit.connectors ?? []).find(
+      (c) => c.id === selectedConnector.connectorId,
+    );
+    return conn ? { unit, conn } : null;
+  })();
 
   // 全圖所有關係線(case-wide,不限定特定人物)
   const allCaseRelationLines =
@@ -132,6 +146,16 @@ export default function Tab2Network({ person, lineTarget }: Props) {
   //  - 選中現有 line → 直接改該線的 subType(自動切 category)
   //  - 選中 person → 進入 pending mode,等使用者點下一人完成
   const onPickRelation = (subType: RelationSubType) => {
+    // 優先順序:選中 connector > 選中 line > 進 pending mode
+    if (connectorTarget) {
+      setConnectorSubType(
+        connectorTarget.unit.id,
+        connectorTarget.conn.id,
+        subType,
+      );
+      if (pendingRelation) setPendingRelation(null);
+      return;
+    }
     if (lineTarget) {
       // 編輯既有線:直接切類型,並清掉 pending(避免之後還有殘留 banner)
       updateLine(lineTarget.id, { subType, category: 'relation' });
@@ -245,12 +269,15 @@ export default function Tab2Network({ person, lineTarget }: Props) {
               {group.items.map((item) => {
                 const sym = SYMBOLS.find((s) => s.code === item.symCode);
                 if (!sym) return null;
-                // 高亮邏輯:
-                //  - 選中現有線條 → 該線 subType 對應的按鈕高亮(可即時點別的切換)
-                //  - 否則用 pendingRelation 判斷(person 模式)
-                const active = lineTarget
-                  ? lineTarget.subType === item.subType
-                  : pendingRelation === item.subType;
+                // 高亮邏輯(優先順序):
+                //  1. 選中 connector → connector 的 subType
+                //  2. 選中現有線條 → 該線 subType
+                //  3. 否則用 pendingRelation 判斷(pending mode)
+                const active = connectorTarget
+                  ? connectorTarget.conn.subType === item.subType
+                  : lineTarget
+                    ? lineTarget.subType === item.subType
+                    : pendingRelation === item.subType;
                 return (
                   <button
                     key={item.subType}

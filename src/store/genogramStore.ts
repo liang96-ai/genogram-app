@@ -587,12 +587,12 @@ type GenogramStore = {
   /** Tab2 關係線 pending mode:點按鈕後等使用者點下一個人物完成連線 */
   pendingRelation: RelationSubType | null;
   setPendingRelation: (sub: RelationSubType | null) => void;
-  /** 建立關係線
-   *  - source 永遠是「人物」(目前 UX 限定:從人物 Tab2 觸發 pending mode)
-   *  - target 可以是「人物」或「網絡單位」 */
+  /** 建立關係線(person→person)
+   *  注意:person→unit 的關係改走 connector subType 機制,
+   *  見 addConnector / setConnectorSubType */
   createRelationLine: (
     fromPersonId: string,
-    target: { type: 'person' | 'unit'; id: string },
+    toPersonId: string,
     subType: RelationSubType,
   ) => void;
 
@@ -619,6 +619,11 @@ type GenogramStore = {
   promoteParentLine: (lineId: string) => void;
   /** 全選保密:把全個案中所有「關係線」(category='relation')private 全設為 value(case-wide) */
   toggleAllRelationLinesPrivate: (value: boolean) => void;
+  /** 目前選中的 connector(全 canvas 同時最多一個) */
+  selectedConnector: { unitId: string; connectorId: string } | null;
+  setSelectedConnector: (
+    sel: { unitId: string; connectorId: string } | null,
+  ) => void;
 
   expandParents: (childId: string) => void;
   expandSpouseOrSibling: (personId: string, direction: Dir) => void;
@@ -676,7 +681,23 @@ type GenogramStore = {
   toggleNetworkUnitActive: (id: string) => void;
   moveNetworkUnit: (id: string, x: number, y: number) => void;
   // Connector (▲ 拉出的線)
-  addConnector: (unitId: string, target: ConnectorTarget) => void;
+  addConnector: (
+    unitId: string,
+    target: ConnectorTarget,
+    subType?: RelationSubType,
+  ) => void;
+  /** 改 connector 的關係 subType(套用 15 種關係線之一)
+   *  傳 null 表示恢復預設(會顯示成 #67 focus-on) */
+  setConnectorSubType: (
+    unitId: string,
+    connectorId: string,
+    subType: RelationSubType | null,
+  ) => void;
+  /** 找 connector(若 unitId/connectorId 是某對人物-單位的 connector,直接拿到)*/
+  findUnitConnectorByPerson: (
+    unitId: string,
+    personId: string,
+  ) => NetworkConnector | null;
   removeConnector: (unitId: string, connectorId: string) => void;
   updateConnectorTarget: (
     unitId: string,
@@ -1340,48 +1361,22 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
 
   setPendingRelation: (sub) => set({ pendingRelation: sub }),
 
-  createRelationLine: (fromPersonId, target, subType) => {
+  createRelationLine: (fromPersonId, toPersonId, subType) => {
     const { currentCase: c, history } = get();
     if (!c) return;
-    // Guard:source 是 person,target 是 person 時不能自己連自己
-    if (target.type === 'person' && fromPersonId === target.id) return;
-    // Guard:target 是 unit 時 — 不可能是同一個(person id ≠ unit id 命名空間)
-    // 同一對(同 subType 已存在)→ 不重複建
-    const isPersonTarget = target.type === 'person';
-    const dup = c.lines.find((l) => {
-      if (l.subType !== subType) return false;
-      if (isPersonTarget) {
-        // 雙向都算重複
-        return (
-          (l.fromPersonId === fromPersonId &&
-            l.toPersonId === target.id &&
-            !l.fromUnitId &&
-            !l.toUnitId) ||
-          (l.fromPersonId === target.id &&
-            l.toPersonId === fromPersonId &&
-            !l.fromUnitId &&
-            !l.toUnitId)
-        );
-      } else {
-        // person → unit
-        return l.fromPersonId === fromPersonId && l.toUnitId === target.id;
-      }
-    });
+    if (fromPersonId === toPersonId) return; // 不允許自己連自己
+    // 同一對 person 同樣 subType 已存在 → 不重複建
+    const dup = c.lines.find(
+      (l) =>
+        l.subType === subType &&
+        ((l.fromPersonId === fromPersonId && l.toPersonId === toPersonId) ||
+          (l.fromPersonId === toPersonId && l.toPersonId === fromPersonId)),
+    );
     if (dup) {
       set({ pendingRelation: null });
       return;
     }
-    let line: Line;
-    if (isPersonTarget) {
-      line = mkLine(fromPersonId, target.id, subType);
-    } else {
-      // person → unit:fromPersonId 是 person,toPersonId 留同 person 當 placeholder
-      // (避免 schema break),toUnitId 才是真的目標
-      line = {
-        ...mkLine(fromPersonId, fromPersonId, subType),
-        toUnitId: target.id,
-      };
-    }
+    const line = mkLine(fromPersonId, toPersonId, subType);
     const newCase = touch({ ...c, lines: [...c.lines, line] });
     set({
       ...pushHistory(c, history, newCase),
@@ -1788,6 +1783,9 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const newCase = touch({ ...c, lines: newLines });
     set({ ...pushHistory(c, history, newCase) });
   },
+
+  selectedConnector: null,
+  setSelectedConnector: (sel) => set({ selectedConnector: sel }),
 
   toggleAllRelationLinesPrivate: (value) => {
     const { currentCase: c, history } = get();
@@ -2707,17 +2705,52 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const newCase = touch({ ...c, networkUnits: newUnits });
     set({ ...pushHistory(c, history, newCase) });
   },
-  addConnector: (unitId, target) => {
+  addConnector: (unitId, target, subType) => {
     const { currentCase: c, history } = get();
     if (!c) return;
     const units = c.networkUnits ?? [];
     const newUnits = units.map((u) => {
       if (u.id !== unitId) return u;
-      const conn: NetworkConnector = { id: uid('conn'), target };
+      // 預設用 'focus-on' (#67,單位專注於對方)— 比舊版灰虛線更有意義
+      const conn: NetworkConnector = {
+        id: uid('conn'),
+        target,
+        subType: subType ?? 'focus-on',
+      };
       return { ...u, connectors: [...(u.connectors ?? []), conn] };
     });
     const newCase = touch({ ...c, networkUnits: newUnits });
     set({ ...pushHistory(c, history, newCase) });
+  },
+  setConnectorSubType: (unitId, connectorId, subType) => {
+    const { currentCase: c, history } = get();
+    if (!c) return;
+    const units = c.networkUnits ?? [];
+    const newUnits = units.map((u) => {
+      if (u.id !== unitId) return u;
+      return {
+        ...u,
+        connectors: (u.connectors ?? []).map((conn) =>
+          conn.id === connectorId
+            ? { ...conn, subType: subType ?? undefined }
+            : conn,
+        ),
+      };
+    });
+    const newCase = touch({ ...c, networkUnits: newUnits });
+    set({ ...pushHistory(c, history, newCase) });
+  },
+  findUnitConnectorByPerson: (unitId, personId) => {
+    const c = get().currentCase;
+    if (!c) return null;
+    const u = (c.networkUnits ?? []).find((x) => x.id === unitId);
+    if (!u) return null;
+    return (
+      (u.connectors ?? []).find(
+        (conn) =>
+          conn.target.type === 'person' && conn.target.id === personId,
+      ) ?? null
+    );
   },
   removeConnector: (unitId, connectorId) => {
     const { currentCase: c, history } = get();
