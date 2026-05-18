@@ -861,7 +861,11 @@ export default function Canvas() {
       const sourceId =
         inspectorTarget?.type === 'person' ? inspectorTarget.id : null;
       if (sourceId && sourceId !== personId) {
-        createRelationLine(sourceId, personId, pendingRelation);
+        createRelationLine(
+          sourceId,
+          { type: 'person', id: personId },
+          pendingRelation,
+        );
       } else {
         setPendingRelation(null);
       }
@@ -968,9 +972,10 @@ export default function Canvas() {
         const last = path[path.length - 1];
         if (!last) return [cur];
         if (cur.x === last.x && cur.y === last.y) return path;
-        // 回頭:若 cur 已在路徑上(非最後一點)→ 截短到該點
+        // 回頭:若 cur 已在路徑上(中間點)→ 截短到該點(撤銷)
+        // 注意:回到「起點」(idx=0) 不該撤銷,那是使用者要封閉多邊形的意圖
         const idx = path.findIndex((p) => p.x === cur.x && p.y === cur.y);
-        if (idx >= 0 && idx < path.length - 1) {
+        if (idx > 0 && idx < path.length - 1) {
           return path.slice(0, idx + 1);
         }
         // 同軸:若跟前一段同方向 → 替換最後一點
@@ -1625,6 +1630,24 @@ export default function Canvas() {
             }}
             onPointerDown={(e) => {
               if (drawMode) return;
+              // 關係線 pending mode:點到單位 → 建立 person→unit 關係線
+              if (pendingRelation) {
+                e.stopPropagation();
+                const sourceId =
+                  inspectorTarget?.type === 'person'
+                    ? inspectorTarget.id
+                    : null;
+                if (sourceId) {
+                  createRelationLine(
+                    sourceId,
+                    { type: 'unit', id: unit.id },
+                    pendingRelation,
+                  );
+                } else {
+                  setPendingRelation(null);
+                }
+                return;
+              }
               e.stopPropagation();
               // 若此單位已在匡選群組中 → 整組拖(含同時選的人);否則獨拖此單位
               const inGroup = selectedUnitIds.includes(unit.id);
@@ -1742,8 +1765,35 @@ export default function Canvas() {
         ))}
 
       {looseLines.map((line) => {
-        const from = currentCase.persons.find((p) => p.id === line.fromPersonId);
-        const to = currentCase.persons.find((p) => p.id === line.toPersonId);
+        // 解析 from 端點(person 或 unit) — unit 用「合成 Person」(institution 形狀)讓 Line 渲染共用邏輯
+        const from = line.fromUnitId
+          ? (() => {
+              const u = (currentCase.networkUnits ?? []).find(
+                (x) => x.id === line.fromUnitId,
+              );
+              if (!u) return null;
+              return {
+                id: u.id,
+                position: u.position,
+                shape: 'institution' as const,
+                basicInfo: { name: u.name },
+              } as Person;
+            })()
+          : currentCase.persons.find((p) => p.id === line.fromPersonId);
+        const to = line.toUnitId
+          ? (() => {
+              const u = (currentCase.networkUnits ?? []).find(
+                (x) => x.id === line.toUnitId,
+              );
+              if (!u) return null;
+              return {
+                id: u.id,
+                position: u.position,
+                shape: 'institution' as const,
+                basicInfo: { name: u.name },
+              } as Person;
+            })()
+          : currentCase.persons.find((p) => p.id === line.toPersonId);
         if (!from || !to) return null;
         const dragEntry = handleDrag?.drags.find((d) => d.lineId === line.id);
         const override = dragEntry && handleDrag

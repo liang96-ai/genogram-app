@@ -41,6 +41,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'menu.tutorialAdvanced': '看進階教學',
     'menu.folderSetup': '設定資料夾',
     'menu.feedback': '回報意見 / 建議',
+    'menu.probandStyle': '案主樣式',
+    'menu.probandBorder': '雙紅匡(標準)',
+    'menu.probandTraditional': '黑色填滿(傳統)',
 
     // ===== Feedback Dialog =====
     'feedback.title': '回報意見 / 建議',
@@ -504,6 +507,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'menu.tutorialAdvanced': 'Advanced Tutorial',
     'menu.folderSetup': 'Set Folder',
     'menu.feedback': 'Send Feedback',
+    'menu.probandStyle': 'Proband style',
+    'menu.probandBorder': 'Double border (standard)',
+    'menu.probandTraditional': 'Black fill (traditional)',
 
     // ===== Feedback Dialog =====
     'feedback.title': 'Send Feedback / Suggestion',

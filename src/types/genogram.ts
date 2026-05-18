@@ -187,6 +187,11 @@ export type Line = {
   id: string;
   fromPersonId: string;
   toPersonId: string;
+  /** 若設定 → from 端是 NetworkUnit(取代 fromPersonId 的解讀);
+   *  目前只支援 category='relation' 的關係線 */
+  fromUnitId?: string;
+  /** 若設定 → to 端是 NetworkUnit;目前只支援 category='relation' */
+  toUnitId?: string;
   category: LineCategory;
   subType: LineSubType;
   visual: LineVisual;

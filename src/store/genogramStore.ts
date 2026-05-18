@@ -522,6 +522,12 @@ type GenogramStore = {
   setLanguage: (lang: 'zh' | 'en') => void;
   /** App 啟動時叫 — 1. 若有存過語言偏好就還原 2. 沒存過 → 偵測 navigator.language(zh* 給中文,其他給英文)+ 寫入 */
   loadLanguage: () => Promise<void>;
+  /** 案主視覺樣式:
+   *  - 'border' (預設):雙紅匡(McGoldrick 標準)
+   *  - 'traditional':整塊黑色填滿(傳統習慣) */
+  probandStyle: 'border' | 'traditional';
+  setProbandStyle: (s: 'border' | 'traditional') => void;
+  loadProbandStyle: () => Promise<void>;
 
   privacyEnabled: boolean;
   privateFields: Record<PrivacyField, boolean>;
@@ -581,10 +587,12 @@ type GenogramStore = {
   /** Tab2 關係線 pending mode:點按鈕後等使用者點下一個人物完成連線 */
   pendingRelation: RelationSubType | null;
   setPendingRelation: (sub: RelationSubType | null) => void;
-  /** 建立關係線(fromPerson → toPerson),subType 已預設好,會設 category='relation' */
+  /** 建立關係線
+   *  - source 永遠是「人物」(目前 UX 限定:從人物 Tab2 觸發 pending mode)
+   *  - target 可以是「人物」或「網絡單位」 */
   createRelationLine: (
     fromPersonId: string,
-    toPersonId: string,
+    target: { type: 'person' | 'unit'; id: string },
     subType: RelationSubType,
   ) => void;
 
@@ -930,6 +938,25 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       .put({ key: 'language', value: lang })
       .catch(() => undefined);
   },
+  probandStyle: 'border',
+  setProbandStyle: (s) => {
+    set({ probandStyle: s });
+    db.settings.put({ key: 'probandStyle', value: s }).catch(() => undefined);
+  },
+  loadProbandStyle: async () => {
+    try {
+      const rec = await db.settings.get('probandStyle');
+      if (rec && typeof rec === 'object' && 'value' in rec) {
+        const saved = (rec as { value: unknown }).value;
+        if (saved === 'border' || saved === 'traditional') {
+          set({ probandStyle: saved });
+        }
+      }
+    } catch (err) {
+      console.error('loadProbandStyle failed:', err);
+    }
+  },
+
   loadLanguage: async () => {
     try {
       const rec = await db.settings.get('language');
@@ -1313,22 +1340,48 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
 
   setPendingRelation: (sub) => set({ pendingRelation: sub }),
 
-  createRelationLine: (fromPersonId, toPersonId, subType) => {
+  createRelationLine: (fromPersonId, target, subType) => {
     const { currentCase: c, history } = get();
     if (!c) return;
-    if (fromPersonId === toPersonId) return; // 不允許自己連自己
-    // 同一對 person 同樣 subType 已存在 → 不重複建
-    const dup = c.lines.find(
-      (l) =>
-        l.subType === subType &&
-        ((l.fromPersonId === fromPersonId && l.toPersonId === toPersonId) ||
-          (l.fromPersonId === toPersonId && l.toPersonId === fromPersonId)),
-    );
+    // Guard:source 是 person,target 是 person 時不能自己連自己
+    if (target.type === 'person' && fromPersonId === target.id) return;
+    // Guard:target 是 unit 時 — 不可能是同一個(person id ≠ unit id 命名空間)
+    // 同一對(同 subType 已存在)→ 不重複建
+    const isPersonTarget = target.type === 'person';
+    const dup = c.lines.find((l) => {
+      if (l.subType !== subType) return false;
+      if (isPersonTarget) {
+        // 雙向都算重複
+        return (
+          (l.fromPersonId === fromPersonId &&
+            l.toPersonId === target.id &&
+            !l.fromUnitId &&
+            !l.toUnitId) ||
+          (l.fromPersonId === target.id &&
+            l.toPersonId === fromPersonId &&
+            !l.fromUnitId &&
+            !l.toUnitId)
+        );
+      } else {
+        // person → unit
+        return l.fromPersonId === fromPersonId && l.toUnitId === target.id;
+      }
+    });
     if (dup) {
       set({ pendingRelation: null });
       return;
     }
-    const line = mkLine(fromPersonId, toPersonId, subType);
+    let line: Line;
+    if (isPersonTarget) {
+      line = mkLine(fromPersonId, target.id, subType);
+    } else {
+      // person → unit:fromPersonId 是 person,toPersonId 留同 person 當 placeholder
+      // (避免 schema break),toUnitId 才是真的目標
+      line = {
+        ...mkLine(fromPersonId, fromPersonId, subType),
+        toUnitId: target.id,
+      };
+    }
     const newCase = touch({ ...c, lines: [...c.lines, line] });
     set({
       ...pushHistory(c, history, newCase),
@@ -1362,9 +1415,67 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   removeLine: (id) => {
     const { currentCase: c, history, inspectorTarget } = get();
     if (!c) return;
-    const newCase = touch({ ...c, lines: c.lines.filter((l) => l.id !== id) });
+    const target = c.lines.find((l) => l.id === id);
+    if (!target) return;
+
+    // 找配對線:同 child + 另一配偶 + 同 bio-like subType → 一起刪
+    // (處理「拖小孩到婚姻線」會建立兩條配對線,刪一條另一條應該也消失)
+    const BIO_LIKE = new Set<LineSubType>([
+      'biological',
+      'adopted',
+      'placed-out',
+      'fostered',
+      'sperm-donor',
+    ]);
+    const idsToRemove = new Set<string>([id]);
+    if (BIO_LIKE.has(target.subType)) {
+      const childId = target.toPersonId;
+      const parentId = target.fromPersonId;
+      // 找這個 parent 的配偶(透過 marriage-like)
+      const MARRIAGE_LIKE = new Set<LineSubType>([
+        'marriage',
+        'engagement',
+        'cohabitation',
+        'legal-cohabitation',
+        'engagement-cohabitation',
+        'divorce',
+        'separation',
+        'legal-separation',
+        'engagement-separation',
+        'widowed',
+        'love-affair',
+        'partnership',
+        'cohabitation-commit',
+        'secret-affair',
+        'divorce-remarriage',
+      ]);
+      const spouseLine = c.lines.find(
+        (l) =>
+          MARRIAGE_LIKE.has(l.subType) &&
+          (l.fromPersonId === parentId || l.toPersonId === parentId),
+      );
+      if (spouseLine) {
+        const spouseId =
+          spouseLine.fromPersonId === parentId
+            ? spouseLine.toPersonId
+            : spouseLine.fromPersonId;
+        // 找配偶到同 child 的 bio-like 線(配對)
+        const pair = c.lines.find(
+          (l) =>
+            l.fromPersonId === spouseId &&
+            l.toPersonId === childId &&
+            BIO_LIKE.has(l.subType),
+        );
+        if (pair) idsToRemove.add(pair.id);
+      }
+    }
+
+    const newCase = touch({
+      ...c,
+      lines: c.lines.filter((l) => !idsToRemove.has(l.id)),
+    });
     const nextInspector =
-      inspectorTarget?.type === 'line' && inspectorTarget.id === id
+      inspectorTarget?.type === 'line' && idsToRemove.has(inspectorTarget.id)
         ? null
         : inspectorTarget;
     set({

@@ -30,6 +30,8 @@ export default function CaseList() {
   );
   const language = useGenogramStore((s) => s.language);
   const setLanguage = useGenogramStore((s) => s.setLanguage);
+  const probandStyle = useGenogramStore((s) => s.probandStyle);
+  const setProbandStyle = useGenogramStore((s) => s.setProbandStyle);
 
   const [showNew, setShowNew] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -164,6 +166,21 @@ export default function CaseList() {
                   label={`${t('menu.language')}: ${language === 'zh' ? '中文' : 'English'}`}
                   onClick={() => {
                     setLanguage(language === 'zh' ? 'en' : 'zh');
+                  }}
+                />
+                <HomeMenuItem
+                  icon={probandStyle === 'traditional' ? '⬛' : '🔲'}
+                  label={`${t('menu.probandStyle')}: ${
+                    probandStyle === 'traditional'
+                      ? t('menu.probandTraditional')
+                      : t('menu.probandBorder')
+                  }`}
+                  onClick={() => {
+                    setProbandStyle(
+                      probandStyle === 'traditional'
+                        ? 'border'
+                        : 'traditional',
+                    );
                   }}
                 />
                 <HomeMenuItem

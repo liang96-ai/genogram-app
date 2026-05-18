@@ -145,6 +145,10 @@ export default function PersonShape({
   const t = useT();
   const privacyEnabled = useGenogramStore((s) => s.privacyEnabled);
   const privateFields = useGenogramStore((s) => s.privateFields);
+  const probandStyle = useGenogramStore((s) => s.probandStyle);
+  // 案主傳統樣式:整塊黑色填滿(取代雙紅匡)
+  const isTraditionalProband =
+    !!person.isProband && probandStyle === 'traditional';
   const showField = (f: PrivacyField) => {
     if (!privacyEnabled) return true;
     if (privateFields[f]) return false;
@@ -160,8 +164,14 @@ export default function PersonShape({
   const isAbortion = lifeStatus === 'abortion';
   const isStillbirth = lifeStatus === 'stillbirth';
   const isMiscarriage = lifeStatus === 'miscarriage';
-  // 流產 / 死產 → 整個形狀填實色;一般 → 白
-  const fill = isMiscarriage || isStillbirth ? PATTERN_FILL : '#ffffff';
+  // 流產 / 死產 → 整個形狀填實色;
+  // 傳統案主樣式 → 整塊黑;
+  // 其他 → 白
+  const fill = isTraditionalProband
+    ? '#000000'
+    : isMiscarriage || isStillbirth
+      ? PATTERN_FILL
+      : '#ffffff';
   // 已逝 → 畫 X 標記(死產改用填滿,不再畫 X)
   const isDead = lifeStatus === 'deceased';
   const showXOverlay = isDead;
@@ -317,6 +327,8 @@ export default function PersonShape({
 
   const renderProband = () => {
     if (!person.isProband) return null;
+    // 傳統樣式不畫雙匡(已用整塊黑色填滿表達案主)
+    if (isTraditionalProband) return null;
     const offset = 6;
     const s = actualShape;
     const color = PROBAND_COLOR;
