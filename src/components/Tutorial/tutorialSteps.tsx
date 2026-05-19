@@ -7,66 +7,7 @@ export interface TutorialStep {
   content: ReactNode;
 }
 
-// ============================================================
-// 共用元件:加家人小箭頭示意圖(基礎教學 #4 / 進階參考用)
-// ============================================================
-function SmallArrowsIllustration() {
-  return (
-    <svg
-      viewBox="-80 -80 160 160"
-      width="200"
-      height="200"
-      style={{ display: 'block', margin: '12px auto' }}
-      aria-label="人物選中時周圍四個藍色小箭頭"
-    >
-      {/* 中間人物方框(代表選中的人物) */}
-      <rect
-        x="-30"
-        y="-30"
-        width="60"
-        height="60"
-        fill="#ffffff"
-        stroke="#007aff"
-        strokeWidth="3"
-      />
-      {/* 上箭頭 ▲ */}
-      <polygon points="0,-50 -12,-35 12,-35" fill="#4a90ff" />
-      {/* 下箭頭 ▼ */}
-      <polygon points="0,50 -12,35 12,35" fill="#4a90ff" />
-      {/* 左箭頭 ◀ */}
-      <polygon points="-50,0 -35,-12 -35,12" fill="#4a90ff" />
-      {/* 右箭頭 ▶ */}
-      <polygon points="50,0 35,-12 35,12" fill="#4a90ff" />
-      {/* 右上紅色 × 刪除按鈕(從畫布原始 UI 模擬) */}
-      <circle
-        cx="32"
-        cy="-32"
-        r="10"
-        fill="#ff3b30"
-        stroke="#ffffff"
-        strokeWidth="1.5"
-      />
-      <line
-        x1="27"
-        y1="-37"
-        x2="37"
-        y2="-27"
-        stroke="#ffffff"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <line
-        x1="37"
-        y1="-37"
-        x2="27"
-        y2="-27"
-        stroke="#ffffff"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
+// SmallArrowsIllustration 已移除(原本用於基礎教學第 4 步「加家人」,該步已刪)
 
 // ============================================================
 // 共用元件:基礎教學 #8 的 PWA 安裝按鈕
@@ -284,150 +225,138 @@ const Code: React.FC<{ children: ReactNode }> = ({ children }) => (
 );
 
 // ============================================================
-// 共用元件:教學一 — 畫布 + 屬性面板 視覺導覽
+// 共用元件:屬性面板視覺解析(基礎教學「屬性面板」步驟用)
+// — 顯示 4 個 Tab、形狀按鈕、姓名+案主+傳統勾選、可展開區塊
+// — 旁邊有 callout 指向重點(4 個分頁、傳統、展開更多)
 // ============================================================
-function CanvasInspectorTour() {
-  // 文案 callout 樣式
-  const callout: React.CSSProperties = {
-    fontSize: 10.5,
-    fill: '#1d1d1f',
-    fontFamily: 'inherit',
-  };
-  const calloutBlue: React.CSSProperties = {
-    fontSize: 10.5,
-    fill: '#007aff',
-    fontFamily: 'inherit',
-    fontWeight: 600,
-  };
+function InspectorMockup() {
   return (
     <svg
-      viewBox="0 0 380 320"
+      viewBox="0 0 360 320"
       width="100%"
       style={{
         display: 'block',
-        margin: '6px auto 4px',
+        margin: '6px auto',
         maxWidth: 420,
         background: '#fafafa',
         borderRadius: 8,
       }}
-      aria-label="畫布與屬性面板的視覺導覽"
+      aria-label="屬性面板視覺解析"
     >
-      {/* === 左側:畫布區 (虛線框代表畫布) === */}
+      {/* 面板外框(虛線) */}
       <rect
-        x="10"
-        y="14"
-        width="230"
-        height="290"
+        x="80"
+        y="10"
+        width="200"
+        height="300"
         rx="6"
         fill="#ffffff"
         stroke="#d2d2d7"
-        strokeDasharray="5 3"
+        strokeDasharray="6 4"
       />
-      <text x="18" y="28" style={{ fontSize: 10, fill: '#86868b' }}>
-        畫布(中央)
+      <text x="88" y="24" style={{ fontSize: 9, fill: '#86868b' }}>
+        右側屬性面板
       </text>
 
-      {/* 案主方框(雙紅匡) */}
-      <rect x="110" y="140" width="32" height="32" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
-      <rect x="105" y="135" width="42" height="42" fill="none" stroke="#ff3b30" strokeWidth="1.5" />
+      {/* === Tab bar (4 個分頁) === */}
+      <rect x="86" y="32" width="42" height="16" rx="2" fill="#e8f1ff" stroke="#007aff" strokeWidth="0.8" />
+      <text x="94" y="44" style={{ fontSize: 9.5, fill: '#007aff', fontWeight: 600 }}>基本</text>
+      <text x="136" y="44" style={{ fontSize: 9.5, fill: '#86868b' }}>網絡</text>
+      <text x="178" y="44" style={{ fontSize: 9.5, fill: '#86868b' }}>醫療</text>
+      <text x="220" y="44" style={{ fontSize: 9.5, fill: '#86868b' }}>自訂</text>
 
-      {/* 上箭頭(加父母) */}
-      <polygon points="126,108 134,122 118,122" fill="#007aff" opacity="0.85" />
-      <text x="146" y="116" style={calloutBlue}>↑ 加父母</text>
-
-      {/* 下箭頭(加小孩) */}
-      <polygon points="126,204 134,190 118,190" fill="#007aff" opacity="0.85" />
-      <text x="146" y="200" style={calloutBlue}>↓ 加小孩</text>
-
-      {/* 左箭頭(加配偶/手足) */}
-      <polygon points="78,156 92,148 92,164" fill="#007aff" opacity="0.85" />
-      <text x="22" y="146" style={calloutBlue}>← 配偶</text>
-
-      {/* 右箭頭(加配偶/手足) */}
-      <polygon points="174,156 160,148 160,164" fill="#007aff" opacity="0.85" />
-      <text x="180" y="146" style={calloutBlue}>→ 配偶</text>
-
-      {/* 雙擊提示 */}
-      <text x="60" y="248" style={callout}>
-        💡 雙擊圖片 → 切形狀(男/女/未知)
+      {/* Callout:4 個分頁 */}
+      <text x="4" y="42" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
+        4 分頁
       </text>
-      {/* 引導虛線:雙擊提示 → 人物 */}
-      <line x1="125" y1="240" x2="125" y2="175" stroke="#86868b" strokeDasharray="2 3" strokeWidth="0.8" />
+      <line x1="40" y1="40" x2="82" y2="40" stroke="#007aff" strokeWidth="0.8" strokeDasharray="2 2" />
 
-      {/* 長按 ▲ 提示 */}
-      <text x="22" y="270" style={callout}>
-        💡 長按 ↑ 0.25s + 拖 → 直接畫黑線
-      </text>
+      {/* === 基本形狀按鈕格 === */}
+      <line x1="86" y1="54" x2="274" y2="54" stroke="#e5e4e7" strokeWidth="0.5" />
+      <text x="86" y="68" style={{ fontSize: 9, fill: '#86868b' }}>基本形狀</text>
+      {/* 6 個基本形狀 */}
+      <rect x="86" y="74" width="16" height="16" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+      <circle cx="118" cy="82" r="8" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+      <polygon points="142,90 150,74 158,90" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+      <polygon points="174,82 182,74 190,82 182,90" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+      <rect x="198" y="78" width="22" height="8" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+      <polygon points="230,82 240,76 240,88" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
 
-      {/* ↑↓←→ 簡介 */}
-      <text x="22" y="290" style={{ fontSize: 9.5, fill: '#86868b' }}>
-        點人物 → 周圍 4 箭頭 → 1 鍵加家人
-      </text>
+      {/* 半填色障礙形狀 */}
+      <text x="86" y="108" style={{ fontSize: 9, fill: '#86868b' }}>障別 / 疾病(半填色)</text>
+      <g>
+        <rect x="86" y="114" width="16" height="16" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+        <rect x="86" y="114" width="8" height="16" fill="#777777" />
+      </g>
+      <g>
+        <clipPath id="circHalf">
+          <rect x="110" y="114" width="8" height="16" />
+        </clipPath>
+        <circle cx="118" cy="122" r="8" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+        <circle cx="118" cy="122" r="8" fill="#777777" clipPath="url(#circHalf)" />
+      </g>
 
-      {/* === 右側:屬性面板 === */}
-      <rect
-        x="250"
-        y="14"
-        width="120"
-        height="290"
-        rx="6"
-        fill="#ffffff"
-        stroke="#d2d2d7"
-        strokeDasharray="5 3"
-      />
-      <text x="258" y="28" style={{ fontSize: 10, fill: '#86868b' }}>
-        屬性面板(右側)
+      {/* Callout:雙擊圖 → 切形狀 */}
+      <text x="4" y="86" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
+        雙擊圖
       </text>
+      <text x="4" y="100" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
+        切形狀
+      </text>
+      <line x1="40" y1="82" x2="80" y2="82" stroke="#007aff" strokeWidth="0.8" strokeDasharray="2 2" />
 
-      {/* Tab bar */}
-      <rect x="258" y="36" width="28" height="14" rx="3" fill="#e8f1ff" stroke="#007aff" strokeWidth="0.8" />
-      <text x="262" y="46" style={{ fontSize: 8.5, fill: '#007aff', fontWeight: 600 }}>基本</text>
-      <text x="291" y="46" style={{ fontSize: 8.5, fill: '#86868b' }}>網絡</text>
-      <text x="318" y="46" style={{ fontSize: 8.5, fill: '#86868b' }}>醫療</text>
-      <text x="345" y="46" style={{ fontSize: 8.5, fill: '#86868b' }}>自訂</text>
+      {/* === 姓名 + 案主 + 傳統 === */}
+      <line x1="86" y1="138" x2="274" y2="138" stroke="#e5e4e7" strokeWidth="0.5" />
+      <text x="86" y="154" style={{ fontSize: 9.5, fill: '#1d1d1f' }}>
+        姓名
+      </text>
+      <text x="118" y="154" style={{ fontSize: 9.5, fill: '#007aff', fontWeight: 600 }}>
+        ☑ 案主
+      </text>
+      <text x="162" y="154" style={{ fontSize: 9.5, fill: '#007aff', fontWeight: 600 }}>
+        ☑ 傳統
+      </text>
+      <rect x="86" y="160" width="180" height="16" fill="#ffffff" stroke="#d2d2d7" strokeWidth="0.6" />
 
-      {/* 形狀按鈕區 — 縮影 */}
-      <text x="258" y="68" style={{ fontSize: 9, fill: '#86868b' }}>形狀</text>
-      <rect x="258" y="72" width="14" height="14" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
-      <circle cx="280" cy="79" r="7" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
-      <polygon points="290,86 297,72 304,86" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
-      <polygon points="320,79 327,73 334,79 327,85" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+      {/* Callout:勾傳統 → 黑色案主 */}
+      <text x="285" y="150" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
+        勾傳統
+      </text>
+      <text x="285" y="164" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
+        → 案主
+      </text>
+      <text x="285" y="178" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
+        黑色填滿
+      </text>
+      <line x1="195" y1="154" x2="282" y2="154" stroke="#007aff" strokeWidth="0.8" strokeDasharray="2 2" />
 
-      {/* 姓名 + ☐案主 + ☐傳統 */}
-      <text x="258" y="106" style={{ fontSize: 9, fill: '#86868b' }}>
-        姓名 ☑ 案主 ☑ 傳統
-      </text>
-      <rect x="258" y="110" width="100" height="14" fill="#ffffff" stroke="#d2d2d7" />
-      {/* 箭頭指向「☑ 傳統」 */}
-      <line x1="325" y1="106" x2="365" y2="92" stroke="#007aff" strokeWidth="0.8" strokeDasharray="2 2" />
-      <text x="290" y="86" style={{ fontSize: 8.5, fill: '#007aff', fontWeight: 600 }}>
-        ☑ 傳統 → 案主黑色
-      </text>
+      {/* === 可展開區塊 === */}
+      <line x1="86" y1="190" x2="274" y2="190" stroke="#e5e4e7" strokeWidth="0.5" />
+      <text x="86" y="206" style={{ fontSize: 10, fill: '#1d1d1f' }}>▶ 性別亞型</text>
+      <text x="86" y="224" style={{ fontSize: 10, fill: '#1d1d1f' }}>▶ 多重身分</text>
+      <text x="86" y="242" style={{ fontSize: 10, fill: '#1d1d1f' }}>▶ 基本醫療</text>
+      <text x="86" y="260" style={{ fontSize: 10, fill: '#1d1d1f' }}>▶ 進階</text>
 
-      {/* 性別亞型 摺疊 */}
-      <line x1="258" y1="138" x2="362" y2="138" stroke="#e5e4e7" strokeWidth="0.5" />
-      <text x="258" y="152" style={{ fontSize: 9, fill: '#1d1d1f' }}>▶ 性別亞型</text>
-      <text x="258" y="170" style={{ fontSize: 9, fill: '#1d1d1f' }}>▶ 多重身分</text>
-      <text x="258" y="188" style={{ fontSize: 9, fill: '#1d1d1f' }}>▶ 基本醫療</text>
-      <text x="258" y="206" style={{ fontSize: 9, fill: '#1d1d1f' }}>▶ 進階</text>
+      {/* Callout:點 ▶ 展開更多 */}
+      <text x="285" y="216" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
+        點 ▶
+      </text>
+      <text x="285" y="230" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
+        展開更多
+      </text>
+      <text x="285" y="244" style={{ fontSize: 9, fill: '#86868b' }}>(跨性別</text>
+      <text x="285" y="256" style={{ fontSize: 9, fill: '#86868b' }}>/障別</text>
+      <text x="285" y="268" style={{ fontSize: 9, fill: '#86868b' }}>/疾病)</text>
+      <line x1="148" y1="206" x2="282" y2="218" stroke="#007aff" strokeWidth="0.8" strokeDasharray="2 2" />
 
-      {/* 引導 — 展開可換圖 */}
-      <line x1="295" y1="174" x2="365" y2="232" stroke="#86868b" strokeDasharray="2 3" strokeWidth="0.8" />
-      <text x="258" y="245" style={callout}>
-        💡 點 ▶ 展開
-      </text>
-      <text x="258" y="260" style={callout}>
-        可換更多圖
-      </text>
-      <text x="258" y="275" style={callout}>
-        (跨性別 / 障別
-      </text>
-      <text x="258" y="288" style={callout}>
-        /疾病 / 寵物等)
+      {/* 底部小提示 */}
+      <text x="86" y="290" style={{ fontSize: 9, fill: '#86868b' }}>
+        每個分頁的詳細功能,進階教學會深入講解
       </text>
     </svg>
   );
 }
+
 
 // ============================================================
 // 🌱 基礎教學 — 中文 (8 步) — 首次自動跳
@@ -448,105 +377,59 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
     ),
   },
   {
-    icon: '🖼️',
-    title: '畫面總覽 — 人物、箭頭、屬性面板',
-    content: (
-      <>
-        <P>
-          進入個案後,中央是 <Strong>畫布</Strong>,右側是 <Strong>屬性面板</Strong>。
-          選中人物就會出現 ↑↓←→ 4 個藍色小箭頭,1 鍵加家人。
-        </P>
-        <CanvasInspectorTour />
-        <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
-          上圖左 = 畫布;右 = 屬性面板「基本」分頁。
-          其他細節後面幾步會深入。
-        </p>
-      </>
-    ),
-  },
-  {
     icon: '✏️',
-    title: '編輯畫面總覽',
+    title: '畫布操作',
     content: (
       <>
-        <P>進入個案後:</P>
+        <P>進入個案後,中央就是 <Strong>畫布</Strong>:</P>
         <P>
-          • 中央:<Strong>畫布</Strong> — 可拖人物、加家人
+          • 拖人物 / 加家人(選中人物會出現 ↑↓←→ 4 個藍色小箭頭,1 鍵加家人)
           <br />
-          &nbsp;&nbsp;&nbsp;⤷ 在空白處<Strong>拖框</Strong> = 圈選多人一起搬位置
+          • 空白處<Strong>拖框</Strong> = 圈選多人一起搬位置
           <br />
-          &nbsp;&nbsp;&nbsp;⤷ 拖<Strong>親子線端點到別人</Strong> = 該人變次要父母(收養 / 出養關係)
+          • 拖<Strong>親子線端點到別人</Strong> = 該人變次要父母(收養 / 出養)
           <br />
-          • 右側:<Strong>屬性面板</Strong>(共 4 個分頁)
-          <br />
+          • 雙擊人物 = 切換形狀(男 ↔ 女 ↔ 懷孕 → 流產 → 死產 → 人工流產)
+        </P>
+        <P>畫面其他元素:</P>
+        <P>
           • 左上:返回鍵 <Code>←</Code> + 主選單 <Code>☰</Code>
           <br />
-          • 右下角浮動工具列:
+          • 右下角浮動工具列:縮放 / 適應視窗 / <Strong>✏️ 畫筆</Strong>(畫生態圖)
           <br />
-          &nbsp;&nbsp;&nbsp;縮放(+ / − / 適應視窗)
-          <br />
-          &nbsp;&nbsp;&nbsp;<Strong>✏️ 畫筆 = 畫「生態圖」</Strong>(圈起家族子群組)
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '➕',
-    title: '加家人 — 小箭頭擴展',
-    content: (
-      <>
-        <P>選中人物 → 周圍出現 4 個藍色小三角:</P>
-        <SmallArrowsIllustration />
-        <P>
-          • <Strong>▲ 上</Strong> → 加爸媽(自動畫婚姻線 + 親子線)
-          <br />
-          • <Strong>◀ 左 / ▶ 右</Strong> → 加配偶(自動切相反性別形狀)
-          <br />
-          • <Strong>▼ 下</Strong> → 若已有配偶就加子女;沒配偶就先加配偶
-          <br />
-          • <Strong>▼ 下長按 1 秒</Strong> → 開啟多胞胎設定視窗(2-15 胞胎 / 分卵 / 同卵)
-        </P>
-        <P>
-          選中婚姻線中央會出現 ↓ 按鈕:<Strong>短按</Strong> = 加 1 子女 / <Strong>長按 1 秒</Strong> = 多胞胎。
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '🔄',
-    title: '切換形狀(雙擊)',
-    content: (
-      <>
-        <P><Strong>雙擊人物</Strong> 切換形狀:</P>
-        <P>
-          • <Code>□</Code> ↔ <Code>○</Code> 男女互切(最常用)
-          <br />
-          • <Code>△</Code> 懷孕 → 死產 → 流產 → 人工流產 4 段循環
-          <br />
-          • <Code>◇</Code> / <Code>機構</Code> / <Code>寵物</Code> 不循環,要改去右側屬性面板第 1 個分頁改
-        </P>
-        <P>
-          多元身份(Trans / 同性戀 / 雙性戀)在右側面板細部選,雙擊不切換這些。
+          • 右側面板細節 → 下一步圖解
         </P>
       </>
     ),
   },
   {
     icon: '📑',
-    title: '右側屬性面板 4 個分頁',
+    title: '右側屬性面板(4 個分頁)',
     content: (
       <>
-        <P>右側屬性面板共 4 個分頁:</P>
+        <P>右側屬性面板共 <Strong>4 個分頁</Strong>:</P>
         <P>
-          • <Strong>基本</Strong>:姓名、年齡、職業、聯絡方式、個人屬性
+          • <Strong>基本</Strong>:姓名、年齡、形狀、案主、性別亞型、聯絡
           <br />
           • <Strong>網絡</Strong>:關係線(15 種) + 機構單位
           <br />
-          • <Strong>醫療</Strong>:疾病、用藥、ICD/DSM 擴充庫
+          • <Strong>醫療</Strong>:疾病、用藥、量表評估
           <br />
-          • <Strong>附件</Strong>:量表分數、訪談筆記、文件
+          • <Strong>自訂</Strong>:個案備注 / 附件
         </P>
-        <P>詳細功能可看「📘 看進階教學」(主選單)。</P>
+        <InspectorMockup />
+        <P>
+          重點:
+          <br />
+          • 勾「<Strong>傳統</Strong>」→ 案主黑色填滿(取代雙紅匡)
+          <br />
+          • 雙擊畫布的人物 → 切形狀(就不用回面板選)
+          <br />
+          • 想用<Strong>跨性別 / 障別 / 疾病</Strong>等更多形狀 → 點 ▶ 展開
+        </P>
+        <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
+          每個分頁的深入用法,請看主選單「📘 看進階教學」。
+        </p>
       </>
     ),
   },
@@ -607,106 +490,59 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
     ),
   },
   {
-    icon: '🖼️',
-    title: 'Screen Overview — Person, Arrows, Inspector',
-    content: (
-      <>
-        <P>
-          After opening a case, the center is the <Strong>canvas</Strong>,
-          the right side is the <Strong>inspector</Strong>. Selecting a
-          person reveals 4 blue arrows ↑↓←→ to add family with one click.
-        </P>
-        <CanvasInspectorTour />
-        <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
-          Left = canvas; Right = inspector "Basic" tab. Other details
-          come in later steps.
-        </p>
-      </>
-    ),
-  },
-  {
     icon: '✏️',
-    title: 'Editor Overview',
+    title: 'Canvas',
     content: (
       <>
-        <P>Once you open a case:</P>
+        <P>After opening a case, the center is the <Strong>canvas</Strong>:</P>
         <P>
-          • Center: <Strong>Canvas</Strong> — drag persons, add family
+          • Drag persons / add family (select a person → 4 blue ↑↓←→ arrows for one-click family)
           <br />
-          &nbsp;&nbsp;&nbsp;⤷ <Strong>Drag-select</Strong> on empty area = pick multiple to move at once
+          • <Strong>Drag-select</Strong> on empty area = pick multiple to move at once
           <br />
-          &nbsp;&nbsp;&nbsp;⤷ Drag a <Strong>parent-child line endpoint</Strong> onto someone = adoption/foster relationship
+          • Drag a <Strong>parent-child line endpoint</Strong> onto someone = adoption / foster
           <br />
-          • Right: <Strong>Property Panel</Strong> (4 tabs)
-          <br />
+          • Double-click a person = cycle shape (□ ↔ ○ ↔ △ pregnancy → stillbirth → miscarriage → abortion)
+        </P>
+        <P>Other on-screen:</P>
+        <P>
           • Top-left: back <Code>←</Code> + main menu <Code>☰</Code>
           <br />
-          • Bottom-right floating toolbar:
+          • Bottom-right floating toolbar: zoom / fit / <Strong>✏️ Pen</Strong> (draw ecosystems)
           <br />
-          &nbsp;&nbsp;&nbsp;Zoom (+ / − / fit to window)
-          <br />
-          &nbsp;&nbsp;&nbsp;<Strong>✏️ Pen = draw "Ecosystems"</Strong> (enclose family subgroups)
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '➕',
-    title: 'Add Family — Small Arrows',
-    content: (
-      <>
-        <P>Select a person → 4 blue triangle arrows appear around them:</P>
-        <SmallArrowsIllustration />
-        <P>
-          • <Strong>▲ Up</Strong> → Add parents (auto-draws marriage + parent-child line)
-          <br />
-          • <Strong>◀ Left / ▶ Right</Strong> → Add spouse (auto-swaps to opposite shape)
-          <br />
-          • <Strong>▼ Down</Strong> → If spouse exists, add child; if not, add spouse first
-          <br />
-          • <Strong>▼ Long-press 1 sec</Strong> → Open multiple-birth dialog (2-15 / fraternal / identical)
-        </P>
-        <P>
-          Selecting a marriage line shows a ↓ button at its center: <Strong>tap</Strong> = +1 child / <Strong>long-press 1 sec</Strong> = multiple birth.
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '🔄',
-    title: 'Switch Shape (Double-click)',
-    content: (
-      <>
-        <P><Strong>Double-click a person</Strong> to cycle shape:</P>
-        <P>
-          • <Code>□</Code> ↔ <Code>○</Code> Male / Female (most common)
-          <br />
-          • <Code>△</Code> Pregnancy → Stillbirth → Miscarriage → Abortion (4-cycle)
-          <br />
-          • <Code>◇</Code> / <Code>Institution</Code> / <Code>Pet</Code> don't cycle — change them via the right panel's first tab
-        </P>
-        <P>
-          Gender variants (Trans / Gay / Bisexual) are set in the right panel; double-click does NOT toggle them.
+          • Right inspector details → see next step
         </P>
       </>
     ),
   },
   {
     icon: '📑',
-    title: 'Right Panel — 4 Tabs',
+    title: 'Right Inspector (4 Tabs)',
     content: (
       <>
-        <P>The right Property Panel has 4 tabs:</P>
+        <P>The right Inspector has <Strong>4 tabs</Strong>:</P>
         <P>
-          • <Strong>Basic</Strong>: Name, age, occupation, contact, personal attributes
+          • <Strong>Basic</Strong>: Name, age, shape, proband, gender variants, contact
           <br />
           • <Strong>Network</Strong>: Relation lines (15 kinds) + institutions
           <br />
-          • <Strong>Medical</Strong>: Diseases, medications, ICD/DSM library
+          • <Strong>Medical</Strong>: Diseases, medications, scale assessments
           <br />
-          • <Strong>Attachments</Strong>: Scale scores, interview notes, documents
+          • <Strong>Custom</Strong>: Case notes / attachments
         </P>
-        <P>For details see "📘 Advanced Tutorial" in the main menu.</P>
+        <InspectorMockup />
+        <P>
+          Key points:
+          <br />
+          • Check "<Strong>Traditional</Strong>" → proband filled black (instead of red double border)
+          <br />
+          • Double-click person on canvas → cycle shape (no need to come back to panel)
+          <br />
+          • For more shapes (<Strong>transgender / disability / disease</Strong>) → click ▶ to expand
+        </P>
+        <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
+          Deep dive of each tab is in "📘 Advanced Tutorial" (main menu).
+        </p>
       </>
     ),
   },
