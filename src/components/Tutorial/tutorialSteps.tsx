@@ -10,6 +10,110 @@ export interface TutorialStep {
 // SmallArrowsIllustration 已移除(原本用於基礎教學第 4 步「加家人」,該步已刪)
 
 // ============================================================
+// 共用元件:線條拖曳教學 3 連格(基礎教學「拖曳線條」步驟用)
+// — Frame 1: 按住線條端點
+// — Frame 2: 拖到新對象(中間虛橘線預覽)
+// — Frame 3: 放開,自動接到新對象
+// ============================================================
+function LineDragMockup() {
+  // 3 個 panel 並排:x=10/130/250, 各寬 110
+  // 每個 panel 內畫:左上人物 A(方)、右上人物 B(圓)、底部小孩 C
+  // Frame 1: A→C 實線,游標在 A 端點 / Frame 2: 端點離開往 B / Frame 3: B→C 實線
+  const renderPanel = (
+    idx: number,
+    xOffset: number,
+    label: string,
+    cursor: { x: number; y: number },
+    lineState: 'attached-A' | 'mid' | 'attached-B',
+  ) => {
+    // 局部座標(panel 內):A(20, 30)方,B(80, 30)圓,C(50, 95)方
+    const Ax = xOffset + 20,
+      Ay = 30;
+    const Bx = xOffset + 80,
+      By = 30;
+    const Cx = xOffset + 50,
+      Cy = 95;
+    return (
+      <g key={idx}>
+        {/* panel 框 */}
+        <rect
+          x={xOffset - 4}
+          y="10"
+          width="118"
+          height="140"
+          rx="6"
+          fill="#ffffff"
+          stroke="#d2d2d7"
+          strokeWidth="0.8"
+        />
+        {/* 編號圓圈 */}
+        <circle cx={xOffset + 8} cy="20" r="8" fill="#007aff" />
+        <text x={xOffset + 8} y="23" textAnchor="middle" style={{ fontSize: 10, fill: '#ffffff', fontWeight: 600 }}>
+          {idx}
+        </text>
+
+        {/* 人物 A(方,左上) */}
+        <rect x={Ax - 10} y={Ay - 10} width="20" height="20" fill="#ffffff" stroke="#404040" strokeWidth="2" />
+        {/* 人物 B(圓,右上) */}
+        <circle cx={Bx} cy={By} r="10" fill="#ffffff" stroke="#404040" strokeWidth="2" />
+        {/* 人物 C(方,下方) */}
+        <rect x={Cx - 10} y={Cy - 10} width="20" height="20" fill="#ffffff" stroke="#404040" strokeWidth="2" />
+
+        {/* 線條 */}
+        {lineState === 'attached-A' && (
+          <line x1={Ax} y1={Ay + 10} x2={Cx} y2={Cy - 10} stroke="#404040" strokeWidth="2" />
+        )}
+        {lineState === 'mid' && (
+          <>
+            {/* 原本連 C 的端點 */}
+            <line x1={cursor.x} y1={cursor.y} x2={Cx} y2={Cy - 10} stroke="#404040" strokeWidth="2" />
+            {/* 預覽虛線到 B */}
+            <line x1={cursor.x} y1={cursor.y} x2={Bx} y2={By + 8} stroke="#ff9500" strokeWidth="1.5" strokeDasharray="3 3" />
+          </>
+        )}
+        {lineState === 'attached-B' && (
+          <line x1={Bx} y1={By + 10} x2={Cx} y2={Cy - 10} stroke="#404040" strokeWidth="2" />
+        )}
+
+        {/* 游標 */}
+        <g transform={`translate(${cursor.x}, ${cursor.y})`}>
+          <path
+            d="M 0,0 L 0,12 L 3,9 L 6,15 L 8,13 L 5,7 L 9,7 Z"
+            fill="#ffffff"
+            stroke="#1d1d1f"
+            strokeWidth="1"
+          />
+        </g>
+
+        {/* 步驟標籤 */}
+        <text x={xOffset + 50} y="135" textAnchor="middle" style={{ fontSize: 10.5, fill: '#1d1d1f', fontWeight: 600 }}>
+          {label}
+        </text>
+      </g>
+    );
+  };
+
+  return (
+    <svg
+      viewBox="0 0 380 170"
+      width="100%"
+      style={{
+        display: 'block',
+        margin: '8px auto',
+        maxWidth: 440,
+        background: '#fafafa',
+        borderRadius: 8,
+      }}
+      aria-label="拖曳線條 3 步驟教學"
+    >
+      {renderPanel(1, 10, '1. 按住線端點', { x: 30, y: 40 }, 'attached-A')}
+      {renderPanel(2, 130, '2. 拖到新對象', { x: 130 + 55, y: 50 }, 'mid')}
+      {renderPanel(3, 250, '3. 放開,自動接好', { x: 250 + 80, y: 40 }, 'attached-B')}
+    </svg>
+  );
+}
+
+// ============================================================
 // 共用元件:畫布視覺解析(基礎教學「畫面總覽 — 人物、箭頭」步驟用)
 // — 顯示一個案主在中央 + ↑↓←→ 4 個藍色箭頭 + 標籤
 // — callout 說明每個箭頭的用途、長按 ↑ 拖出黑線的小提示
@@ -318,18 +422,18 @@ const Code: React.FC<{ children: ReactNode }> = ({ children }) => (
 
 // ============================================================
 // 共用元件:屬性面板視覺解析(基礎教學「屬性面板」步驟用)
-// — 顯示 4 個 Tab、形狀按鈕、姓名+案主+傳統勾選、可展開區塊
-// — 旁邊有 callout 指向重點(4 個分頁、傳統、展開更多)
+// — 顯示 4 個 Tab、形狀按鈕、性別亞型/基本醫療/進階(在「形狀」標題後)、姓名+案主+傳統
+// — 旁邊有 callout 指向重點
 // ============================================================
 function InspectorMockup() {
   return (
     <svg
-      viewBox="0 0 360 320"
+      viewBox="0 0 380 280"
       width="100%"
       style={{
         display: 'block',
         margin: '6px auto',
-        maxWidth: 420,
+        maxWidth: 440,
         background: '#fafafa',
         borderRadius: 8,
       }}
@@ -337,113 +441,104 @@ function InspectorMockup() {
     >
       {/* 面板外框(虛線) */}
       <rect
-        x="80"
+        x="60"
         y="10"
-        width="200"
-        height="300"
+        width="240"
+        height="260"
         rx="6"
         fill="#ffffff"
         stroke="#d2d2d7"
         strokeDasharray="6 4"
       />
-      <text x="88" y="24" style={{ fontSize: 9, fill: '#86868b' }}>
+      <text x="68" y="24" style={{ fontSize: 9, fill: '#86868b' }}>
         右側屬性面板
       </text>
 
       {/* === Tab bar (4 個分頁) === */}
-      <rect x="86" y="32" width="42" height="16" rx="2" fill="#e8f1ff" stroke="#007aff" strokeWidth="0.8" />
-      <text x="94" y="44" style={{ fontSize: 9.5, fill: '#007aff', fontWeight: 600 }}>基本</text>
-      <text x="136" y="44" style={{ fontSize: 9.5, fill: '#86868b' }}>網絡</text>
-      <text x="178" y="44" style={{ fontSize: 9.5, fill: '#86868b' }}>醫療</text>
-      <text x="220" y="44" style={{ fontSize: 9.5, fill: '#86868b' }}>自訂</text>
+      <rect x="66" y="32" width="42" height="16" rx="2" fill="#e8f1ff" stroke="#007aff" strokeWidth="0.8" />
+      <text x="74" y="44" style={{ fontSize: 9.5, fill: '#007aff', fontWeight: 600 }}>基本</text>
+      <text x="118" y="44" style={{ fontSize: 9.5, fill: '#86868b' }}>網絡</text>
+      <text x="170" y="44" style={{ fontSize: 9.5, fill: '#86868b' }}>醫療</text>
+      <text x="218" y="44" style={{ fontSize: 9.5, fill: '#86868b' }}>自訂</text>
 
       {/* Callout:4 個分頁 */}
-      <text x="4" y="42" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
+      <text x="2" y="42" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
         4 分頁
       </text>
-      <line x1="40" y1="40" x2="82" y2="40" stroke="#007aff" strokeWidth="0.8" strokeDasharray="2 2" />
+      <line x1="38" y1="40" x2="62" y2="40" stroke="#007aff" strokeWidth="0.8" strokeDasharray="2 2" />
 
-      {/* === 基本形狀按鈕格 === */}
-      <line x1="86" y1="54" x2="274" y2="54" stroke="#e5e4e7" strokeWidth="0.5" />
-      <text x="86" y="68" style={{ fontSize: 9, fill: '#86868b' }}>基本形狀</text>
+      {/* === 「形狀」Section 標題列 — 左為標題,右為 3 個 checkbox === */}
+      <line x1="66" y1="54" x2="294" y2="54" stroke="#e5e4e7" strokeWidth="0.5" />
+      <text x="66" y="70" style={{ fontSize: 10.5, fill: '#1d1d1f', fontWeight: 600 }}>
+        形狀
+      </text>
+      {/* ☑ 3 個小 checkbox 在標題右側,跟真實 Tab1 一致 */}
+      <text x="98" y="70" style={{ fontSize: 9.5, fill: '#1d1d1f' }}>☑ 性別亞型</text>
+      <text x="162" y="70" style={{ fontSize: 9.5, fill: '#1d1d1f' }}>☑ 基本醫療</text>
+      <text x="226" y="70" style={{ fontSize: 9.5, fill: '#1d1d1f' }}>☑ 進階</text>
+
+      {/* Callout:勾起來增加更多形狀 */}
+      <text x="305" y="62" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>勾起來</text>
+      <text x="305" y="76" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>加更多</text>
+      <text x="305" y="90" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>形狀</text>
+      <text x="305" y="104" style={{ fontSize: 9, fill: '#86868b' }}>(跨性別</text>
+      <text x="305" y="116" style={{ fontSize: 9, fill: '#86868b' }}>障別/疾病)</text>
+      <line x1="270" y1="68" x2="302" y2="68" stroke="#007aff" strokeWidth="0.8" strokeDasharray="2 2" />
+
+      {/* === 形狀按鈕區塊(flow grid)=== */}
+      {/* + 新增人物 */}
+      <rect x="66" y="80" width="18" height="18" rx="2" fill="#ffffff" stroke="#007aff" strokeWidth="1" />
+      <text x="71" y="93" style={{ fontSize: 11, fill: '#007aff', fontWeight: 600 }}>+</text>
       {/* 6 個基本形狀 */}
-      <rect x="86" y="74" width="16" height="16" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
-      <circle cx="118" cy="82" r="8" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
-      <polygon points="142,90 150,74 158,90" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
-      <polygon points="174,82 182,74 190,82 182,90" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
-      <rect x="198" y="78" width="22" height="8" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
-      <polygon points="230,82 240,76 240,88" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
-
-      {/* 半填色障礙形狀 */}
-      <text x="86" y="108" style={{ fontSize: 9, fill: '#86868b' }}>障別 / 疾病(半填色)</text>
+      <rect x="90" y="80" width="18" height="18" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+      <circle cx="123" cy="89" r="9" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+      <polygon points="138,98 147,80 156,98" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+      <polygon points="171,89 180,80 189,89 180,98" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+      <rect x="197" y="85" width="22" height="8" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+      <polygon points="230,89 238,82 238,96" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+      {/* 障別半填色(連續流) */}
       <g>
-        <rect x="86" y="114" width="16" height="16" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
-        <rect x="86" y="114" width="8" height="16" fill="#777777" />
+        <rect x="252" y="80" width="18" height="18" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+        <rect x="252" y="80" width="9" height="18" fill="#777777" />
       </g>
-      <g>
-        <clipPath id="circHalf">
-          <rect x="110" y="114" width="8" height="16" />
-        </clipPath>
-        <circle cx="118" cy="122" r="8" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
-        <circle cx="118" cy="122" r="8" fill="#777777" clipPath="url(#circHalf)" />
+      {/* 第二排示意:展開後更多形狀 */}
+      <g opacity="0.7">
+        <rect x="66" y="104" width="18" height="18" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+        <text x="69" y="116" style={{ fontSize: 11, fill: '#404040' }}>♂♀</text>
+        <rect x="90" y="104" width="18" height="18" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+        <text x="93" y="116" style={{ fontSize: 11, fill: '#404040' }}>⚣</text>
+        <rect x="114" y="104" width="18" height="18" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+        <text x="118" y="116" style={{ fontSize: 10, fill: '#404040' }}>Rx</text>
+        <text x="142" y="118" style={{ fontSize: 9, fill: '#86868b' }}>... 更多(視勾選)</text>
       </g>
 
-      {/* Callout:雙擊圖 → 切形狀 */}
-      <text x="4" y="86" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
-        雙擊圖
-      </text>
-      <text x="4" y="100" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
-        切形狀
-      </text>
-      <line x1="40" y1="82" x2="80" y2="82" stroke="#007aff" strokeWidth="0.8" strokeDasharray="2 2" />
-
-      {/* === 姓名 + 案主 + 傳統 === */}
-      <line x1="86" y1="138" x2="274" y2="138" stroke="#e5e4e7" strokeWidth="0.5" />
-      <text x="86" y="154" style={{ fontSize: 9.5, fill: '#1d1d1f' }}>
-        姓名
-      </text>
-      <text x="118" y="154" style={{ fontSize: 9.5, fill: '#007aff', fontWeight: 600 }}>
-        ☑ 案主
-      </text>
-      <text x="162" y="154" style={{ fontSize: 9.5, fill: '#007aff', fontWeight: 600 }}>
-        ☑ 傳統
-      </text>
-      <rect x="86" y="160" width="180" height="16" fill="#ffffff" stroke="#d2d2d7" strokeWidth="0.6" />
+      {/* === 姓名列 === */}
+      <line x1="66" y1="134" x2="294" y2="134" stroke="#e5e4e7" strokeWidth="0.5" />
+      <text x="66" y="152" style={{ fontSize: 10, fill: '#86868b' }}>姓名</text>
+      <text x="92" y="152" style={{ fontSize: 9.5, fill: '#007aff', fontWeight: 600 }}>☑ 案主</text>
+      <text x="138" y="152" style={{ fontSize: 9.5, fill: '#007aff', fontWeight: 600 }}>☑ 傳統</text>
+      <rect x="66" y="158" width="220" height="18" fill="#ffffff" stroke="#d2d2d7" strokeWidth="0.6" />
 
       {/* Callout:勾傳統 → 黑色案主 */}
-      <text x="285" y="150" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
-        勾傳統
-      </text>
-      <text x="285" y="164" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
-        → 案主
-      </text>
-      <text x="285" y="178" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
-        黑色填滿
-      </text>
-      <line x1="195" y1="154" x2="282" y2="154" stroke="#007aff" strokeWidth="0.8" strokeDasharray="2 2" />
+      <text x="305" y="148" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>勾傳統</text>
+      <text x="305" y="162" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>→ 案主</text>
+      <text x="305" y="176" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>黑色填滿</text>
+      <line x1="182" y1="152" x2="302" y2="152" stroke="#007aff" strokeWidth="0.8" strokeDasharray="2 2" />
 
-      {/* === 可展開區塊 === */}
-      <line x1="86" y1="190" x2="274" y2="190" stroke="#e5e4e7" strokeWidth="0.5" />
-      <text x="86" y="206" style={{ fontSize: 10, fill: '#1d1d1f' }}>▶ 性別亞型</text>
-      <text x="86" y="224" style={{ fontSize: 10, fill: '#1d1d1f' }}>▶ 多重身分</text>
-      <text x="86" y="242" style={{ fontSize: 10, fill: '#1d1d1f' }}>▶ 基本醫療</text>
-      <text x="86" y="260" style={{ fontSize: 10, fill: '#1d1d1f' }}>▶ 進階</text>
-
-      {/* Callout:點 ▶ 展開更多 */}
-      <text x="285" y="216" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
-        點 ▶
+      {/* === 其餘欄位提示(年齡/出生日期/個案角色/聯絡等) === */}
+      <line x1="66" y1="184" x2="294" y2="184" stroke="#e5e4e7" strokeWidth="0.5" />
+      <text x="66" y="200" style={{ fontSize: 10, fill: '#1d1d1f' }}>
+        年齡 · 出生日期 · 個案角色
       </text>
-      <text x="285" y="230" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
-        展開更多
+      <text x="66" y="216" style={{ fontSize: 10, fill: '#1d1d1f' }}>
+        聯絡資訊 · 備註 · 附加標記
       </text>
-      <text x="285" y="244" style={{ fontSize: 9, fill: '#86868b' }}>(跨性別</text>
-      <text x="285" y="256" style={{ fontSize: 9, fill: '#86868b' }}>/障別</text>
-      <text x="285" y="268" style={{ fontSize: 9, fill: '#86868b' }}>/疾病)</text>
-      <line x1="148" y1="206" x2="282" y2="218" stroke="#007aff" strokeWidth="0.8" strokeDasharray="2 2" />
+      <text x="66" y="232" style={{ fontSize: 10, fill: '#1d1d1f' }}>
+        生命狀態(在世/已逝/流產...)
+      </text>
 
-      {/* 底部小提示 */}
-      <text x="86" y="290" style={{ fontSize: 9, fill: '#86868b' }}>
-        每個分頁的詳細功能,進階教學會深入講解
+      <text x="66" y="258" style={{ fontSize: 9, fill: '#86868b' }}>
+        進階教學會深入講解每個分頁
       </text>
     </svg>
   );
@@ -480,7 +575,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
   },
   {
     icon: '🔄',
-    title: '切換形狀(雙擊)',
+    title: '雙擊切換',
     content: (
       <>
         <P><Strong>雙擊畫布上的人物</Strong> 直接切形狀,不用回屬性面板:</P>
@@ -531,18 +626,50 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
   },
   {
     icon: '➰',
-    title: '線條入門',
+    title: '線條入門 — 親子線實/虛',
+    content: (
+      <>
+        <P>家族結構的「黑色線條」分兩類:</P>
+        <P>
+          <Strong>│ 實線</Strong> — 法律父母
+          <br />
+          &nbsp;&nbsp;&nbsp;biological 親生 / adopted 收養
+        </P>
+        <P>
+          <Strong>┊ 虛線</Strong> — 非法律父母
+          <br />
+          &nbsp;&nbsp;&nbsp;fostered 寄養 / placed-out 出養 / sperm-donor 精子捐贈
+        </P>
+        <P>
+          <Strong>雙擊</Strong> 親子線可在實/虛之間切換(夫妻雙方的親子線會一起變)。
+          <Strong>單擊</Strong> 任何線可在右側面板看完整屬性。
+        </P>
+        <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
+          婚姻、關係線、網絡連線等其他線條,在進階教學深入講解。
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '🖱️',
+    title: '拖曳線條 — 改連接對象',
     content: (
       <>
         <P>
-          • <Strong>婚姻線雙擊</Strong> → 循環切類型(結婚/離婚/分居/訂婚...)
-          <br />
-          • <Strong>親子線雙擊</Strong> → 切實線/虛線(實=法定父母 / 虛=非法定)
-          <br />
-          • <Strong>按住線拖端點</Strong> → 拖到別人 = 改連接對象
-          <br />
-          • <Strong>單擊線</Strong> → 右側面板顯示完整屬性
+          已建好的線條(婚姻線、親子線、關係線)都可以
+          <Strong>拖端點到別人</Strong>,改連接對象。3 步驟:
         </P>
+        <LineDragMockup />
+        <P>
+          • <Strong>按住線條端點</Strong>(線會跟著手指動)
+          <br />
+          • <Strong>拖到另一個人物</Strong> 上面 → 預覽橘色虛線
+          <br />
+          • <Strong>放開</Strong> → 自動接到新對象
+        </P>
+        <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
+          拖到空白處放開 = 取消;拖到自己 = 取消。
+        </p>
       </>
     ),
   },
@@ -597,7 +724,7 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
   },
   {
     icon: '🔄',
-    title: 'Switch Shape (Double-click)',
+    title: 'Double-click to Switch',
     content: (
       <>
         <P><Strong>Double-click a person</Strong> on the canvas to cycle shape — no need to go back to the inspector:</P>
@@ -648,18 +775,51 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
   },
   {
     icon: '➰',
-    title: 'Lines Introduction',
+    title: 'Lines Intro — Parent-child Solid / Dashed',
+    content: (
+      <>
+        <P>Black family-structure lines come in two flavors:</P>
+        <P>
+          <Strong>│ Solid</Strong> — legal parent
+          <br />
+          &nbsp;&nbsp;&nbsp;biological / adopted
+        </P>
+        <P>
+          <Strong>┊ Dashed</Strong> — non-legal parent
+          <br />
+          &nbsp;&nbsp;&nbsp;fostered / placed-out / sperm-donor
+        </P>
+        <P>
+          <Strong>Double-click</Strong> a parent-child line to toggle solid/dashed
+          (both spouses' lines flip together). <Strong>Single-click</Strong> any line
+          to see full properties on the right.
+        </P>
+        <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
+          Marriage / relation / network lines: see the advanced tutorial.
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '🖱️',
+    title: 'Drag a Line — Change Target',
     content: (
       <>
         <P>
-          • <Strong>Double-click marriage line</Strong> → cycle subtype (Married/Divorced/Separated/Engaged...)
-          <br />
-          • <Strong>Double-click parent-child line</Strong> → toggle solid/dashed (solid = legal parent / dashed = non-legal)
-          <br />
-          • <Strong>Hold and drag a line's endpoint</Strong> → change connection target
-          <br />
-          • <Strong>Single-click a line</Strong> → right panel shows full properties
+          Any existing line (marriage / parent-child / relation) can be
+          <Strong> dragged by its endpoint</Strong> onto a different person. Three steps:
         </P>
+        <LineDragMockup />
+        <P>
+          • <Strong>Press &amp; hold the line endpoint</Strong> (it follows your finger)
+          <br />
+          • <Strong>Drag onto another person</Strong> → orange dashed preview
+          <br />
+          • <Strong>Release</Strong> → auto-attached to the new person
+        </P>
+        <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
+          Release on empty space or self = cancel.
+        </p>
       </>
     ),
   },
