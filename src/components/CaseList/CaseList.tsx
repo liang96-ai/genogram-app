@@ -17,6 +17,7 @@ import FeedbackDialog from './FeedbackDialog';
 import PrivacyWelcomeDialog, {
   hasAcknowledgedPrivacy,
 } from './PrivacyWelcomeDialog';
+import FolderSetupModal from './FolderSetupModal';
 
 export default function CaseList() {
   const t = useT();
@@ -46,6 +47,9 @@ export default function CaseList() {
   const [privacyWelcomeOpen, setPrivacyWelcomeOpen] = useState(
     () => !hasAcknowledgedPrivacy(),
   );
+  // 點「新增個案」時若還沒設資料夾,先彈資料夾提醒;
+  // 提醒關閉(選了或暫時不要)後再開 NewCaseDialog
+  const [folderPromptForNew, setFolderPromptForNew] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 點外面關 menu
@@ -371,7 +375,15 @@ export default function CaseList() {
         {/* New Case + Import Buttons */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 28 }}>
           <button
-            onClick={() => setShowNew(true)}
+            onClick={() => {
+              // 還沒設資料夾 + FSA 支援 → 先彈資料夾提醒,關閉後再開新個案 dialog
+              // 已設 / 不支援 → 直接開新個案 dialog
+              if (fsaSupported && !folderName) {
+                setFolderPromptForNew(true);
+              } else {
+                setShowNew(true);
+              }
+            }}
             style={{
               flex: 1,
               display: 'flex',
@@ -570,6 +582,28 @@ export default function CaseList() {
       )}
       {privacyWelcomeOpen && (
         <PrivacyWelcomeDialog onClose={() => setPrivacyWelcomeOpen(false)} />
+      )}
+      {folderPromptForNew && (
+        <FolderSetupModal
+          onClose={() => {
+            // 使用者按「暫時不要」/ 點外面 → 不擋,繼續開新個案 dialog
+            setFolderPromptForNew(false);
+            setShowNew(true);
+          }}
+          onSelected={async () => {
+            // 使用者選了資料夾 → 同步既有個案到資料夾 → 再開新個案 dialog
+            setFolderPromptForNew(false);
+            setFolderName(getRootFolderName());
+            try {
+              const allCases = await db.cases.toArray();
+              for (const g of allCases) await writeCaseJson(g);
+              await loadCaseList();
+            } catch (err) {
+              console.error('sync to new folder failed:', err);
+            }
+            setShowNew(true);
+          }}
+        />
       )}
     </div>
   );

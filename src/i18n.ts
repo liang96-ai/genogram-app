@@ -163,7 +163,7 @@ const dict: Record<Lang, Record<string, string>> = {
     // ===== Privacy Welcome Dialog (首次開啟才彈) =====
     'privacy.welcomeTitle': '🔒 你的資料,只在你的裝置上',
     'privacy.welcomeIntro':
-      '社工和心理師處理的是高度敏感資訊。這個工具的架構就是為了讓你完全不用擔心資料外流。',
+      '這個工具的架構就是為了高度敏感資訊自己保留,讓你完全不用擔心資料外流到網路上。',
     'privacy.welcomePoint1Title': '✅ 沒有伺服器、沒有資料庫',
     'privacy.welcomePoint1Body':
       '所有家系圖只存在你的瀏覽器(IndexedDB)。如果你選了同步資料夾,也只寫到你自己選的本機資料夾。',
@@ -648,7 +648,7 @@ const dict: Record<Lang, Record<string, string>> = {
     // ===== Privacy Welcome Dialog (first launch only) =====
     'privacy.welcomeTitle': '🔒 Your data stays on your device',
     'privacy.welcomeIntro':
-      'Social workers and psychologists handle highly sensitive information. This tool is architected so you never need to worry about data leaks.',
+      'This tool is built so highly sensitive information stays on your own device — you never need to worry about data leaking onto the network.',
     'privacy.welcomePoint1Title': '✅ No server, no database',
     'privacy.welcomePoint1Body':
       'All genograms live only in your browser (IndexedDB). If you opt into folder sync, files are written only to the local folder you pick.',
