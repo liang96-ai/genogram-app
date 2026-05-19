@@ -183,11 +183,13 @@ export default function NetworkUnitShape({
         const isConnSelected = selectedConnectorId === conn.id;
 
         // 有 subType + target 是 person/unit → 用 Line 元件渲染(全 15 種視覺)
-        // 拖曳中跟 target 是 ecosystem 時 fall back 到下方的簡單線
+        // 拖曳中 fall back 到下方簡單線;其餘三種 target 都走完整 Line 元件
         const canUseLineComponent =
           !dragging &&
           conn.subType &&
-          (conn.target.type === 'person' || conn.target.type === 'unit');
+          (conn.target.type === 'person' ||
+            conn.target.type === 'unit' ||
+            conn.target.type === 'ecosystem');
         if (canUseLineComponent) {
           // 合成 Person 物件給 Line 元件吃 — 用 unit 中心 + institution 形狀,讓 edge clipping 自然在邊界
           const synthFrom: Person = {
@@ -209,6 +211,22 @@ export default function NetworkUnitShape({
                 basicInfo: { name: tu.name },
               };
             }
+          } else if (conn.target.type === 'ecosystem') {
+            // 把虛擬圓心往「線延伸方向」推 28px,讓 Line 元件 circle edge clip(也是 28)
+            // 之後線剛好終止在 target(生態圖命中點)邊界上,不會內縮
+            const dx = target.x - unit.position.x;
+            const dy = target.y - unit.position.y;
+            const len = Math.hypot(dx, dy) || 1;
+            const CIRCLE_EDGE = 28; // 跟 Line.tsx SHAPE_HALF / 圓形 offset 一致
+            synthTo = {
+              id: '__synth_eco_' + conn.id,
+              position: {
+                x: target.x + (CIRCLE_EDGE * dx) / len,
+                y: target.y + (CIRCLE_EDGE * dy) / len,
+              },
+              shape: 'circle',
+              basicInfo: { name: '' },
+            };
           }
           if (synthTo) {
             const synthLine: LineType = {
