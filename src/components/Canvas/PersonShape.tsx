@@ -47,6 +47,8 @@ type Props = {
   onPointerDown: (e: React.PointerEvent) => void;
   onDoubleClick: () => void;
   onDelete?: () => void;
+  /** 選中時上方 ▲ 拖出「未明家人」線到另一人物 — 由 Canvas 處理拖曳邏輯 */
+  onConnectHandleDown?: (e: React.PointerEvent) => void;
 };
 
 const SIZE = 56;
@@ -141,6 +143,7 @@ export default function PersonShape({
   onPointerDown,
   onDoubleClick,
   onDelete,
+  onConnectHandleDown,
 }: Props) {
   const t = useT();
   const privacyEnabled = useGenogramStore((s) => s.privacyEnabled);
@@ -1016,6 +1019,38 @@ export default function PersonShape({
               );
             })}
           </>
+        );
+      })()}
+
+      {/* ▲ 連線把手 — 選中時上方中央出現,拖到另一人物 → 建立「家人但關係未明」線
+          灰色(#6e6e73)區別於網絡單位的藍色 ▲(避免誤認為網絡關係) */}
+      {selected && onConnectHandleDown && (() => {
+        const topY =
+          actualShape === 'institution'
+            ? -INST_HALF_H - 14
+            : actualShape === 'pet'
+              ? -16.8 - 14
+              : -HALF - 14;
+        const TRI = 7;
+        return (
+          <g
+            transform={`translate(0, ${topY})`}
+            style={{ cursor: 'crosshair' }}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              onConnectHandleDown(e);
+            }}
+            data-tooltip="拖到另一人物 → 建立家人關係(未明型態)"
+          >
+            {/* hit area:大圓透明,點擊範圍更大 */}
+            <circle r={14} fill="transparent" />
+            <polygon
+              points={`0,${-TRI} ${TRI * 0.85},${TRI * 0.6} ${-TRI * 0.85},${TRI * 0.6}`}
+              fill="#6e6e73"
+              stroke="#ffffff"
+              strokeWidth={1.2}
+            />
+          </g>
         );
       })()}
 

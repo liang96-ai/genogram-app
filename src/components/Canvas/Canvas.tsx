@@ -235,6 +235,14 @@ export default function Canvas() {
     x: number;
     y: number;
   } | null>(null);
+  // 人物 ▲ 拖曳預覽:從 fromPersonId 拉一條「未明家人」線
+  const [unknownFamilyDrag, setUnknownFamilyDrag] = useState<{
+    fromPersonId: string;
+    fromX: number;
+    fromY: number;
+    x: number;
+    y: number;
+  } | null>(null);
   // 選中的 connector(短按時設定 → 顯示 ×;最多一個)
   const selectedConnector = useGenogramStore((s) => s.selectedConnector);
   const setSelectedConnector = useGenogramStore(
@@ -256,6 +264,9 @@ export default function Canvas() {
   const pendingRelation = useGenogramStore((s) => s.pendingRelation);
   const setPendingRelation = useGenogramStore((s) => s.setPendingRelation);
   const createRelationLine = useGenogramStore((s) => s.createRelationLine);
+  const createUnknownFamilyLine = useGenogramStore(
+    (s) => s.createUnknownFamilyLine,
+  );
   const inspectorTarget = useGenogramStore((s) => s.inspectorTarget);
 
   // 切換個案時自動把畫面置中到內容中心(保留目前 zoom)
@@ -914,6 +925,47 @@ export default function Canvas() {
       moved: false,
     };
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+  };
+
+  // ==================== Person ▲ 拖出「未明家人」線 ====================
+  const onPersonConnectHandleDown = (
+    e: React.PointerEvent,
+    personId: string,
+  ) => {
+    e.stopPropagation();
+    if (drawMode) return;
+    const fromPerson = currentCase.persons.find((p) => p.id === personId);
+    if (!fromPerson) return;
+    const pointerId = e.pointerId;
+    setUnknownFamilyDrag({
+      fromPersonId: personId,
+      fromX: fromPerson.position.x,
+      fromY: fromPerson.position.y,
+      x: fromPerson.position.x,
+      y: fromPerson.position.y,
+    });
+    const onMove = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      const local = toSvgPoint(ev.clientX, ev.clientY);
+      setUnknownFamilyDrag((prev) =>
+        prev ? { ...prev, x: local.x, y: local.y } : null,
+      );
+    };
+    const onUp = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+      const local = toSvgPoint(ev.clientX, ev.clientY);
+      const targetPerson = findPersonAt(local.x, local.y);
+      if (targetPerson && targetPerson.id !== personId) {
+        createUnknownFamilyLine(personId, targetPerson.id);
+      }
+      setUnknownFamilyDrag(null);
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
   };
 
   // ==================== Background (marquee / pan / 畫筆) ====================
@@ -1923,9 +1975,26 @@ export default function Canvas() {
             onPointerDown={(e) => onPersonPointerDown(e, person.id)}
             onDoubleClick={() => cycleShape(person.id)}
             onDelete={() => removePersons([person.id])}
+            onConnectHandleDown={(e) =>
+              onPersonConnectHandleDown(e, person.id)
+            }
           />
         );
       })}
+
+      {/* ▲ 拖曳預覽 — 從來源人物拉一條灰虛線到游標位置 */}
+      {unknownFamilyDrag && (
+        <line
+          x1={unknownFamilyDrag.fromX}
+          y1={unknownFamilyDrag.fromY}
+          x2={unknownFamilyDrag.x}
+          y2={unknownFamilyDrag.y}
+          stroke="#a1a1a6"
+          strokeWidth={1.5}
+          strokeDasharray="4 4"
+          style={{ pointerEvents: 'none' }}
+        />
+      )}
 
       {selectedPersonIds.length === 1 &&
         (() => {

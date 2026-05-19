@@ -55,6 +55,8 @@ export const SUBTYPE_SPEC: Partial<Record<LineSubType, SubtypeSpec>> = {
   fostered: { lineStyle: 'dashed' },
   'placed-out': { lineStyle: 'dashed' },
   'sperm-donor': { lineStyle: 'dashed' },
+  // 未明家人 — 細灰實線,中性 placeholder
+  'unknown-family': { lineStyle: 'solid' },
 };
 
 export function getDasharray(key: LineStyleKey): string | undefined {
@@ -371,7 +373,8 @@ const mkLine = (
     subType === 'identical-twins' ||
     subType === 'miscarriage' ||
     subType === 'stillbirth' ||
-    subType === 'abortion'
+    subType === 'abortion' ||
+    subType === 'unknown-family'
       ? 'member'
       : 'relation',
   subType,
@@ -594,6 +597,14 @@ type GenogramStore = {
     fromPersonId: string,
     toPersonId: string,
     subType: RelationSubType,
+  ) => void;
+  /** 建立「家人但關係未明」線(unknown-family member line)
+   *  — 從人物 ▲ 拖到另一人物時觸發
+   *  — 若兩人已有任何 member line(婚姻/親子等),不重複建
+   *  — 之後可透過升級 UI 改成具體 subType */
+  createUnknownFamilyLine: (
+    fromPersonId: string,
+    toPersonId: string,
   ) => void;
 
   addLine: (l: Line) => void;
@@ -1381,6 +1392,35 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     set({
       ...pushHistory(c, history, newCase),
       pendingRelation: null,
+      selectedLineIds: [line.id],
+      inspectorTarget: { type: 'line', id: line.id },
+    });
+  },
+
+  createUnknownFamilyLine: (fromPersonId, toPersonId) => {
+    const { currentCase: c, history } = get();
+    if (!c) return;
+    if (fromPersonId === toPersonId) return; // 不允許自己連自己
+    // 若兩人之間已有任何 member line(婚姻/親子/手足/妊娠/已知 unknown-family),不重複建
+    // — 既有 member line 已經表示「有家人關係」,unknown-family 只在空白時使用
+    const exists = c.lines.find(
+      (l) =>
+        l.category === 'member' &&
+        ((l.fromPersonId === fromPersonId && l.toPersonId === toPersonId) ||
+          (l.fromPersonId === toPersonId && l.toPersonId === fromPersonId)),
+    );
+    if (exists) {
+      // 已經有 member line → 直接選中既有那條,讓使用者看到「已存在」
+      set({
+        selectedLineIds: [exists.id],
+        inspectorTarget: { type: 'line', id: exists.id },
+      });
+      return;
+    }
+    const line = mkLine(fromPersonId, toPersonId, 'unknown-family');
+    const newCase = touch({ ...c, lines: [...c.lines, line] });
+    set({
+      ...pushHistory(c, history, newCase),
       selectedLineIds: [line.id],
       inspectorTarget: { type: 'line', id: line.id },
     });

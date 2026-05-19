@@ -228,7 +228,9 @@ export type MemberSubType =
   // 妊娠
   | 'miscarriage'
   | 'stillbirth'
-  | 'abortion';
+  | 'abortion'
+  // 未明家人關係(占位用 — 知道是家人但不清楚具體型態,之後可升級)
+  | 'unknown-family';
 
 export type RelationSubType =
   | 'connected'

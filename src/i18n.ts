@@ -257,6 +257,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'lineProps.subType.placedOut': '出養',
     'lineProps.subType.twins': '雙胞胎',
     'lineProps.subType.identicalTwins': '同卵雙胞胎',
+    'lineProps.subType.unknownFamily': '家人(未明型態)',
 
     // ===== Scale Dialog =====
     'scaleDialog.source': '來源',
@@ -740,6 +741,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'lineProps.subType.engagementCohabitation': 'Engaged & Cohabiting',
     'lineProps.subType.loveAffair': 'Love Affair',
     'lineProps.subType.biological': 'Biological',
+    'lineProps.subType.unknownFamily': 'Family (unspecified)',
     'lineProps.subType.adopted': 'Adopted',
     'lineProps.subType.fostered': 'Fostered',
     'lineProps.subType.placedOut': 'Placed Out',
