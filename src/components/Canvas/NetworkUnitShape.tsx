@@ -282,6 +282,18 @@ export default function NetworkUnitShape({
         const dx = target.x - topAnchorX;
         const dy = target.y - topAnchorY;
         const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+        // 中央符號 — cutoff(#75 雙短橫)/ cutoff-repaired(#76 小圓)
+        // 簡單 render path(ecosystem 目標 / dragging)時也要畫,不然套 Tab2 看不出來
+        const segDx = target.x - topAnchorX;
+        const segDy = target.y - topAnchorY;
+        const segLen = Math.hypot(segDx, segDy) || 1;
+        const uxN = segDx / segLen;
+        const uyN = segDy / segLen;
+        const nxN = -uyN;
+        const nyN = uxN;
+        const showCutoffMarks = conn.subType === 'cutoff' && !dragging;
+        const showCutoffRepaired =
+          conn.subType === 'cutoff-repaired' && !dragging;
         return (
           <g key={conn.id}>
             {/* 可見線 */}
@@ -295,6 +307,32 @@ export default function NetworkUnitShape({
               strokeDasharray={dashPattern}
               style={{ pointerEvents: 'none' }}
             />
+            {/* cutoff #75 — 中央雙短橫 (||) */}
+            {showCutoffMarks &&
+              [-3, 3].map((off) => (
+                <line
+                  key={off}
+                  x1={midX + uxN * off + nxN * 6}
+                  y1={midY + uyN * off + nyN * 6}
+                  x2={midX + uxN * off - nxN * 6}
+                  y2={midY + uyN * off - nyN * 6}
+                  stroke={lineStroke}
+                  strokeWidth={2}
+                  style={{ pointerEvents: 'none' }}
+                />
+              ))}
+            {/* cutoff-repaired #76 — 中央小圓 */}
+            {showCutoffRepaired && (
+              <circle
+                cx={midX}
+                cy={midY}
+                r={5}
+                fill="#ffffff"
+                stroke={lineStroke}
+                strokeWidth={1.6}
+                style={{ pointerEvents: 'none' }}
+              />
+            )}
             {/* 箭頭(focus / abuse / caregiver 等) */}
             {showArrow && !dragging && (
               <polygon

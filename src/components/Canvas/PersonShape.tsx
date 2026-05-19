@@ -561,9 +561,12 @@ export default function PersonShape({
   // 依 actualShape(square/circle) 裁切填色
   const patternsRaw = person.fillPatterns ?? [];
   // 舊名 migration
-  const patterns: FillPattern[] = patternsRaw.map((p) =>
+  const patternsAll: FillPattern[] = patternsRaw.map((p) =>
     p === 'diagonal-stripes' ? 'left-diagonal-stripes' : p,
   );
+  // 案主傳統樣式(整塊黑)優先級最高 — 跳過所有 fillPattern,
+  // 避免出現「一半灰一半黑」(例:案主 + 身障 left-half-filled)
+  const patterns: FillPattern[] = isTraditionalProband ? [] : patternsAll;
   const clipId = `clip-${person.id}`;
   const showFillPatterns = patterns.length > 0;
   const clipShape = (() => {
