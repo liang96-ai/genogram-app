@@ -173,10 +173,6 @@ const dict: Record<Lang, Record<string, string>> = {
     'privacy.welcomePoint3Title': '✅ 資料離開裝置只有 2 種情況',
     'privacy.welcomePoint3Body':
       '(1) 你按「分享」給對方下載連結(不含家系圖內容) (2) 你按「回報問題」開信箱(可選送 / 可不送)。除此之外,完全離線可用。',
-    'privacy.welcomeOpenSource':
-      '本工具 100% 開源,任何人都可以驗證 → ',
-    'privacy.welcomeOpenSourceLink':
-      'github.com/liang96-ai/genogram-app',
     'privacy.welcomeAck': '我了解,開始使用',
 
     // ===== Tab2 Network =====
@@ -662,10 +658,6 @@ const dict: Record<Lang, Record<string, string>> = {
     'privacy.welcomePoint3Title': '✅ Data leaves the device in only 2 cases',
     'privacy.welcomePoint3Body':
       '(1) You press "Share" to send a download link (which never contains genogram data); (2) You press "Report" which opens your mail client (sending is optional). Otherwise, fully offline.',
-    'privacy.welcomeOpenSource':
-      '100% open source, anyone can verify → ',
-    'privacy.welcomeOpenSourceLink':
-      'github.com/liang96-ai/genogram-app',
     'privacy.welcomeAck': 'I understand, start',
 
     // ===== Tab2 Network =====

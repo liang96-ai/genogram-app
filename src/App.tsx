@@ -10,9 +10,9 @@ import {
   ExportDialog,
   ImportDialog,
 } from './components/CaseList/ExportImportDialog';
-import Tutorial, {
-  hasTutorialBeenSeen,
-} from './components/Tutorial/Tutorial';
+import Tutorial from './components/Tutorial/Tutorial';
+// hasTutorialBeenSeen 暫不使用(教學手冊改為選單觸發)— 留 import 註解供未來恢復
+// import { hasTutorialBeenSeen } from './components/Tutorial/Tutorial';
 import ScaleDialog from './components/Scales/ScaleDialog';
 import InstallBanner from './components/InstallBanner';
 import { useT } from './i18n';
@@ -129,12 +129,14 @@ export default function App() {
     loadProbandStyle,
   ]);
 
-  // 第一次「進編輯模式」→ 自動跳教學(在清單頁不跳,等使用者真的開始編輯才教)
-  useEffect(() => {
-    if (!loaded) return;
-    if (appMode !== 'edit') return;
-    if (!hasTutorialBeenSeen()) setShowTutorial(true);
-  }, [loaded, appMode, setShowTutorial]);
+  // 教學手冊改成「使用者主動從選單觸發」— 不再首次進編輯自動彈
+  // (避免跟首頁隱私歡迎彈窗連續兩次強制 modal,UX 太重)
+  // 想加回自動彈,把下面 useEffect 取消註解即可
+  // useEffect(() => {
+  //   if (!loaded) return;
+  //   if (appMode !== 'edit') return;
+  //   if (!hasTutorialBeenSeen()) setShowTutorial(true);
+  // }, [loaded, appMode, setShowTutorial]);
 
   // 自動儲存(write-through):
   //   1. 寫 IndexedDB(快,必有)

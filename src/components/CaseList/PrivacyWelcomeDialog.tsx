@@ -100,27 +100,7 @@ export default function PrivacyWelcomeDialog({ onClose }: Props) {
           body={t('privacy.welcomePoint3Body')}
         />
 
-        <div
-          style={{
-            fontSize: 11,
-            color: '#86868b',
-            marginTop: 16,
-            marginBottom: 20,
-            paddingTop: 12,
-            borderTop: '1px solid #f0f0f5',
-            lineHeight: 1.5,
-          }}
-        >
-          {t('privacy.welcomeOpenSource')}
-          <a
-            href={`https://${t('privacy.welcomeOpenSourceLink')}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: '#007aff', textDecoration: 'none' }}
-          >
-            {t('privacy.welcomeOpenSourceLink')}
-          </a>
-        </div>
+        <div style={{ marginBottom: 20 }} />
 
         <button
           onClick={handleAck}
