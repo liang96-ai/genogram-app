@@ -602,7 +602,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         <P>
           • <Strong>基本</Strong>:姓名、年齡、形狀、案主、性別亞型、聯絡
           <br />
-          • <Strong>網絡</Strong>:關係線(15 種) + 機構單位
+          • <Strong>網絡</Strong>:互動關係線(15 種) + 機構單位
           <br />
           • <Strong>醫療</Strong>:疾病、用藥、量表評估
           <br />
@@ -645,7 +645,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
           <Strong>單擊</Strong> 任何線可在右側面板看完整屬性。
         </P>
         <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
-          婚姻、關係線、網絡連線等其他線條,在進階教學深入講解。
+          婚姻、互動關係線、網絡連線等其他線條,在進階教學深入講解。
         </p>
       </>
     ),
@@ -656,7 +656,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
     content: (
       <>
         <P>
-          已建好的線條(婚姻線、親子線、關係線)都可以
+          已建好的線條(婚姻線、親子線、互動關係線)都可以
           <Strong>拖端點到別人</Strong>,改連接對象。3 步驟:
         </P>
         <LineDragMockup />
@@ -870,11 +870,11 @@ export const ADVANCED_STEPS_ZH: TutorialStep[] = [
   },
   {
     icon: '🌀',
-    title: 'Tab2 網絡關係(關係線 + 單位)',
+    title: 'Tab2 網絡關係(互動關係線 + 單位)',
     content: (
       <>
         <P>
-          <Strong>關係線</Strong>(15 種,分 5 小組):
+          <Strong>互動關係線</Strong>(15 種,分 5 小組):
           <br />
           正向 4 / 中性 2 / 負向 3 / 暴力 3 / 照顧斷裂 3
         </P>
@@ -883,11 +883,11 @@ export const ADVANCED_STEPS_ZH: TutorialStep[] = [
           點另一人物完成連線。Esc 取消。
         </P>
         <P>
-          選中現有關係線時點別的按鈕 → 即時切類型。
+          選中現有互動關係線時點別的按鈕 → 即時切類型。
           <br />
-          <Strong>雙擊關係線</Strong> → 編輯備注。
+          <Strong>雙擊互動關係線</Strong> → 編輯備注。
           <br />
-          標題旁 <Strong>🔒 全選保密</Strong> → 全部關係線即時消失。
+          標題旁 <Strong>🔒 全選保密</Strong> → 全部互動關係線即時消失。
         </P>
         <P>
           <Strong>網絡單位</Strong>:按 <Code>＋</Code> 加機構 → 畫布上單位上方 <Strong>▲</Strong> 拖出去連到人/單位/生態圈。
@@ -1034,12 +1034,12 @@ export const ADVANCED_STEPS_ZH: TutorialStep[] = [
           • <Strong>總開關</Strong>(Tab1 / Tab3 都看得到)勾起來
           → 各 Tab 出現 <Strong>區塊「全選保密」</Strong> + <Strong>欄位個別 🔒</Strong>
           <br />
-          • <Strong>Tab2 關係線「全選保密」</Strong>不受總開關控制,隨時可勾
+          • <Strong>Tab2 互動關係線「全選保密」</Strong>不受總開關控制,隨時可勾
         </P>
         <P>
           勾保密後:
           <br />
-          • 該欄位 / 關係線在<Strong>畫布上即時消失</Strong>
+          • 該欄位 / 互動關係線在<Strong>畫布上即時消失</Strong>
           <br />
           • 匯出 PNG/JPG 時也消失(完整保護隱私)
         </P>

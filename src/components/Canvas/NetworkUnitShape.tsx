@@ -183,10 +183,10 @@ export default function NetworkUnitShape({
         const isConnSelected = selectedConnectorId === conn.id;
 
         // 有 subType + target 是 person/unit → 用 Line 元件渲染(全 15 種視覺)
-        // 拖曳中 fall back 到下方簡單線;其餘三種 target 都走完整 Line 元件
+        // 拖曳中 fall back 到下方簡單線;其餘所有狀況都走完整 Line 元件
+        // (subType 缺失也用 'focus-on' 預設,所以不再有「灰虛線」狀態)
         const canUseLineComponent =
           !dragging &&
-          conn.subType &&
           (conn.target.type === 'person' ||
             conn.target.type === 'unit' ||
             conn.target.type === 'ecosystem');
@@ -234,7 +234,8 @@ export default function NetworkUnitShape({
               fromPersonId: synthFrom.id,
               toPersonId: synthTo.id,
               category: 'relation',
-              subType: conn.subType!,
+              // legacy connectors 沒 subType 的視為 'focus-on'(全藍色,不再有灰虛線)
+              subType: conn.subType ?? 'focus-on',
               visual: { lineStyle: 'solid' },
               note: conn.note,
             };

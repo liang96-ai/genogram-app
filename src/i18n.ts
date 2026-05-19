@@ -310,14 +310,14 @@ const dict: Record<Lang, Record<string, string>> = {
     'unit.overlap': '⚠️ 重疊',
 
     // ===== Tab2 Relation Lines(#62-76)=====
-    'relation.title': '關係線',
+    'relation.title': '互動關係線',
     'relation.group.positive': '正向',
     'relation.group.neutral': '中性',
     'relation.group.negative': '負向',
     'relation.group.violence': '暴力',
     'relation.group.cutoff': '照顧 / 斷裂',
-    'relation.pendingBanner': '點另一人物完成「{name}」關係線(Esc 取消)',
-    'relation.headerTip': '點 → 選人物 → 拉到另一人完成;或點現有關係線改類型',
+    'relation.pendingBanner': '點另一人物完成「{name}」互動關係線(Esc 取消)',
+    'relation.headerTip': '點 → 選人物 → 拉到另一人完成;或點現有互動關係線改類型',
     'relation.private': '保密此線',
     'relation.privateTip': '勾起來 → 匯出圖片時整條線(含備注)消失',
     // 15 個 RelationSubType labels
@@ -358,11 +358,11 @@ const dict: Record<Lang, Record<string, string>> = {
     'symCat.成員線-親子': '成員線 - 親子',
     'symCat.成員線-手足': '成員線 - 手足',
     'symCat.成員線-妊娠': '成員線 - 妊娠',
-    'symCat.關係線-正向': '關係線 - 正向',
-    'symCat.關係線-中性': '關係線 - 中性',
-    'symCat.關係線-負向': '關係線 - 負向',
-    'symCat.關係線-暴力': '關係線 - 暴力',
-    'symCat.關係線-照顧斷裂': '關係線 - 照顧斷裂',
+    'symCat.關係線-正向': '互動關係線 - 正向',
+    'symCat.關係線-中性': '互動關係線 - 中性',
+    'symCat.關係線-負向': '互動關係線 - 負向',
+    'symCat.關係線-暴力': '互動關係線 - 暴力',
+    'symCat.關係線-照顧斷裂': '互動關係線 - 照顧斷裂',
     'symCat.特殊視覺': '特殊視覺',
 
     // ===== Canvas tooltip(滑鼠停留懸浮提示)=====
@@ -423,7 +423,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'share.footerHint':
       '建議:LINE / Email / 社群貼文 都可以貼。配 QR Code 海報效果最好。',
     'share.template':
-      '🌳 家系圖工具\n{url}\n\n特色:\n✓ 只要按上下左右、拉動線條,快速畫,好上手。\n✓ 100% 在地儲存,個案資料不上雲端,離線可用。\n✓ 方便交流傳送,可傳送完整檔其他人接手,或是隱匿個資傳送。\n✓ 符號字典、關係線、醫療資訊、附件好存放。',
+      '🌳 家系圖工具\n{url}\n\n特色:\n✓ 只要按上下左右、拉動線條,快速畫,好上手。\n✓ 100% 在地儲存,個案資料不上雲端,離線可用。\n✓ 方便交流傳送,可傳送完整檔其他人接手,或是隱匿個資傳送。\n✓ 符號字典、互動關係線、醫療資訊、附件好存放。',
     'caseList.addCase': '新增個案',
     'caseList.import': '匯入',
     'caseList.backupTitle': '全備份(包含所有個案 + 設定)',
