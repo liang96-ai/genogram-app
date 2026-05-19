@@ -10,6 +10,98 @@ export interface TutorialStep {
 // SmallArrowsIllustration 已移除(原本用於基礎教學第 4 步「加家人」,該步已刪)
 
 // ============================================================
+// 共用元件:畫布視覺解析(基礎教學「畫面總覽 — 人物、箭頭」步驟用)
+// — 顯示一個案主在中央 + ↑↓←→ 4 個藍色箭頭 + 標籤
+// — callout 說明每個箭頭的用途、長按 ↑ 拖出黑線的小提示
+// ============================================================
+function CanvasArrowsMockup() {
+  return (
+    <svg
+      viewBox="0 0 320 260"
+      width="100%"
+      style={{
+        display: 'block',
+        margin: '8px auto',
+        maxWidth: 380,
+        background: '#fafafa',
+        borderRadius: 8,
+      }}
+      aria-label="畫布上人物與 4 個加家人箭頭"
+    >
+      {/* 畫布外框(虛線) */}
+      <rect
+        x="10"
+        y="10"
+        width="300"
+        height="240"
+        rx="6"
+        fill="#ffffff"
+        stroke="#d2d2d7"
+        strokeDasharray="6 4"
+      />
+      <text x="18" y="24" style={{ fontSize: 10, fill: '#86868b' }}>
+        畫布(中央)
+      </text>
+
+      {/* 案主方框(雙紅匡) */}
+      <rect
+        x="144"
+        y="116"
+        width="32"
+        height="32"
+        fill="#ffffff"
+        stroke="#404040"
+        strokeWidth="2.25"
+      />
+      <rect
+        x="139"
+        y="111"
+        width="42"
+        height="42"
+        fill="none"
+        stroke="#ff3b30"
+        strokeWidth="1.5"
+      />
+
+      {/* 上箭頭(加父母) */}
+      <polygon points="160,82 168,96 152,96" fill="#007aff" opacity="0.85" />
+      <text x="180" y="92" style={{ fontSize: 11, fill: '#007aff', fontWeight: 600 }}>
+        ↑ 加父母
+      </text>
+
+      {/* 下箭頭(加小孩 / 加配偶) */}
+      <polygon points="160,180 168,166 152,166" fill="#007aff" opacity="0.85" />
+      <text x="180" y="176" style={{ fontSize: 11, fill: '#007aff', fontWeight: 600 }}>
+        ↓ 加小孩
+      </text>
+      <text x="180" y="190" style={{ fontSize: 9.5, fill: '#86868b' }}>
+        (無配偶時先加配偶)
+      </text>
+
+      {/* 左箭頭(加配偶) */}
+      <polygon points="112,132 126,124 126,140" fill="#007aff" opacity="0.85" />
+      <text x="38" y="120" style={{ fontSize: 11, fill: '#007aff', fontWeight: 600 }}>
+        ← 加配偶
+      </text>
+
+      {/* 右箭頭(加配偶) */}
+      <polygon points="208,132 194,124 194,140" fill="#007aff" opacity="0.85" />
+      <text x="214" y="120" style={{ fontSize: 11, fill: '#007aff', fontWeight: 600 }}>
+        → 加配偶
+      </text>
+
+      {/* 長按提示 */}
+      <text x="18" y="216" style={{ fontSize: 10.5, fill: '#1d1d1f' }}>
+        💡 長按 ↑ 0.25 秒 + 拖到另一人物 → 直接畫黑色親子線
+      </text>
+      <text x="18" y="234" style={{ fontSize: 10.5, fill: '#1d1d1f' }}>
+        💡 長按 ↓ 1 秒 → 開雙胞胎設定視窗(2-15 胞胎)
+      </text>
+    </svg>
+  );
+}
+
+// ============================================================
 // 共用元件:基礎教學 #8 的 PWA 安裝按鈕
 //   依平台/狀態自動切換內容:
 //     - 已安裝 → 提示已安裝
@@ -363,41 +455,45 @@ function InspectorMockup() {
 // ============================================================
 export const BASIC_STEPS_ZH: TutorialStep[] = [
   {
-    icon: '🌳',
-    title: '歡迎使用家系圖工具',
+    icon: '🖼️',
+    title: '畫面總覽 — 人物、4 個箭頭',
     content: (
       <>
-        <P>這是一個 <Strong>100% 在地儲存</Strong> 的工具。</P>
         <P>
-          你的所有個案資料只會存在這個瀏覽器/電腦裡,
-          <Strong>完全不會上傳</Strong> 到任何伺服器或雲端。
+          進入個案後中央就是 <Strong>畫布</Strong>。
+          選中人物會出現 ↑↓←→ 4 個藍色小箭頭,1 鍵加家人:
         </P>
-        <P>按「下一步」開始 1 分鐘小教學,或右上角直接跳過。</P>
-      </>
-    ),
-  },
-  {
-    icon: '✏️',
-    title: '畫布操作',
-    content: (
-      <>
-        <P>進入個案後,中央就是 <Strong>畫布</Strong>:</P>
+        <CanvasArrowsMockup />
         <P>
-          • 拖人物 / 加家人(選中人物會出現 ↑↓←→ 4 個藍色小箭頭,1 鍵加家人)
+          畫布其他重點:
           <br />
           • 空白處<Strong>拖框</Strong> = 圈選多人一起搬位置
           <br />
           • 拖<Strong>親子線端點到別人</Strong> = 該人變次要父母(收養 / 出養)
           <br />
-          • 雙擊人物 = 切換形狀(男 ↔ 女 ↔ 懷孕 → 流產 → 死產 → 人工流產)
-        </P>
-        <P>畫面其他元素:</P>
-        <P>
           • 左上:返回鍵 <Code>←</Code> + 主選單 <Code>☰</Code>
           <br />
           • 右下角浮動工具列:縮放 / 適應視窗 / <Strong>✏️ 畫筆</Strong>(畫生態圖)
+        </P>
+      </>
+    ),
+  },
+  {
+    icon: '🔄',
+    title: '切換形狀(雙擊)',
+    content: (
+      <>
+        <P><Strong>雙擊畫布上的人物</Strong> 直接切形狀,不用回屬性面板:</P>
+        <P>
+          • <Code>□</Code> ↔ <Code>○</Code> 男女互切(最常用)
           <br />
-          • 右側面板細節 → 下一步圖解
+          • <Code>△</Code> 懷孕 → 死產 → 流產 → 人工流產 4 段循環
+          <br />
+          • <Code>◇</Code> 未知性別 / <Code>機構</Code> / <Code>寵物</Code> 不循環
+        </P>
+        <P>
+          想用更多形狀(<Strong>跨性別 / 同性戀 / 障別 / 疾病</Strong>等)
+          → 走右側屬性面板基本分頁的展開區塊(下一步圖解)。
         </P>
       </>
     ),
@@ -476,41 +572,45 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
 // ============================================================
 export const BASIC_STEPS_EN: TutorialStep[] = [
   {
-    icon: '🌳',
-    title: 'Welcome to the Genogram Tool',
+    icon: '🖼️',
+    title: 'Screen Overview — Person, 4 Arrows',
     content: (
       <>
-        <P>This is a <Strong>100% local-only</Strong> tool.</P>
         <P>
-          All your case data stays in this browser/computer.
-          <Strong>Nothing is ever uploaded</Strong> to any server or cloud.
+          After opening a case, the center is the <Strong>canvas</Strong>.
+          Selecting a person reveals 4 blue arrows ↑↓←→ to add family with one click:
         </P>
-        <P>Click "Next" for a 1-minute tour, or skip via the top-right.</P>
-      </>
-    ),
-  },
-  {
-    icon: '✏️',
-    title: 'Canvas',
-    content: (
-      <>
-        <P>After opening a case, the center is the <Strong>canvas</Strong>:</P>
+        <CanvasArrowsMockup />
         <P>
-          • Drag persons / add family (select a person → 4 blue ↑↓←→ arrows for one-click family)
+          Other canvas tips:
           <br />
           • <Strong>Drag-select</Strong> on empty area = pick multiple to move at once
           <br />
           • Drag a <Strong>parent-child line endpoint</Strong> onto someone = adoption / foster
           <br />
-          • Double-click a person = cycle shape (□ ↔ ○ ↔ △ pregnancy → stillbirth → miscarriage → abortion)
-        </P>
-        <P>Other on-screen:</P>
-        <P>
           • Top-left: back <Code>←</Code> + main menu <Code>☰</Code>
           <br />
-          • Bottom-right floating toolbar: zoom / fit / <Strong>✏️ Pen</Strong> (draw ecosystems)
+          • Bottom-right toolbar: zoom / fit / <Strong>✏️ Pen</Strong> (draw ecosystems)
+        </P>
+      </>
+    ),
+  },
+  {
+    icon: '🔄',
+    title: 'Switch Shape (Double-click)',
+    content: (
+      <>
+        <P><Strong>Double-click a person</Strong> on the canvas to cycle shape — no need to go back to the inspector:</P>
+        <P>
+          • <Code>□</Code> ↔ <Code>○</Code> Male / Female (most common)
           <br />
-          • Right inspector details → see next step
+          • <Code>△</Code> Pregnancy → Stillbirth → Miscarriage → Abortion (4-cycle)
+          <br />
+          • <Code>◇</Code> Unknown / <Code>Institution</Code> / <Code>Pet</Code> do not cycle
+        </P>
+        <P>
+          For more shapes (<Strong>transgender / gay / disability / disease</Strong>)
+          → use the expandable sections in the inspector's Basic tab (next step illustrates).
         </P>
       </>
     ),
