@@ -1975,9 +1975,6 @@ export default function Canvas() {
             onPointerDown={(e) => onPersonPointerDown(e, person.id)}
             onDoubleClick={() => cycleShape(person.id)}
             onDelete={() => removePersons([person.id])}
-            onConnectHandleDown={(e) =>
-              onPersonConnectHandleDown(e, person.id)
-            }
           />
         );
       })}
@@ -2010,6 +2007,9 @@ export default function Canvas() {
               rightFull={countSpousesOnSide(p.id, 'right') >= 3}
               onDownLongPress={(personId) =>
                 setTwinDialogTarget({ type: 'person', id: personId })
+              }
+              onUpLongPress={(personId, e) =>
+                onPersonConnectHandleDown(e, personId)
               }
             />
           );

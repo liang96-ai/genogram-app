@@ -122,6 +122,15 @@ export default function Tab2Network({ person, lineTarget }: Props) {
   );
   const selectedConnector = useGenogramStore((s) => s.selectedConnector);
   const setConnectorSubType = useGenogramStore((s) => s.setConnectorSubType);
+  const inspectorTarget = useGenogramStore((s) => s.inspectorTarget);
+  // 偵測「目前選的是 member line 嗎?」— 用來擋 pendingRelation 觸發
+  // (Inspector 已把 member line 的 lineTarget 過濾成 null,但避免使用者
+  //  手動切到 Tab2 後按按鈕,還是會冒出 pending banner)
+  const memberLineSelected = (() => {
+    if (inspectorTarget?.type !== 'line') return false;
+    const l = currentCase?.lines.find((x) => x.id === inspectorTarget.id);
+    return !!l && l.category === 'member';
+  })();
   // 取得目前選中 connector 物件(若有)
   const connectorTarget = (() => {
     if (!selectedConnector) return null;
@@ -163,6 +172,16 @@ export default function Tab2Network({ person, lineTarget }: Props) {
       // 編輯既有線:直接切類型,並清掉 pending(避免之後還有殘留 banner)
       updateLine(lineTarget.id, { subType, category: 'relation' });
       if (pendingRelation) setPendingRelation(null);
+      return;
+    }
+    // 若使用者選了 member line(理論上 Inspector 已過濾,但若使用者自己切到 Tab2)
+    // 也要擋住 pending mode 觸發,避免冒出「點另一人物完成」banner
+    if (lineTarget && lineTarget.category !== 'relation') {
+      return;
+    }
+    // 雙保險:直接看 inspectorTarget 是否為 member line(因為 Inspector 把它過濾成 null,
+    // 上面 lineTarget 的 check 抓不到)
+    if (memberLineSelected) {
       return;
     }
     setPendingRelation(subType);

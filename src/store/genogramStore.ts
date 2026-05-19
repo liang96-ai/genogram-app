@@ -1580,11 +1580,53 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       const isCurrentlySolid = currentStyle === 'solid';
 
       if (isCurrentlySolid) {
-        // 實 → 虛(降為次要,單線變,不觸 mutex)
+        // 實 → 虛(夫妻雙方的親子線一起變)
+        // 例:AB 夫妻 + C 子女,雙擊 A→C 時 B→C 也一起虛,
+        // 不然會出現「A 是養父、B 是親生」這種視覺不一致的狀態
+        const childId = line.toPersonId;
+        const clickedParentId = line.fromPersonId;
+        const MARRIAGE_LIKE_LOCAL = new Set<LineSubType>([
+          'marriage',
+          'engagement',
+          'cohabitation',
+          'legal-cohabitation',
+          'engagement-cohabitation',
+          'divorce',
+          'separation',
+          'legal-separation',
+          'engagement-separation',
+          'widowed',
+          'love-affair',
+          'partnership',
+          'cohabitation-commit',
+          'secret-affair',
+          'divorce-remarriage',
+        ]);
+        const spouseLine = c.lines.find(
+          (l) =>
+            MARRIAGE_LIKE_LOCAL.has(l.subType) &&
+            (l.fromPersonId === clickedParentId ||
+              l.toPersonId === clickedParentId),
+        );
+        const spouseId = spouseLine
+          ? spouseLine.fromPersonId === clickedParentId
+            ? spouseLine.toPersonId
+            : spouseLine.fromPersonId
+          : null;
+        const idsToFlip = new Set<string>([lineId]);
+        if (spouseId) {
+          const spouseBio = c.lines.find(
+            (l) =>
+              l.toPersonId === childId &&
+              l.fromPersonId === spouseId &&
+              bioish.has(l.subType),
+          );
+          if (spouseBio) idsToFlip.add(spouseBio.id);
+        }
         const newCase = touch({
           ...c,
           lines: c.lines.map((l) =>
-            l.id === lineId
+            idsToFlip.has(l.id)
               ? {
                   ...l,
                   subType: 'placed-out' as LineSubType,

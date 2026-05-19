@@ -588,23 +588,41 @@ export default function Line({
           />
         );
       })()}
-      <line
-        x1={startX}
-        y1={startY}
-        x2={endX}
-        y2={endY}
-        stroke="transparent"
-        strokeWidth={18}
-        onPointerDown={onLinePointerDown}
-        onDoubleClick={(e) => {
-          e.stopPropagation();
-          // 點兩下進入編輯備注 — 原本的「循環切換 subType」已停用
-          enterEditNote();
-          // 仍呼叫 prop callback,讓父層可選擇做其他事(目前 Canvas 不做)
-          onLineDoubleClick(e);
-        }}
-        style={{ cursor: dragging ? 'grabbing' : 'grab' }}
-      />
+      {/* Hit area — arc 模式時用沿弧線的 bezier path,否則用直線
+          (原本永遠用直線,弧線視覺彎上去之後直線 hit area 抓不到 → 點不到弧) */}
+      {arcEnabled ? (
+        <path
+          d={`M ${startX} ${startY} Q ${arcCtrlX} ${arcCtrlY} ${endX} ${endY}`}
+          stroke="transparent"
+          strokeWidth={18}
+          fill="none"
+          onPointerDown={onLinePointerDown}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            enterEditNote();
+            onLineDoubleClick(e);
+          }}
+          style={{ cursor: dragging ? 'grabbing' : 'grab' }}
+        />
+      ) : (
+        <line
+          x1={startX}
+          y1={startY}
+          x2={endX}
+          y2={endY}
+          stroke="transparent"
+          strokeWidth={18}
+          onPointerDown={onLinePointerDown}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            // 點兩下進入編輯備注 — 原本的「循環切換 subType」已停用
+            enterEditNote();
+            // 仍呼叫 prop callback,讓父層可選擇做其他事(目前 Canvas 不做)
+            onLineDoubleClick(e);
+          }}
+          style={{ cursor: dragging ? 'grabbing' : 'grab' }}
+        />
+      )}
       {/* 編輯備注模式 — 輸入框浮在線中央上方 */}
       {editingNote && !dragging && (
         <foreignObject

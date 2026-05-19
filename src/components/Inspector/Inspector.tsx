@@ -58,10 +58,10 @@ export default function Inspector() {
 
   const selectedConnector = useGenogramStore((s) => s.selectedConnector);
 
-  // 選中線條時自動切到網絡關係 Tab(線條屬性顯示在那裡)
+  // 選中「關係線」時才自動切到網絡關係 Tab(member line 不切 — 黑線沒有 Tab2 屬性可改)
   useEffect(() => {
-    if (line) setActiveTab('network');
-  }, [line?.id]);  // eslint-disable-line react-hooks/exhaustive-deps
+    if (line && line.category === 'relation') setActiveTab('network');
+  }, [line?.id, line?.category]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // 選中 connector 時自動切到 Tab2(關係按鈕在這)
   useEffect(() => {
