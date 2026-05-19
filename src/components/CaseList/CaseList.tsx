@@ -18,6 +18,7 @@ import PrivacyWelcomeDialog, {
   hasAcknowledgedPrivacy,
 } from './PrivacyWelcomeDialog';
 import FolderSetupModal from './FolderSetupModal';
+import { hasTutorialBeenSeen } from '../Tutorial/Tutorial';
 
 export default function CaseList() {
   const t = useT();
@@ -76,7 +77,13 @@ export default function CaseList() {
     loadCaseList();
     // 讀現有 root folder 名稱(載入後可能 App.tsx 已經 loadRootDirHandle)
     setFolderName(getRootFolderName());
-  }, [loadCaseList]);
+    // 已 ack 隱私但沒看過教學的使用者(例如回訪)→ 進首頁就跳教學
+    // 新使用者首次走流程則在 PrivacyWelcomeDialog onClose 時觸發
+    if (hasAcknowledgedPrivacy() && !hasTutorialBeenSeen()) {
+      const timer = window.setTimeout(() => setShowTutorial(true), 300);
+      return () => window.clearTimeout(timer);
+    }
+  }, [loadCaseList, setShowTutorial]);
 
   return (
     <div
@@ -581,7 +588,15 @@ export default function CaseList() {
         <FeedbackDialog onClose={() => setFeedbackOpen(false)} />
       )}
       {privacyWelcomeOpen && (
-        <PrivacyWelcomeDialog onClose={() => setPrivacyWelcomeOpen(false)} />
+        <PrivacyWelcomeDialog
+          onClose={() => {
+            setPrivacyWelcomeOpen(false);
+            // 隱私確認後若沒看過教學 → 接著彈教學歡迎(延遲讓 modal 收尾)
+            if (!hasTutorialBeenSeen()) {
+              window.setTimeout(() => setShowTutorial(true), 400);
+            }
+          }}
+        />
       )}
       {folderPromptForNew && (
         <FolderSetupModal

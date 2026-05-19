@@ -284,6 +284,152 @@ const Code: React.FC<{ children: ReactNode }> = ({ children }) => (
 );
 
 // ============================================================
+// 共用元件:教學一 — 畫布 + 屬性面板 視覺導覽
+// ============================================================
+function CanvasInspectorTour() {
+  // 文案 callout 樣式
+  const callout: React.CSSProperties = {
+    fontSize: 10.5,
+    fill: '#1d1d1f',
+    fontFamily: 'inherit',
+  };
+  const calloutBlue: React.CSSProperties = {
+    fontSize: 10.5,
+    fill: '#007aff',
+    fontFamily: 'inherit',
+    fontWeight: 600,
+  };
+  return (
+    <svg
+      viewBox="0 0 380 320"
+      width="100%"
+      style={{
+        display: 'block',
+        margin: '6px auto 4px',
+        maxWidth: 420,
+        background: '#fafafa',
+        borderRadius: 8,
+      }}
+      aria-label="畫布與屬性面板的視覺導覽"
+    >
+      {/* === 左側:畫布區 (虛線框代表畫布) === */}
+      <rect
+        x="10"
+        y="14"
+        width="230"
+        height="290"
+        rx="6"
+        fill="#ffffff"
+        stroke="#d2d2d7"
+        strokeDasharray="5 3"
+      />
+      <text x="18" y="28" style={{ fontSize: 10, fill: '#86868b' }}>
+        畫布(中央)
+      </text>
+
+      {/* 案主方框(雙紅匡) */}
+      <rect x="110" y="140" width="32" height="32" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
+      <rect x="105" y="135" width="42" height="42" fill="none" stroke="#ff3b30" strokeWidth="1.5" />
+
+      {/* 上箭頭(加父母) */}
+      <polygon points="126,108 134,122 118,122" fill="#007aff" opacity="0.85" />
+      <text x="146" y="116" style={calloutBlue}>↑ 加父母</text>
+
+      {/* 下箭頭(加小孩) */}
+      <polygon points="126,204 134,190 118,190" fill="#007aff" opacity="0.85" />
+      <text x="146" y="200" style={calloutBlue}>↓ 加小孩</text>
+
+      {/* 左箭頭(加配偶/手足) */}
+      <polygon points="78,156 92,148 92,164" fill="#007aff" opacity="0.85" />
+      <text x="22" y="146" style={calloutBlue}>← 配偶</text>
+
+      {/* 右箭頭(加配偶/手足) */}
+      <polygon points="174,156 160,148 160,164" fill="#007aff" opacity="0.85" />
+      <text x="180" y="146" style={calloutBlue}>→ 配偶</text>
+
+      {/* 雙擊提示 */}
+      <text x="60" y="248" style={callout}>
+        💡 雙擊圖片 → 切形狀(男/女/未知)
+      </text>
+      {/* 引導虛線:雙擊提示 → 人物 */}
+      <line x1="125" y1="240" x2="125" y2="175" stroke="#86868b" strokeDasharray="2 3" strokeWidth="0.8" />
+
+      {/* 長按 ▲ 提示 */}
+      <text x="22" y="270" style={callout}>
+        💡 長按 ↑ 0.25s + 拖 → 直接畫黑線
+      </text>
+
+      {/* ↑↓←→ 簡介 */}
+      <text x="22" y="290" style={{ fontSize: 9.5, fill: '#86868b' }}>
+        點人物 → 周圍 4 箭頭 → 1 鍵加家人
+      </text>
+
+      {/* === 右側:屬性面板 === */}
+      <rect
+        x="250"
+        y="14"
+        width="120"
+        height="290"
+        rx="6"
+        fill="#ffffff"
+        stroke="#d2d2d7"
+        strokeDasharray="5 3"
+      />
+      <text x="258" y="28" style={{ fontSize: 10, fill: '#86868b' }}>
+        屬性面板(右側)
+      </text>
+
+      {/* Tab bar */}
+      <rect x="258" y="36" width="28" height="14" rx="3" fill="#e8f1ff" stroke="#007aff" strokeWidth="0.8" />
+      <text x="262" y="46" style={{ fontSize: 8.5, fill: '#007aff', fontWeight: 600 }}>基本</text>
+      <text x="291" y="46" style={{ fontSize: 8.5, fill: '#86868b' }}>網絡</text>
+      <text x="318" y="46" style={{ fontSize: 8.5, fill: '#86868b' }}>醫療</text>
+      <text x="345" y="46" style={{ fontSize: 8.5, fill: '#86868b' }}>自訂</text>
+
+      {/* 形狀按鈕區 — 縮影 */}
+      <text x="258" y="68" style={{ fontSize: 9, fill: '#86868b' }}>形狀</text>
+      <rect x="258" y="72" width="14" height="14" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+      <circle cx="280" cy="79" r="7" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+      <polygon points="290,86 297,72 304,86" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+      <polygon points="320,79 327,73 334,79 327,85" fill="#ffffff" stroke="#404040" strokeWidth="1.2" />
+
+      {/* 姓名 + ☐案主 + ☐傳統 */}
+      <text x="258" y="106" style={{ fontSize: 9, fill: '#86868b' }}>
+        姓名 ☑ 案主 ☑ 傳統
+      </text>
+      <rect x="258" y="110" width="100" height="14" fill="#ffffff" stroke="#d2d2d7" />
+      {/* 箭頭指向「☑ 傳統」 */}
+      <line x1="325" y1="106" x2="365" y2="92" stroke="#007aff" strokeWidth="0.8" strokeDasharray="2 2" />
+      <text x="290" y="86" style={{ fontSize: 8.5, fill: '#007aff', fontWeight: 600 }}>
+        ☑ 傳統 → 案主黑色
+      </text>
+
+      {/* 性別亞型 摺疊 */}
+      <line x1="258" y1="138" x2="362" y2="138" stroke="#e5e4e7" strokeWidth="0.5" />
+      <text x="258" y="152" style={{ fontSize: 9, fill: '#1d1d1f' }}>▶ 性別亞型</text>
+      <text x="258" y="170" style={{ fontSize: 9, fill: '#1d1d1f' }}>▶ 多重身分</text>
+      <text x="258" y="188" style={{ fontSize: 9, fill: '#1d1d1f' }}>▶ 基本醫療</text>
+      <text x="258" y="206" style={{ fontSize: 9, fill: '#1d1d1f' }}>▶ 進階</text>
+
+      {/* 引導 — 展開可換圖 */}
+      <line x1="295" y1="174" x2="365" y2="232" stroke="#86868b" strokeDasharray="2 3" strokeWidth="0.8" />
+      <text x="258" y="245" style={callout}>
+        💡 點 ▶ 展開
+      </text>
+      <text x="258" y="260" style={callout}>
+        可換更多圖
+      </text>
+      <text x="258" y="275" style={callout}>
+        (跨性別 / 障別
+      </text>
+      <text x="258" y="288" style={callout}>
+        /疾病 / 寵物等)
+      </text>
+    </svg>
+  );
+}
+
+// ============================================================
 // 🌱 基礎教學 — 中文 (8 步) — 首次自動跳
 // ============================================================
 export const BASIC_STEPS_ZH: TutorialStep[] = [
@@ -302,20 +448,19 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
     ),
   },
   {
-    icon: '📋',
-    title: '個案清單(首頁)',
+    icon: '🖼️',
+    title: '畫面總覽 — 人物、箭頭、屬性面板',
     content: (
       <>
-        <P>所有家系圖個案會在首頁列出,像 Word 文件清單。</P>
         <P>
-          • 藍色按鈕 <Strong>＋ 新增個案</Strong> 開新檔
-          <br />
-          • 點任何個案卡片即可進入編輯
-          <br />
-          • 卡片右上 <Code>⋯</Code> → 改名 / 匯出 / 刪除
-          <br />
-          • 旁邊 <Strong>📥 匯入</Strong> / <Strong>📦 備份</Strong> 處理檔案進出
+          進入個案後,中央是 <Strong>畫布</Strong>,右側是 <Strong>屬性面板</Strong>。
+          選中人物就會出現 ↑↓←→ 4 個藍色小箭頭,1 鍵加家人。
         </P>
+        <CanvasInspectorTour />
+        <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
+          上圖左 = 畫布;右 = 屬性面板「基本」分頁。
+          其他細節後面幾步會深入。
+        </p>
       </>
     ),
   },
@@ -462,20 +607,20 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
     ),
   },
   {
-    icon: '📋',
-    title: 'Case List (Home)',
+    icon: '🖼️',
+    title: 'Screen Overview — Person, Arrows, Inspector',
     content: (
       <>
-        <P>All your genogram cases appear on the home page, like a Word doc list.</P>
         <P>
-          • Blue <Strong>＋ New case</Strong> button creates a new file
-          <br />
-          • Click any card to open and edit
-          <br />
-          • Card top-right <Code>⋯</Code> → Rename / Export / Delete
-          <br />
-          • Side buttons <Strong>📥 Import</Strong> / <Strong>📦 Backup</Strong> handle file I/O
+          After opening a case, the center is the <Strong>canvas</Strong>,
+          the right side is the <Strong>inspector</Strong>. Selecting a
+          person reveals 4 blue arrows ↑↓←→ to add family with one click.
         </P>
+        <CanvasInspectorTour />
+        <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
+          Left = canvas; Right = inspector "Basic" tab. Other details
+          come in later steps.
+        </p>
       </>
     ),
   },

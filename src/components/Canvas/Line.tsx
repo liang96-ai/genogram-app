@@ -228,7 +228,8 @@ export default function Line({
   const endX = handleOverride?.end === 'to' ? handleOverride.x : exClipped;
   const endY = handleOverride?.end === 'to' ? handleOverride.y : eyClipped;
 
-  // 關係線(#62-76)整體用藍色;member 線統一純黑 + 2x 粗度(跟 MarriageGroup / placed-out 渲染一致)
+  // 關係線(#62-76)整體用藍色;member 線統一深灰 (#404040) + 粗度 2.25
+  // (粗+黑各 -25% 比純黑 3px 舒服,但仍明顯比關係線重)
   const isRelation = line.category === 'relation';
   const stroke = dragging
     ? '#ff9500'
@@ -236,8 +237,8 @@ export default function Line({
       ? '#007aff'
       : isRelation
         ? '#007aff'
-        : '#000000';
-  const strokeWidth = dragging ? 5 : selected ? 5 : isRelation ? 1.5 : 3;
+        : '#404040';
+  const strokeWidth = dragging ? 4 : selected ? 4 : isRelation ? 1.5 : 2.25;
   const dash = getDasharray(getLineStyleKey(line));
 
   const midX = (startX + endX) / 2;

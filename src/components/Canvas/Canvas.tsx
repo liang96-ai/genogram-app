@@ -1918,8 +1918,8 @@ export default function Canvas() {
           ? '#ff9500'
           : selected
             ? '#007aff'
-            : '#000000';
-        const sw = dragging || selected ? 5 : 3;
+            : '#404040';
+        const sw = dragging || selected ? 4 : 2.25;
         return (
           <g key={`po-${idx}`}>
             <line
@@ -1995,8 +1995,8 @@ export default function Canvas() {
           y1={unknownFamilyDrag.fromY}
           x2={unknownFamilyDrag.x}
           y2={unknownFamilyDrag.y}
-          stroke="#000000"
-          strokeWidth={3}
+          stroke="#404040"
+          strokeWidth={2.25}
           strokeDasharray="6 4"
           style={{ pointerEvents: 'none' }}
         />
