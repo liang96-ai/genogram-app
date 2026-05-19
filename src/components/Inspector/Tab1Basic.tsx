@@ -264,6 +264,8 @@ export default function Tab1Basic({ person }: Props) {
   const removePersons = useGenogramStore((s) => s.removePersons);
   const addPersonAtCenter = useGenogramStore((s) => s.addPersonAtCenter);
   const showConfirm = useGenogramStore((s) => s.showConfirm);
+  const probandStyle = useGenogramStore((s) => s.probandStyle);
+  const setProbandStyle = useGenogramStore((s) => s.setProbandStyle);
 
   const hasVariant =
     !!person.genderVariant && person.genderVariant !== 'cisgender';
@@ -450,7 +452,7 @@ export default function Tab1Basic({ person }: Props) {
                 color: '#86868b',
               }}
             >
-              {/* 左:姓名 + 案主 */}
+              {/* 左:姓名 + 案主 + (案主時才顯示)傳統 */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span>{t('tab1.name')}</span>
                 {!isInstitution && (
@@ -464,6 +466,26 @@ export default function Tab1Basic({ person }: Props) {
                       }
                     />
                     {t('tab1.proband')}
+                  </label>
+                )}
+                {/* 「傳統」勾選 — 只在是案主時才出現,避免 UI 雜亂。
+                    綁定全域 probandStyle(全 case 一致,因為通常只有 1 個案主)。 */}
+                {!isInstitution && person.isProband && (
+                  <label
+                    style={tinyCheckLabel}
+                    data-tooltip={t('tab1.probandTraditionalTip')}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={probandStyle === 'traditional'}
+                      style={uniCheckboxStyle}
+                      onChange={(e) =>
+                        setProbandStyle(
+                          e.target.checked ? 'traditional' : 'border',
+                        )
+                      }
+                    />
+                    {t('tab1.probandTraditional')}
                   </label>
                 )}
               </div>

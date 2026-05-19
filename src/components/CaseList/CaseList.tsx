@@ -14,6 +14,9 @@ import {
 import { db } from '../../services/database';
 import SymbolGallery from '../Gallery/SymbolGallery';
 import FeedbackDialog from './FeedbackDialog';
+import PrivacyWelcomeDialog, {
+  hasAcknowledgedPrivacy,
+} from './PrivacyWelcomeDialog';
 
 export default function CaseList() {
   const t = useT();
@@ -30,8 +33,6 @@ export default function CaseList() {
   );
   const language = useGenogramStore((s) => s.language);
   const setLanguage = useGenogramStore((s) => s.setLanguage);
-  const probandStyle = useGenogramStore((s) => s.probandStyle);
-  const setProbandStyle = useGenogramStore((s) => s.setProbandStyle);
 
   const [showNew, setShowNew] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -41,6 +42,10 @@ export default function CaseList() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  // 第一次開啟才彈隱私說明(localStorage flag 控制只彈一次)
+  const [privacyWelcomeOpen, setPrivacyWelcomeOpen] = useState(
+    () => !hasAcknowledgedPrivacy(),
+  );
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 點外面關 menu
@@ -135,13 +140,31 @@ export default function CaseList() {
                   fontWeight: 600,
                   color: '#1d1d1f',
                   margin: 0,
-                  marginBottom: 4,
+                  marginBottom: 6,
                 }}
               >
                 {t('caseList.title')}
               </h1>
-              <div style={{ fontSize: 13, color: '#86868b' }}>
-                {t('caseList.subtitle')}
+              {/* 隱私標語 — 從淡灰 subtitle 升級為 badge 風格,讓所有人一進首頁就看到 */}
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: 12,
+                  color: '#1a7a3f',
+                  background: '#e8f5ec',
+                  border: '1px solid #c5e8d2',
+                  padding: '4px 10px',
+                  borderRadius: 12,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                }}
+                onClick={() => setPrivacyWelcomeOpen(true)}
+                title={t('privacy.welcomeTitle')}
+              >
+                <span>🔒</span>
+                <span>{t('caseList.subtitle')}</span>
               </div>
             </div>
 
@@ -168,21 +191,7 @@ export default function CaseList() {
                     setLanguage(language === 'zh' ? 'en' : 'zh');
                   }}
                 />
-                <HomeMenuItem
-                  icon={probandStyle === 'traditional' ? '⬛' : '🔲'}
-                  label={`${t('menu.probandStyle')}: ${
-                    probandStyle === 'traditional'
-                      ? t('menu.probandTraditional')
-                      : t('menu.probandBorder')
-                  }`}
-                  onClick={() => {
-                    setProbandStyle(
-                      probandStyle === 'traditional'
-                        ? 'border'
-                        : 'traditional',
-                    );
-                  }}
-                />
+                {/* 「案主樣式」已從首頁主選單移到 Tab1(案主旁邊 ☐ 傳統)— 那邊是 per-person UI 的自然位置 */}
                 <HomeMenuItem
                   icon="📖"
                   label={t('menu.symbolGallery')}
@@ -558,6 +567,9 @@ export default function CaseList() {
       {galleryOpen && <SymbolGallery onClose={() => setGalleryOpen(false)} />}
       {feedbackOpen && (
         <FeedbackDialog onClose={() => setFeedbackOpen(false)} />
+      )}
+      {privacyWelcomeOpen && (
+        <PrivacyWelcomeDialog onClose={() => setPrivacyWelcomeOpen(false)} />
       )}
     </div>
   );

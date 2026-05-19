@@ -101,6 +101,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'tab1.addNewPerson': '新增獨立人物',
     'tab1.name': '姓名',
     'tab1.proband': '案主',
+    'tab1.probandTraditional': '傳統',
+    'tab1.probandTraditionalTip':
+      '勾選 → 案主用黑色填滿表示(傳統麥氏家系圖風格);未勾 → 紅色雙框(現代標準)。全 case 一致,不分人物。',
     'tab1.age': '年齡',
     'tab1.ageAuto': '(自動)',
     'tab1.namePlaceholder': '例:王小明',
@@ -156,6 +159,25 @@ const dict: Record<Lang, Record<string, string>> = {
     'privacy.fieldTip': '勾起來 → 此欄位不顯示在圖上',
     'privacy.sectionTip': '點一下 → 該區所有欄位的保密同時勾起來',
     'privacy.noFields': '此區無欄位可保密',
+
+    // ===== Privacy Welcome Dialog (首次開啟才彈) =====
+    'privacy.welcomeTitle': '🔒 你的資料,只在你的裝置上',
+    'privacy.welcomeIntro':
+      '社工和心理師處理的是高度敏感資訊。這個工具的架構就是為了讓你完全不用擔心資料外流。',
+    'privacy.welcomePoint1Title': '✅ 沒有伺服器、沒有資料庫',
+    'privacy.welcomePoint1Body':
+      '所有家系圖只存在你的瀏覽器(IndexedDB)。如果你選了同步資料夾,也只寫到你自己選的本機資料夾。',
+    'privacy.welcomePoint2Title': '✅ 開發者看不到任何案主資料',
+    'privacy.welcomePoint2Body':
+      '工具是純前端 PWA,Vercel 只負責送網頁程式碼給你的瀏覽器,不收任何使用者輸入的內容。',
+    'privacy.welcomePoint3Title': '✅ 資料離開裝置只有 2 種情況',
+    'privacy.welcomePoint3Body':
+      '(1) 你按「分享」給對方下載連結(不含家系圖內容) (2) 你按「回報問題」開信箱(可選送 / 可不送)。除此之外,完全離線可用。',
+    'privacy.welcomeOpenSource':
+      '本工具 100% 開源,任何人都可以驗證 → ',
+    'privacy.welcomeOpenSourceLink':
+      'github.com/liang96-ai/genogram-app',
+    'privacy.welcomeAck': '我了解,開始使用',
 
     // ===== Tab2 Network =====
     'tab2.addUnit': '新增單位',
@@ -567,6 +589,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'tab1.addNewPerson': 'Add new person',
     'tab1.name': 'Name',
     'tab1.proband': 'Proband',
+    'tab1.probandTraditional': 'Traditional',
+    'tab1.probandTraditionalTip':
+      'Check → proband drawn with black fill (traditional McGoldrick style); uncheck → red double border (modern standard). Case-wide, not per person.',
     'tab1.age': 'Age',
     'tab1.ageAuto': '(auto)',
     'tab1.namePlaceholder': 'e.g. Jane Doe',
@@ -622,6 +647,25 @@ const dict: Record<Lang, Record<string, string>> = {
     'privacy.fieldTip': 'Check → this field hidden on canvas',
     'privacy.sectionTip': 'Click → toggle privacy for all fields in this section',
     'privacy.noFields': 'No fields in this section',
+
+    // ===== Privacy Welcome Dialog (first launch only) =====
+    'privacy.welcomeTitle': '🔒 Your data stays on your device',
+    'privacy.welcomeIntro':
+      'Social workers and psychologists handle highly sensitive information. This tool is architected so you never need to worry about data leaks.',
+    'privacy.welcomePoint1Title': '✅ No server, no database',
+    'privacy.welcomePoint1Body':
+      'All genograms live only in your browser (IndexedDB). If you opt into folder sync, files are written only to the local folder you pick.',
+    'privacy.welcomePoint2Title': '✅ The developer cannot see any client data',
+    'privacy.welcomePoint2Body':
+      'This is a pure-frontend PWA. Vercel only serves the app code to your browser; no user input ever leaves the device through it.',
+    'privacy.welcomePoint3Title': '✅ Data leaves the device in only 2 cases',
+    'privacy.welcomePoint3Body':
+      '(1) You press "Share" to send a download link (which never contains genogram data); (2) You press "Report" which opens your mail client (sending is optional). Otherwise, fully offline.',
+    'privacy.welcomeOpenSource':
+      '100% open source, anyone can verify → ',
+    'privacy.welcomeOpenSourceLink':
+      'github.com/liang96-ai/genogram-app',
+    'privacy.welcomeAck': 'I understand, start',
 
     // ===== Tab2 Network =====
     'tab2.addUnit': 'Add Unit',
