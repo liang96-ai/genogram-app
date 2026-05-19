@@ -1979,14 +1979,14 @@ export default function Canvas() {
         );
       })}
 
-      {/* ▲ 拖曳預覽 — 從來源人物拉一條灰虛線到游標位置 */}
+      {/* ▲ 拖曳預覽 — 從來源人物拉一條黑線到游標位置(顏色跟最終建立的 biological 線一致) */}
       {unknownFamilyDrag && (
         <line
           x1={unknownFamilyDrag.fromX}
           y1={unknownFamilyDrag.fromY}
           x2={unknownFamilyDrag.x}
           y2={unknownFamilyDrag.y}
-          stroke="#a1a1a6"
+          stroke="#6e6e73"
           strokeWidth={1.5}
           strokeDasharray="4 4"
           style={{ pointerEvents: 'none' }}

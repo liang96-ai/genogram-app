@@ -228,26 +228,17 @@ export default function Line({
   const endX = handleOverride?.end === 'to' ? handleOverride.x : exClipped;
   const endY = handleOverride?.end === 'to' ? handleOverride.y : eyClipped;
 
-  // 關係線(#62-76)整體用藍色;member 線(婚姻/親子)用黑灰
-  // 未明家人(unknown-family)用更淺的灰,視覺上像「占位」,不會跟正式婚姻/親子混淆
+  // 關係線(#62-76)整體用藍色;member 線(婚姻/親子)統一黑灰
+  // 全部黑色 member line 都用相同 stroke (#6e6e73) 與粗度 (1.5),跟 MarriageGroup 一致
   const isRelation = line.category === 'relation';
-  const isUnknownFamily = line.subType === 'unknown-family';
   const stroke = dragging
     ? '#ff9500'
     : selected
       ? '#007aff'
       : isRelation
         ? '#007aff'
-        : isUnknownFamily
-          ? '#a1a1a6'
-          : '#6e6e73';
-  const strokeWidth = dragging
-    ? 2.5
-    : selected
-      ? 2.5
-      : isUnknownFamily
-        ? 1.2
-        : 1.5;
+        : '#6e6e73';
+  const strokeWidth = dragging ? 2.5 : selected ? 2.5 : 1.5;
   const dash = getDasharray(getLineStyleKey(line));
 
   const midX = (startX + endX) / 2;

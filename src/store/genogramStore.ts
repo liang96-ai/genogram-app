@@ -598,10 +598,10 @@ type GenogramStore = {
     toPersonId: string,
     subType: RelationSubType,
   ) => void;
-  /** 建立「家人但關係未明」線(unknown-family member line)
-   *  — 從人物 ▲ 拖到另一人物時觸發
+  /** 從人物 ▲ 長按拖到另一人物時建立的線
+   *  — 預設 biological 親生線(實線、灰黑、跟其他 member line 同樣樣式)
    *  — 若兩人已有任何 member line(婚姻/親子等),不重複建
-   *  — 之後可透過升級 UI 改成具體 subType */
+   *  — 之後使用者可雙擊切實/虛(=biological ⇄ placed-out) */
   createUnknownFamilyLine: (
     fromPersonId: string,
     toPersonId: string,
@@ -1401,8 +1401,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const { currentCase: c, history } = get();
     if (!c) return;
     if (fromPersonId === toPersonId) return; // 不允許自己連自己
-    // 若兩人之間已有任何 member line(婚姻/親子/手足/妊娠/已知 unknown-family),不重複建
-    // — 既有 member line 已經表示「有家人關係」,unknown-family 只在空白時使用
+    // 若兩人之間已有任何 member line(婚姻/親子/手足/妊娠),不重複建
     const exists = c.lines.find(
       (l) =>
         l.category === 'member' &&
@@ -1417,7 +1416,9 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       });
       return;
     }
-    const line = mkLine(fromPersonId, toPersonId, 'unknown-family');
+    // 直接建 biological 親生線(實線、灰黑,跟其他 member line 同樣樣式)
+    // 使用者可後續雙擊切實/虛,或之後改型 UI 改成婚姻/收養等
+    const line = mkLine(fromPersonId, toPersonId, 'biological');
     const newCase = touch({ ...c, lines: [...c.lines, line] });
     set({
       ...pushHistory(c, history, newCase),

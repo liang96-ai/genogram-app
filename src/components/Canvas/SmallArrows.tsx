@@ -129,8 +129,8 @@ export default function SmallArrows({
             >
               <title>
                 {hasParents
-                  ? '長按 0.5 秒拖到另一人物 → 建立家人關係(未明型態)'
-                  : '短按:加父母 / 長按 0.5 秒拖:建立家人關係(未明型態)'}
+                  ? '長按 0.5 秒拖到另一人物 → 建立親子線(實線、預設親生)'
+                  : '短按:加父母 / 長按 0.5 秒拖:建立親子線(實線、預設親生)'}
               </title>
               <circle r={ARROW_SIZE + 4} fill="#ffffff" fillOpacity={0.01} />
               <polygon
