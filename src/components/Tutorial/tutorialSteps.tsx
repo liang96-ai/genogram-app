@@ -8,124 +8,7 @@ export interface TutorialStep {
 }
 
 // SmallArrowsIllustration 已移除(原本用於基礎教學第 4 步「加家人」,該步已刪)
-
-// ============================================================
-// 共用元件:線條拖曳教學 3 連格(基礎教學「拖曳線條」步驟用)
-// — Frame 1: 按住線條端點
-// — Frame 2: 拖到新對象(中間虛橘線預覽)
-// — Frame 3: 放開,自動接到新對象
-// ============================================================
-function LineDragMockup({ lang }: { lang: 'zh' | 'en' }) {
-  const labels =
-    lang === 'en'
-      ? {
-          p1: '1. Press line endpoint',
-          p2: '2. Drag to new person',
-          p3: '3. Release → auto-attach',
-          aria: 'Drag a line endpoint tutorial',
-        }
-      : {
-          p1: '1. 按住線端點',
-          p2: '2. 拖到新對象',
-          p3: '3. 放開,自動接好',
-          aria: '拖曳線條 3 步驟教學',
-        };
-  // 3 個 panel 並排:x=10/130/250, 各寬 110
-  // 每個 panel 內畫:左上人物 A(方)、右上人物 B(圓)、底部小孩 C
-  // Frame 1: A→C 實線,游標在 A 端點 / Frame 2: 端點離開往 B / Frame 3: B→C 實線
-  const renderPanel = (
-    idx: number,
-    xOffset: number,
-    label: string,
-    cursor: { x: number; y: number },
-    lineState: 'attached-A' | 'mid' | 'attached-B',
-  ) => {
-    // 局部座標(panel 內):A(20, 30)方,B(80, 30)圓,C(50, 95)方
-    const Ax = xOffset + 20,
-      Ay = 30;
-    const Bx = xOffset + 80,
-      By = 30;
-    const Cx = xOffset + 50,
-      Cy = 95;
-    return (
-      <g key={idx}>
-        {/* panel 框 */}
-        <rect
-          x={xOffset - 4}
-          y="10"
-          width="118"
-          height="140"
-          rx="6"
-          fill="#ffffff"
-          stroke="#d2d2d7"
-          strokeWidth="0.8"
-        />
-        {/* 編號圓圈 */}
-        <circle cx={xOffset + 8} cy="20" r="8" fill="#007aff" />
-        <text x={xOffset + 8} y="23" textAnchor="middle" style={{ fontSize: 10, fill: '#ffffff', fontWeight: 600 }}>
-          {idx}
-        </text>
-
-        {/* 人物 A(方,左上) */}
-        <rect x={Ax - 10} y={Ay - 10} width="20" height="20" fill="#ffffff" stroke="#404040" strokeWidth="2" />
-        {/* 人物 B(圓,右上) */}
-        <circle cx={Bx} cy={By} r="10" fill="#ffffff" stroke="#404040" strokeWidth="2" />
-        {/* 人物 C(方,下方) */}
-        <rect x={Cx - 10} y={Cy - 10} width="20" height="20" fill="#ffffff" stroke="#404040" strokeWidth="2" />
-
-        {/* 線條 */}
-        {lineState === 'attached-A' && (
-          <line x1={Ax} y1={Ay + 10} x2={Cx} y2={Cy - 10} stroke="#404040" strokeWidth="2" />
-        )}
-        {lineState === 'mid' && (
-          <>
-            {/* 原本連 C 的端點 */}
-            <line x1={cursor.x} y1={cursor.y} x2={Cx} y2={Cy - 10} stroke="#404040" strokeWidth="2" />
-            {/* 預覽虛線到 B */}
-            <line x1={cursor.x} y1={cursor.y} x2={Bx} y2={By + 8} stroke="#ff9500" strokeWidth="1.5" strokeDasharray="3 3" />
-          </>
-        )}
-        {lineState === 'attached-B' && (
-          <line x1={Bx} y1={By + 10} x2={Cx} y2={Cy - 10} stroke="#404040" strokeWidth="2" />
-        )}
-
-        {/* 游標 */}
-        <g transform={`translate(${cursor.x}, ${cursor.y})`}>
-          <path
-            d="M 0,0 L 0,12 L 3,9 L 6,15 L 8,13 L 5,7 L 9,7 Z"
-            fill="#ffffff"
-            stroke="#1d1d1f"
-            strokeWidth="1"
-          />
-        </g>
-
-        {/* 步驟標籤 */}
-        <text x={xOffset + 50} y="135" textAnchor="middle" style={{ fontSize: 10.5, fill: '#1d1d1f', fontWeight: 600 }}>
-          {label}
-        </text>
-      </g>
-    );
-  };
-
-  return (
-    <svg
-      viewBox="0 0 380 170"
-      width="100%"
-      style={{
-        display: 'block',
-        margin: '8px auto',
-        maxWidth: 440,
-        background: '#fafafa',
-        borderRadius: 8,
-      }}
-      aria-label={labels.aria}
-    >
-      {renderPanel(1, 10, labels.p1, { x: 30, y: 40 }, 'attached-A')}
-      {renderPanel(2, 130, labels.p2, { x: 130 + 55, y: 50 }, 'mid')}
-      {renderPanel(3, 250, labels.p3, { x: 250 + 80, y: 40 }, 'attached-B')}
-    </svg>
-  );
-}
+// LineDragMockup 已移除(原本 Step 5A 用,現在 Step 5A 純文字描述)
 
 type Lang = 'zh' | 'en';
 
@@ -247,24 +130,19 @@ function FamilyLineMockup({ lang }: { lang: Lang }) {
     lang === 'en'
       ? {
           ariaLabel: 'Solid vs dashed parent-child line comparison',
-          solidTitle: '│ Solid — legal parent',
-          solidNote: 'biological / adopted',
-          dashedTitle: '┊ Dashed — non-legal',
-          dashedNote: 'fostered / placed-out / sperm-donor',
+          solidTitle: '│ Solid',
+          dashedTitle: '┊ Dashed',
         }
       : {
           ariaLabel: '實線 vs 虛線親子線對比',
-          solidTitle: '│ 實線 — 法律父母',
-          solidNote: 'biological 親生 / adopted 收養',
-          dashedTitle: '┊ 虛線 — 非法律',
-          dashedNote: 'fostered 寄養 / placed-out 出養 / sperm-donor',
+          solidTitle: '│ 實線',
+          dashedTitle: '┊ 虛線',
         };
   // 通用 mini 家庭繪製 - 給定 x 偏移 + 線條樣式 + 標題
   const renderFamily = (
     xOff: number,
     isDashed: boolean,
     title: string,
-    note: string,
   ) => {
     const px = xOff + 30; // 父
     const mx = xOff + 110; // 母
@@ -289,50 +167,9 @@ function FamilyLineMockup({ lang }: { lang: Lang }) {
         <line x1={child} y1={trunkY} x2={child} y2={childY - 14} stroke="#404040" strokeWidth="2.25" strokeDasharray={dash} />
         {/* 小孩(方) */}
         <rect x={child - 14} y={childY - 14} width="28" height="28" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
-        {/* 註記 */}
-        <text x={xOff + 70} y={170} textAnchor="middle" style={{ fontSize: 9.5, fill: '#86868b' }}>{note}</text>
       </g>
     );
   };
-  return (
-    <svg
-      viewBox="0 0 380 190"
-      width="100%"
-      style={{
-        display: 'block',
-        margin: '8px auto',
-        maxWidth: 440,
-        background: '#fafafa',
-        borderRadius: 8,
-      }}
-      aria-label={t.ariaLabel}
-    >
-      {renderFamily(10, false, t.solidTitle, t.solidNote)}
-      {/* 分隔虛線 */}
-      <line x1="190" y1="20" x2="190" y2="170" stroke="#d2d2d7" strokeWidth="0.8" strokeDasharray="2 3" />
-      {renderFamily(200, true, t.dashedTitle, t.dashedNote)}
-    </svg>
-  );
-}
-
-// ============================================================
-// 共用元件:▲ 拖到婚姻線(Step 5 子題 2)— 2-panel before/after
-// ============================================================
-function DragToMarriageMockup({ lang }: { lang: Lang }) {
-  const t =
-    lang === 'en'
-      ? {
-          ariaLabel: 'Drag ▲ to marriage line tutorial',
-          panel1: '1. Press ▲ + drag to marriage line',
-          panel2: '2. Release → becomes child of both spouses',
-          orangeHint: 'orange preview',
-        }
-      : {
-          ariaLabel: '拖 ▲ 到婚姻線教學',
-          panel1: '1. 按住 ▲ + 拖到婚姻線',
-          panel2: '2. 放開 → 成為夫妻共同小孩',
-          orangeHint: '橘色預覽',
-        };
   return (
     <svg
       viewBox="0 0 380 170"
@@ -346,45 +183,109 @@ function DragToMarriageMockup({ lang }: { lang: Lang }) {
       }}
       aria-label={t.ariaLabel}
     >
-      {/* Panel 1: 拖中 */}
-      <rect x="10" y="10" width="170" height="140" rx="6" fill="#ffffff" stroke="#d2d2d7" strokeWidth="0.8" />
-      <circle cx="22" cy="22" r="8" fill="#007aff" />
-      <text x="22" y="25" textAnchor="middle" style={{ fontSize: 10, fill: '#ffffff', fontWeight: 600 }}>1</text>
-      {/* 上方人物 A,加 ▲ */}
-      <rect x="80" y="38" width="20" height="20" fill="#ffffff" stroke="#404040" strokeWidth="2" />
-      <polygon points="90,30 95,38 85,38" fill="#007aff" opacity="0.85" />
-      {/* 橘色虛線預覽往婚姻線 */}
-      <line x1="90" y1="48" x2="90" y2="100" stroke="#ff9500" strokeWidth="1.5" strokeDasharray="3 3" />
-      <text x="100" y="78" style={{ fontSize: 8.5, fill: '#ff9500' }}>{t.orangeHint}</text>
-      {/* 游標 */}
-      <g transform="translate(86, 70)">
-        <path d="M 0,0 L 0,12 L 3,9 L 6,15 L 8,13 L 5,7 L 9,7 Z" fill="#ffffff" stroke="#1d1d1f" strokeWidth="1" />
-      </g>
-      {/* 底部婚姻線 M ═══ F */}
-      <rect x="55" y="100" width="20" height="20" fill="#ffffff" stroke="#404040" strokeWidth="2" />
-      <circle cx="115" cy="110" r="10" fill="#ffffff" stroke="#404040" strokeWidth="2" />
-      <line x1="75" y1="110" x2="105" y2="110" stroke="#404040" strokeWidth="2" />
-      {/* 步驟標籤 */}
-      <text x="95" y="143" textAnchor="middle" style={{ fontSize: 10, fill: '#1d1d1f', fontWeight: 600 }}>{t.panel1}</text>
+      {renderFamily(10, false, t.solidTitle)}
+      {/* 分隔虛線 */}
+      <line x1="190" y1="20" x2="190" y2="155" stroke="#d2d2d7" strokeWidth="0.8" strokeDasharray="2 3" />
+      {renderFamily(200, true, t.dashedTitle)}
+    </svg>
+  );
+}
 
-      {/* Panel 2: 放開後 */}
-      <rect x="200" y="10" width="170" height="140" rx="6" fill="#ffffff" stroke="#d2d2d7" strokeWidth="0.8" />
-      <circle cx="212" cy="22" r="8" fill="#007aff" />
-      <text x="212" y="25" textAnchor="middle" style={{ fontSize: 10, fill: '#ffffff', fontWeight: 600 }}>2</text>
-      {/* 父母婚姻線(上方) */}
-      <rect x="240" y="38" width="20" height="20" fill="#ffffff" stroke="#404040" strokeWidth="2" />
-      <circle cx="305" cy="48" r="10" fill="#ffffff" stroke="#404040" strokeWidth="2" />
-      <line x1="260" y1="48" x2="295" y2="48" stroke="#404040" strokeWidth="2" />
-      {/* 親子線(虛線,placed-out) */}
-      <line x1="277" y1="48" x2="277" y2="76" stroke="#404040" strokeWidth="2" strokeDasharray="4 3" />
-      <line x1="263" y1="76" x2="291" y2="76" stroke="#404040" strokeWidth="2" strokeDasharray="4 3" />
-      <line x1="263" y1="76" x2="263" y2="100" stroke="#404040" strokeWidth="2" strokeDasharray="4 3" />
-      <line x1="291" y1="76" x2="291" y2="100" stroke="#404040" strokeWidth="2" strokeDasharray="4 3" />
-      {/* A 變成小孩 */}
-      <rect x="267" y="100" width="20" height="20" fill="#ffffff" stroke="#404040" strokeWidth="2.5" />
-      <text x="277" y="115" textAnchor="middle" style={{ fontSize: 9, fill: '#007aff', fontWeight: 600 }}>A</text>
-      {/* 步驟標籤 */}
-      <text x="285" y="143" textAnchor="middle" style={{ fontSize: 10, fill: '#1d1d1f', fontWeight: 600 }}>{t.panel2}</text>
+// ============================================================
+// 共用元件:拖親子線到別對夫妻(Step 5 子題 B)— AB+C → AB+DE+C
+// Frame 1: AB 夫妻 + C 子女(實線)
+// Frame 2: 拖 C 上面的線到 DE 婚姻 → AB→C 仍實線(法律父母)、DE→C 虛線(出養)、DE 縮小
+// ============================================================
+function DragToMarriageMockup({ lang }: { lang: Lang }) {
+  const t =
+    lang === 'en'
+      ? {
+          ariaLabel: 'Drag parent-child line to another couple',
+          panel1: '1. AB married, C their child (solid)',
+          panel2: '2. After dragging C\'s line to DE marriage',
+          panel2sub: 'DE = bio parents (placed-out dashed, smaller)',
+        }
+      : {
+          ariaLabel: '拖親子線到別對夫妻',
+          panel1: '1. 原本 AB 是 C 的父母(實線)',
+          panel2: '2. 拖 C 上面的線到 DE 婚姻',
+          panel2sub: 'DE = 生父母(出養虛線,縮小)',
+        };
+  return (
+    <svg
+      viewBox="0 0 410 200"
+      width="100%"
+      style={{
+        display: 'block',
+        margin: '8px auto',
+        maxWidth: 460,
+        background: '#fafafa',
+        borderRadius: 8,
+      }}
+      aria-label={t.ariaLabel}
+    >
+      {/* === Frame 1: AB married + C === */}
+      <rect x="6" y="10" width="170" height="180" rx="6" fill="#ffffff" stroke="#d2d2d7" strokeWidth="0.8" />
+      <circle cx="18" cy="22" r="8" fill="#007aff" />
+      <text x="18" y="25" textAnchor="middle" style={{ fontSize: 10, fill: '#ffffff', fontWeight: 600 }}>1</text>
+      {/* A 方 */}
+      <rect x="55" y="40" width="22" height="22" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
+      <text x="66" y="55" textAnchor="middle" style={{ fontSize: 11, fill: '#1d1d1f', fontWeight: 600 }}>A</text>
+      {/* B 圓 */}
+      <circle cx="120" cy="51" r="11" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
+      <text x="120" y="55" textAnchor="middle" style={{ fontSize: 11, fill: '#1d1d1f', fontWeight: 600 }}>B</text>
+      {/* 婚姻線 */}
+      <line x1="77" y1="51" x2="109" y2="51" stroke="#404040" strokeWidth="2.25" />
+      {/* 親子實線:從婚姻中點下到 C */}
+      <line x1="93" y1="51" x2="93" y2="115" stroke="#404040" strokeWidth="2.25" />
+      {/* C 方 */}
+      <rect x="82" y="115" width="22" height="22" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
+      <text x="93" y="130" textAnchor="middle" style={{ fontSize: 11, fill: '#1d1d1f', fontWeight: 600 }}>C</text>
+      {/* 標籤 */}
+      <text x="91" y="160" textAnchor="middle" style={{ fontSize: 10, fill: '#1d1d1f', fontWeight: 600 }}>
+        {t.panel1}
+      </text>
+
+      {/* === Frame 2: AB + DE(縮小)→ C === */}
+      <rect x="186" y="10" width="220" height="180" rx="6" fill="#ffffff" stroke="#d2d2d7" strokeWidth="0.8" />
+      <circle cx="198" cy="22" r="8" fill="#007aff" />
+      <text x="198" y="25" textAnchor="middle" style={{ fontSize: 10, fill: '#ffffff', fontWeight: 600 }}>2</text>
+
+      {/* AB 婚姻(原大小) */}
+      <rect x="210" y="40" width="22" height="22" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
+      <text x="221" y="55" textAnchor="middle" style={{ fontSize: 11, fill: '#1d1d1f', fontWeight: 600 }}>A</text>
+      <circle cx="265" cy="51" r="11" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
+      <text x="265" y="55" textAnchor="middle" style={{ fontSize: 11, fill: '#1d1d1f', fontWeight: 600 }}>B</text>
+      <line x1="232" y1="51" x2="254" y2="51" stroke="#404040" strokeWidth="2.25" />
+
+      {/* DE 婚姻(縮小 70%)*/}
+      <rect x="335" y="46" width="14" height="14" fill="#ffffff" stroke="#404040" strokeWidth="2" />
+      <text x="342" y="57" textAnchor="middle" style={{ fontSize: 9, fill: '#1d1d1f', fontWeight: 600 }}>D</text>
+      <circle cx="378" cy="53" r="7" fill="#ffffff" stroke="#404040" strokeWidth="2" />
+      <text x="378" y="56" textAnchor="middle" style={{ fontSize: 9, fill: '#1d1d1f', fontWeight: 600 }}>E</text>
+      <line x1="349" y1="53" x2="371" y2="53" stroke="#404040" strokeWidth="2" />
+
+      {/* AB → C 實線:從 AB 中點(243, 51)下 → 橫到 C 左上 → 下 */}
+      <line x1="243" y1="51" x2="243" y2="110" stroke="#404040" strokeWidth="2.25" />
+      <line x1="243" y1="110" x2="288" y2="110" stroke="#404040" strokeWidth="2.25" />
+      <line x1="288" y1="110" x2="288" y2="130" stroke="#404040" strokeWidth="2.25" />
+
+      {/* DE → C 虛線:從 DE 中點(360, 53)下 → 橫到 C 右上 → 下 */}
+      <line x1="360" y1="53" x2="360" y2="118" stroke="#404040" strokeWidth="1.8" strokeDasharray="4 3" />
+      <line x1="360" y1="118" x2="302" y2="118" stroke="#404040" strokeWidth="1.8" strokeDasharray="4 3" />
+      <line x1="302" y1="118" x2="302" y2="130" stroke="#404040" strokeWidth="1.8" strokeDasharray="4 3" />
+
+      {/* C 方(中央底部) */}
+      <rect x="284" y="130" width="22" height="22" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
+      <text x="295" y="145" textAnchor="middle" style={{ fontSize: 11, fill: '#1d1d1f', fontWeight: 600 }}>C</text>
+
+      {/* 標籤 */}
+      <text x="296" y="172" textAnchor="middle" style={{ fontSize: 10, fill: '#1d1d1f', fontWeight: 600 }}>
+        {t.panel2}
+      </text>
+      <text x="296" y="184" textAnchor="middle" style={{ fontSize: 9, fill: '#86868b' }}>
+        {t.panel2sub}
+      </text>
     </svg>
   );
 }
@@ -868,6 +769,12 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
       <>
         <P>家族結構的「黑色線條」分兩類:</P>
         <FamilyLineMockup lang="zh" />
+        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
+          <Strong>│ 實線</Strong> — biological 親生 / adopted 收養
+        </p>
+        <p style={{ margin: '4px 0 8px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
+          <Strong>┊ 虛線</Strong> — fostered 寄養 / placed-out 出養 / sperm-donor 精子捐贈
+        </p>
         <P>
           <Strong>雙擊</Strong> 親子線可在實/虛之間切換(夫妻雙方的親子線會一起變)。
           <Strong>單擊</Strong> 任何線可在右側面板看完整屬性。
@@ -886,15 +793,15 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         <p style={{ margin: '6px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f' }}>
           A. 拖既有線端點 → 改連接對象
         </p>
-        <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.6, margin: '2px 0 4px' }}>
-          婚姻線、親子線、互動關係線都能這樣改:
+        <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 12px' }}>
+          婚姻線、親子線、互動關係線都能<Strong>按住線端點 → 拖到另一個人 → 放開</Strong>,
+          自動改連對象(預覽會顯示橘色虛線)。
         </p>
-        <LineDragMockup lang="zh" />
         <p style={{ margin: '12px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f' }}>
-          B. 從人物 ▲ 長按拖到婚姻線 → 變共同小孩
+          B. 拖親子線到別對夫妻 → 加為出養父母
         </p>
-        <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.6, margin: '2px 0 4px' }}>
-          想把某個人「掛」到一對夫妻之下:
+        <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 4px' }}>
+          場景:已知 C 是 AB 的小孩,後來發現其實 C 是 DE 出養給 AB 的:
         </p>
         <DragToMarriageMockup lang="zh" />
         <p style={{ fontSize: 12, color: '#86868b', marginTop: 8, lineHeight: 1.6 }}>
@@ -1014,6 +921,12 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
       <>
         <P>Black family-structure lines come in two flavors:</P>
         <FamilyLineMockup lang="en" />
+        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
+          <Strong>│ Solid</Strong> — biological / adopted
+        </p>
+        <p style={{ margin: '4px 0 8px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
+          <Strong>┊ Dashed</Strong> — fostered / placed-out / sperm-donor
+        </p>
         <P>
           <Strong>Double-click</Strong> a parent-child line to toggle solid/dashed
           (both spouses' lines flip together). <Strong>Single-click</Strong> any line
@@ -1033,15 +946,16 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
         <p style={{ margin: '6px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f' }}>
           A. Drag an existing endpoint → change target
         </p>
-        <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.6, margin: '2px 0 4px' }}>
-          Works on marriage / parent-child / relation lines:
+        <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 12px' }}>
+          Marriage / parent-child / relation lines: <Strong>press the
+          endpoint → drag onto another person → release</Strong>. An
+          orange dashed preview shows where it'll land.
         </p>
-        <LineDragMockup lang="en" />
         <p style={{ margin: '12px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f' }}>
-          B. From a person's ▲, long-press + drag to a marriage line
+          B. Drag a parent-child line to another couple → add as bio (placed-out)
         </p>
-        <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.6, margin: '2px 0 4px' }}>
-          The person becomes a child of that married couple:
+        <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 4px' }}>
+          Scenario: C looked like AB's child; you later learn DE are the bio parents who placed C out to AB:
         </p>
         <DragToMarriageMockup lang="en" />
         <p style={{ fontSize: 12, color: '#86868b', marginTop: 8, lineHeight: 1.6 }}>
