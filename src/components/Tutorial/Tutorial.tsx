@@ -100,7 +100,9 @@ export default function Tutorial({
         style={{
           width: 480,
           maxWidth: 'calc(100vw - 40px)',
-          maxHeight: 'calc(100vh - 40px)',
+          // 固定高 640px(寬鬆值,長步驟不需內部滾動;短步驟有少許留白)
+          // 小視窗(< 680 vh)就用 viewport 上限保護
+          height: 'min(640px, calc(100vh - 40px))',
           background: '#ffffff',
           borderRadius: 14,
           boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
