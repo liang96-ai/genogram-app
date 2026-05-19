@@ -172,8 +172,9 @@ export default function MarriageGroup({
 }: Props) {
   const t = useT();
   const marriageDragEntry = handleDrag?.drags.find((d) => d.lineId === m.id);
-  const baseStroke = '#6e6e73';
-  const baseWidth = 1.5;
+  // 全部黑色 member line 統一:純黑 + 2x 粗度(跟 Line.tsx 一致)
+  const baseStroke = '#000000';
+  const baseWidth = 3;
   const selColor = '#007aff';
   const dragColor = '#ff9500';
 
@@ -222,7 +223,7 @@ export default function MarriageGroup({
     : marriageSelected
       ? selColor
       : baseStroke;
-  const mWidth = marriageDragging || marriageSelected ? 2.5 : baseWidth;
+  const mWidth = marriageDragging || marriageSelected ? 5 : baseWidth;
   const mDash = getDasharray(getLineStyleKey(m));
   const mMidSymbol = SUBTYPE_SPEC[m.subType]?.midSymbol;
 

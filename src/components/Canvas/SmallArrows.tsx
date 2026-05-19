@@ -104,7 +104,7 @@ export default function SmallArrows({
                   triggered = true;
                   cleanup();
                   onUpLongPress?.(person.id, downEvt);
-                }, 500);
+                }, 250);
                 const onMove = (ev: PointerEvent) => {
                   if (ev.pointerId !== pointerId) return;
                   if (
@@ -129,8 +129,8 @@ export default function SmallArrows({
             >
               <title>
                 {hasParents
-                  ? '長按 0.5 秒拖到另一人物 → 建立親子線(實線、預設親生)'
-                  : '短按:加父母 / 長按 0.5 秒拖:建立親子線(實線、預設親生)'}
+                  ? '長按 0.25 秒拖到另一人物或婚姻線 → 建立親子線'
+                  : '短按:加父母 / 長按 0.25 秒拖:建立親子線'}
               </title>
               <circle r={ARROW_SIZE + 4} fill="#ffffff" fillOpacity={0.01} />
               <polygon

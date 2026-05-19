@@ -957,9 +957,18 @@ export default function Canvas() {
       document.removeEventListener('pointerup', onUp);
       document.removeEventListener('pointercancel', onUp);
       const local = toSvgPoint(ev.clientX, ev.clientY);
+      // 優先級 1:拖到另一人物 → 建立親子線(來源是父母,目標是子女)
       const targetPerson = findPersonAt(local.x, local.y);
       if (targetPerson && targetPerson.id !== personId) {
         createUnknownFamilyLine(personId, targetPerson.id);
+        setUnknownFamilyDrag(null);
+        return;
+      }
+      // 優先級 2:拖到婚姻線 → 把這個人物當「該婚姻的小孩」(雙方都成為父母)
+      // 用 addSecondaryParentsFromMarriage(預設 placed-out 虛線,使用者可再升級)
+      const marriageHit = findMarriageAt(local.x, local.y);
+      if (marriageHit) {
+        addSecondaryParentsFromMarriage(personId, marriageHit.id);
       }
       setUnknownFamilyDrag(null);
     };
@@ -1909,8 +1918,8 @@ export default function Canvas() {
           ? '#ff9500'
           : selected
             ? '#007aff'
-            : '#6e6e73';
-        const sw = dragging || selected ? 2.5 : 1.5;
+            : '#000000';
+        const sw = dragging || selected ? 5 : 3;
         return (
           <g key={`po-${idx}`}>
             <line
@@ -1979,16 +1988,16 @@ export default function Canvas() {
         );
       })}
 
-      {/* ▲ 拖曳預覽 — 從來源人物拉一條黑線到游標位置(顏色跟最終建立的 biological 線一致) */}
+      {/* ▲ 拖曳預覽 — 從來源人物拉一條黑線到游標位置(顏色/粗度跟最終建立的 biological 線一致) */}
       {unknownFamilyDrag && (
         <line
           x1={unknownFamilyDrag.fromX}
           y1={unknownFamilyDrag.fromY}
           x2={unknownFamilyDrag.x}
           y2={unknownFamilyDrag.y}
-          stroke="#6e6e73"
-          strokeWidth={1.5}
-          strokeDasharray="4 4"
+          stroke="#000000"
+          strokeWidth={3}
+          strokeDasharray="6 4"
           style={{ pointerEvents: 'none' }}
         />
       )}
