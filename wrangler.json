@@ -1,6 +1,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "genogram-tool",
+  "name": "genogram",
   "compatibility_date": "2024-09-01",
-  "pages_build_output_dir": "./dist"
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
 }
