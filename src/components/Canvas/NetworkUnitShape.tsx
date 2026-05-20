@@ -217,7 +217,7 @@ export default function NetworkUnitShape({
             const dx = target.x - unit.position.x;
             const dy = target.y - unit.position.y;
             const len = Math.hypot(dx, dy) || 1;
-            const CIRCLE_EDGE = 28; // 跟 Line.tsx SHAPE_HALF / 圓形 offset 一致
+            const CIRCLE_EDGE = 28; // rl-tuned: match SHAPE_HALF in Line.tsx (do not adjust)
             synthTo = {
               id: '__synth_eco_' + conn.id,
               position: {

@@ -1292,6 +1292,8 @@ export default function Canvas() {
     <svg
       ref={svgRef}
       id="canvas-svg"
+      data-render="gn-rl-1"
+      data-edge="28"
       width="100%"
       height="100%"
       style={{
