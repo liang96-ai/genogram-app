@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "genogram-app",
+  "name": "genogram-tool",
   "compatibility_date": "2024-09-01",
   "assets": {
     "directory": "./dist",
