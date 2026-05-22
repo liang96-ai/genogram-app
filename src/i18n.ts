@@ -491,6 +491,25 @@ const dict: Record<Lang, Record<string, string>> = {
     'import.overwritten': '覆蓋 {n}',
     'import.skipped': '略過 {n}',
     'import.complete': '完成',
+
+    // ===== About =====
+    'about.title': '關於',
+    'about.openButton': '關於 / 支持本專案',
+    'about.tagline':
+      '本工具為「社會工作、家庭治療、教育、醫療」等領域而設計。完全免費 · 完全開源 · 不收集任何資料 · 所有資料只存在你的瀏覽器內。',
+    'about.openSourceTitle': '📖 開源 · 可驗證的隱私',
+    'about.openSourceBody':
+      '本工具採 AGPL-3.0 授權,程式碼完全公開。你可以親自查看 GitHub 上的程式,驗證確實沒有任何資料被偷偷上傳。',
+    'about.supportTitle': '☕ 支持本專案',
+    'about.supportBody':
+      '維護開源工具是長期且無償的工作。如果本工具對你或你的單位有幫助,以下是支持的方式:',
+    'about.kofiLabel': '個人贊助',
+    'about.emailLabel': '機構合作',
+    'about.docsTitle': '📄 完整文件',
+    'about.docPrivacy': '隱私聲明',
+    'about.docTerms': '服務條款',
+    'about.docSponsorship': '贊助說明',
+    'about.docLicense': '授權',
   },
   en: {
     // ===== Common =====
@@ -976,6 +995,25 @@ const dict: Record<Lang, Record<string, string>> = {
     'import.overwritten': 'Overwritten {n}',
     'import.skipped': 'Skipped {n}',
     'import.complete': 'Done',
+
+    // ===== About =====
+    'about.title': 'About',
+    'about.openButton': 'About / Support this project',
+    'about.tagline':
+      'A privacy-first tool for people working in social services, family therapy, education, and healthcare. Completely free · Fully open source · No data collection · All data stays in your browser.',
+    'about.openSourceTitle': '📖 Open Source · Verifiable Privacy',
+    'about.openSourceBody':
+      'Licensed under AGPL-3.0, the source code is fully public. You can inspect the code on GitHub yourself to verify that no data is ever secretly uploaded.',
+    'about.supportTitle': '☕ Support This Project',
+    'about.supportBody':
+      'Maintaining open-source software is long-term, unpaid work. Here are ways to support if this tool has been useful:',
+    'about.kofiLabel': 'Individuals',
+    'about.emailLabel': 'Organizations',
+    'about.docsTitle': '📄 Full Documents',
+    'about.docPrivacy': 'Privacy',
+    'about.docTerms': 'Terms',
+    'about.docSponsorship': 'Sponsorship',
+    'about.docLicense': 'License',
   },
 };
 

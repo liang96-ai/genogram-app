@@ -16,6 +16,7 @@ import Tutorial from './components/Tutorial/Tutorial';
 import ScaleDialog from './components/Scales/ScaleDialog';
 import InstallBanner from './components/InstallBanner';
 import FolderSetupModal from './components/CaseList/FolderSetupModal';
+import AboutButton from './components/About/AboutButton';
 import { useT } from './i18n';
 import {
   getScale,
@@ -304,6 +305,7 @@ export default function App() {
           />
         )}
         <InstallBanner />
+        <AboutButton />
       </>
     );
   }
@@ -352,6 +354,7 @@ export default function App() {
           level="advanced"
         />
       )}
+      <AboutButton />
     </>
   );
 }
