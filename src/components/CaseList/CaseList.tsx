@@ -77,13 +77,8 @@ export default function CaseList() {
     loadCaseList();
     // 讀現有 root folder 名稱(載入後可能 App.tsx 已經 loadRootDirHandle)
     setFolderName(getRootFolderName());
-    // 已 ack 隱私但沒看過教學的使用者(例如回訪)→ 進首頁就跳教學
-    // 新使用者首次走流程則在 PrivacyWelcomeDialog onClose 時觸發
-    if (hasAcknowledgedPrivacy() && !hasTutorialBeenSeen()) {
-      const timer = window.setTimeout(() => setShowTutorial(true), 300);
-      return () => window.clearTimeout(timer);
-    }
-  }, [loadCaseList, setShowTutorial]);
+    // 教學觸發改到「首次按 + 新增個案 並進入編輯模式」時(見下方 NewCaseDialog onCreate)
+  }, [loadCaseList]);
 
   return (
     <div
@@ -566,6 +561,10 @@ export default function CaseList() {
           onCreate={async (name) => {
             setShowNew(false);
             await createCase(name);
+            // 首次新建個案 + 進入畫布 → 跳基礎教學(只跳一次)
+            if (!hasTutorialBeenSeen()) {
+              window.setTimeout(() => setShowTutorial(true), 400);
+            }
           }}
           onCancel={() => setShowNew(false)}
         />
@@ -591,10 +590,7 @@ export default function CaseList() {
         <PrivacyWelcomeDialog
           onClose={() => {
             setPrivacyWelcomeOpen(false);
-            // 隱私確認後若沒看過教學 → 接著彈教學歡迎(延遲讓 modal 收尾)
-            if (!hasTutorialBeenSeen()) {
-              window.setTimeout(() => setShowTutorial(true), 400);
-            }
+            // 教學觸發改到「首次按 + 新增個案 並進入編輯模式」時
           }}
         />
       )}

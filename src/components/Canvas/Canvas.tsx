@@ -1586,7 +1586,17 @@ export default function Canvas() {
               removeConnector(unit.id, connectorId);
               setSelectedConnector(null);
             }}
-            onDelete={() => removeNetworkUnit(unit.id)}
+            onDelete={() => {
+              // 多選狀態下按 X 刪「全部選取的單位」(與鍵盤 Delete 一致)
+              if (
+                selectedUnitIds.includes(unit.id) &&
+                selectedUnitIds.length > 1
+              ) {
+                selectedUnitIds.forEach((id) => removeNetworkUnit(id));
+              } else {
+                removeNetworkUnit(unit.id);
+              }
+            }}
             onTriangleDown={(e, unitId) => {
               if (drawMode) return;
               const local0 = toSvgPoint(e.clientX, e.clientY);
@@ -1889,7 +1899,17 @@ export default function Canvas() {
               // 父層只負責 stopPropagation
               e.stopPropagation();
             }}
-            onDelete={() => removeLine(line.id)}
+            onDelete={() => {
+              // 多選狀態下按 X 刪「全部選取的線」(與鍵盤 Delete 一致)
+              if (
+                selectedLineIds.includes(line.id) &&
+                selectedLineIds.length > 1
+              ) {
+                selectedLineIds.forEach((id) => removeLine(id));
+              } else {
+                removeLine(line.id);
+              }
+            }}
             arcDetour={arcDetour}
           />
         );
@@ -1970,7 +1990,17 @@ export default function Canvas() {
           onMarriageDownArrowLongPress={() =>
             setTwinDialogTarget({ type: 'marriage', id: g.marriage.id })
           }
-          onDeleteLine={(lineId) => removeLine(lineId)}
+          onDeleteLine={(lineId) => {
+            // 多選狀態下按 X 刪「全部選取的線」(與鍵盤 Delete 一致)
+            if (
+              selectedLineIds.includes(lineId) &&
+              selectedLineIds.length > 1
+            ) {
+              selectedLineIds.forEach((id) => removeLine(id));
+            } else {
+              removeLine(lineId);
+            }
+          }}
         />
       ))}
 
@@ -1985,7 +2015,17 @@ export default function Canvas() {
             displayScaleOverride={autoShrink ? 0.7 : undefined}
             onPointerDown={(e) => onPersonPointerDown(e, person.id)}
             onDoubleClick={() => cycleShape(person.id)}
-            onDelete={() => removePersons([person.id])}
+            onDelete={() => {
+              // 多選狀態下按 X 刪「全部選取的人物」(與鍵盤 Delete 一致)
+              if (
+                selectedPersonIds.includes(person.id) &&
+                selectedPersonIds.length > 1
+              ) {
+                removePersons(selectedPersonIds);
+              } else {
+                removePersons([person.id]);
+              }
+            }}
           />
         );
       })}

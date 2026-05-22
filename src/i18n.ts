@@ -169,10 +169,10 @@ const dict: Record<Lang, Record<string, string>> = {
       '所有家系圖只存在你的瀏覽器(IndexedDB)。如果你選了同步資料夾,也只寫到你自己選的本機資料夾。',
     'privacy.welcomePoint2Title': '✅ 開發者看不到任何案主資料',
     'privacy.welcomePoint2Body':
-      '工具是純前端 PWA,Vercel 只負責送網頁程式碼給你的瀏覽器,不收任何使用者輸入的內容。',
+      '工具是純前端 PWA,網站主機只負責把網頁程式碼送到你的瀏覽器執行,不收任何使用者輸入的內容。',
     'privacy.welcomePoint3Title': '✅ 資料離開裝置只有 2 種情況',
     'privacy.welcomePoint3Body':
-      '(1) 你按「分享」給對方下載連結(不含家系圖內容) (2) 你按「回報問題」開信箱(可選送 / 可不送)。除此之外,完全離線可用。',
+      '(1) 你按「分享」給對方下載連結(不含家系圖內容)\n(2) 你按「回報問題」開信箱(可選送 / 可不送)\n除此之外,完全離線可用。',
     'privacy.welcomeAck': '我了解,開始使用',
 
     // ===== Tab2 Network =====
@@ -673,10 +673,10 @@ const dict: Record<Lang, Record<string, string>> = {
       'All genograms live only in your browser (IndexedDB). If you opt into folder sync, files are written only to the local folder you pick.',
     'privacy.welcomePoint2Title': '✅ The developer cannot see any client data',
     'privacy.welcomePoint2Body':
-      'This is a pure-frontend PWA. Vercel only serves the app code to your browser; no user input ever leaves the device through it.',
+      'This is a pure-frontend PWA. The host only delivers the app code to your browser to run locally; no user input ever leaves the device.',
     'privacy.welcomePoint3Title': '✅ Data leaves the device in only 2 cases',
     'privacy.welcomePoint3Body':
-      '(1) You press "Share" to send a download link (which never contains genogram data); (2) You press "Report" which opens your mail client (sending is optional). Otherwise, fully offline.',
+      '(1) You press "Share" to send a download link (which never contains genogram data)\n(2) You press "Report" which opens your mail client (sending is optional)\nOtherwise, fully offline.',
     'privacy.welcomeAck': 'I understand, start',
 
     // ===== Tab2 Network =====

@@ -139,7 +139,14 @@ function Point({ title, body }: { title: string; body: string }) {
       >
         {title}
       </div>
-      <div style={{ fontSize: 12.5, color: '#3a3a3c', lineHeight: 1.55 }}>
+      <div
+        style={{
+          fontSize: 12.5,
+          color: '#3a3a3c',
+          lineHeight: 1.55,
+          whiteSpace: 'pre-line',
+        }}
+      >
         {body}
       </div>
     </div>

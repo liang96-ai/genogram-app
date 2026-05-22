@@ -970,7 +970,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       .put({ key: 'language', value: lang })
       .catch(() => undefined);
   },
-  probandStyle: 'border',
+  probandStyle: 'traditional',
   setProbandStyle: (s) => {
     set({ probandStyle: s });
     db.settings.put({ key: 'probandStyle', value: s }).catch(() => undefined);
