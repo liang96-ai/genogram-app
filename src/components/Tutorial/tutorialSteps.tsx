@@ -898,21 +898,13 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
     title: '畫面總覽 — 人物、4 個箭頭',
     content: (
       <>
-        <P>
-          進入個案後中央就是 <Strong>畫布</Strong>。
-          選中人物會出現 ↑↓←→ 4 個藍色小箭頭,1 鍵加家人:
-        </P>
+        <P>進入個案後中央就是 <Strong>畫布</Strong>。</P>
+        <P>選中人物會出現 ↑↓←→ 4 個藍色小箭頭,1 鍵加家人:</P>
         <CanvasArrowsMockup lang="zh" />
         <P>
           畫布其他重點:
           <br />
-          • 空白處<Strong>拖框</Strong> = 圈選多人一起搬位置
-          <br />
-          • 拖<Strong>親子線端點到別人</Strong> = 該人變次要父母(收養 / 出養)
-          <br />
-          • 左上:返回鍵 <Code>←</Code> + 主選單 <Code>☰</Code>
-          <br />
-          • 右下角浮動工具列:縮放 / 適應視窗 / <Strong>✏️ 畫筆</Strong>(畫生態圖)
+          • 空白處<Strong>拖框</Strong> = 圈選多人,批量拖動一起搬位置
         </P>
       </>
     ),
@@ -1019,16 +1011,16 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
   },
   {
     icon: '⚫🔵',
-    title: '黑線 vs 藍線 — Membership vs Relationship',
+    title: '黑線 vs 藍線',
     content: (
       <>
         <P>同一對人物可以同時有兩種線:</P>
         <BlackBlueLineMockup lang="zh" />
-        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          ⚫ <Strong>黑線</Strong> = 成員關係(誰是誰的家人)
+        <p style={{ margin: '10px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          ⚫ <Strong>黑線</Strong> = 成員關係(誰是誰的家人 - Membership)
         </p>
-        <p style={{ margin: '4px 0 8px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          🔵 <Strong>藍線</Strong> = 互動關係(誰跟誰互動程度)
+        <p style={{ margin: '6px 0 10px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          🔵 <Strong>藍線</Strong> = 互動關係(誰跟誰互動程度 - Relationship)
         </p>
         <P>
           在右側 <Strong>Tab2「網絡」</Strong> 可加 15 種互動關係線。
@@ -1118,21 +1110,13 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
     title: 'Screen Overview — Person, 4 Arrows',
     content: (
       <>
-        <P>
-          After opening a case, the center is the <Strong>canvas</Strong>.
-          Selecting a person reveals 4 blue arrows ↑↓←→ to add family with one click:
-        </P>
+        <P>After opening a case, the center is the <Strong>canvas</Strong>.</P>
+        <P>Selecting a person reveals 4 blue arrows ↑↓←→ to add family with one click:</P>
         <CanvasArrowsMockup lang="en" />
         <P>
           Other canvas tips:
           <br />
-          • <Strong>Drag-select</Strong> on empty area = pick multiple to move at once
-          <br />
-          • Drag a <Strong>parent-child line endpoint</Strong> onto someone = adoption / foster
-          <br />
-          • Top-left: back <Code>←</Code> + main menu <Code>☰</Code>
-          <br />
-          • Bottom-right toolbar: zoom / fit / <Strong>✏️ Pen</Strong> (draw ecosystems)
+          • <Strong>Drag-select</Strong> on empty area = pick multiple people and move them together
         </P>
       </>
     ),
@@ -1222,9 +1206,10 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           A. Drag an existing endpoint → change target
         </p>
         <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 12px' }}>
-          Marriage / parent-child / relation lines: <Strong>press the
-          endpoint → drag onto another person → release</Strong>. An
-          orange dashed preview shows where it'll land.
+          Marriage / parent-child / relation lines: <Strong>press and
+          hold the line's endpoint → drag onto another person →
+          release</Strong>. An orange dashed preview shows where it'll
+          land.
         </p>
         <p style={{ margin: '12px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f' }}>
           B. Drag a parent-child line to another couple → add as bio (placed-out example)
@@ -1241,15 +1226,15 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
   },
   {
     icon: '⚫🔵',
-    title: 'Black vs Blue — Membership vs Relationship',
+    title: 'Black vs Blue',
     content: (
       <>
         <P>The same pair of people can have both kinds of lines:</P>
         <BlackBlueLineMockup lang="en" />
-        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+        <p style={{ margin: '10px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
           ⚫ <Strong>Black</Strong> = Membership (who is whose family)
         </p>
-        <p style={{ margin: '4px 0 8px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+        <p style={{ margin: '6px 0 10px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
           🔵 <Strong>Blue</Strong> = Relationship (how close they relate)
         </p>
         <P>
@@ -1321,8 +1306,9 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
         </P>
         <InstallButtonEN />
         <P>
-          Questions? Tap <Code>ℹ️</Code> in the top-right for "About / Support",
-          or main menu <Code>☰</Code> → "Report" to email the developer.
+          For questions, tap <Code>ℹ️</Code> (top-right) to see About and
+          support options, or open the main menu <Code>☰</Code> → "Report"
+          to email the developer directly.
         </P>
         <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: '#86868b', lineHeight: 1.6 }}>
           Happy charting 🌳

@@ -726,7 +726,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'tab4.addLinkBtn': 'Add',
     'tab4.notePlaceholder': 'Enter interview content…',
     'tab4.deleteNote': 'Delete note',
-    'tab4.fsHint': '📁 No local folder set. The first upload will prompt you to choose one; the app will create case_{id}/attachments/ inside.',
+    'tab4.fsHint': '📁 No local folder set. The first upload will prompt you to choose one; the app will then create case_{id}/attachments/ in that folder.',
     'tab4.fsUnsupported': '⚠ This browser does not support local folders (iOS Safari limit). Attachments can only be external links.',
 
     // ===== Line Properties =====

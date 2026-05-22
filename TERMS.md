@@ -19,7 +19,7 @@ See [LICENSE](./LICENSE).
 本工具設計給社會工作、家庭治療、心理諮商、教育、醫療等領域工作者，
 作為輔助繪製家系圖之用途。
 
-Designed for use in social work, family therapy, counselling, education,
+Designed for use in social work, family therapy, counseling, education,
 and healthcare contexts.
 
 ---
