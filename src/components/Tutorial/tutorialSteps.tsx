@@ -105,12 +105,13 @@ function ShapeSwitchMockup({ lang }: { lang: Lang }) {
     >
       {/* 左:方形 */}
       <rect x="60" y="36" width="40" height="40" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
-      {/* 游標 + 雙擊 */}
+      {/* 游標(不含「雙擊」字,字移到箭頭上方) */}
       <g transform="translate(108, 50)">
         <path d="M 0,0 L 0,14 L 4,11 L 7,18 L 10,16 L 6,9 L 11,9 Z" fill="#ffffff" stroke="#1d1d1f" strokeWidth="1.2" />
         <text x="14" y="6" style={{ fontSize: 9, fill: '#007aff', fontWeight: 600 }}>×2</text>
-        <text x="-30" y="-6" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>{t.cursor}</text>
       </g>
+      {/* 「雙擊」標籤 — 移到箭頭正上方 */}
+      <text x="165" y="48" textAnchor="middle" style={{ fontSize: 11, fill: '#007aff', fontWeight: 600 }}>{t.cursor}</text>
       {/* 箭頭 */}
       <line x1="135" y1="56" x2="195" y2="56" stroke="#86868b" strokeWidth="1.5" />
       <polygon points="195,56 187,52 187,60" fill="#86868b" />
@@ -199,39 +200,26 @@ function BlackBlueLineMockup({ lang }: { lang: Lang }) {
   const t =
     lang === 'en'
       ? {
-          ariaLabel: 'Black line vs blue line — same couple, different layers',
-          blackLabel: '⚫ Black = membership (who is whose family)',
-          blueLabel: '🔵 Blue = interaction (how close they relate)',
+          ariaLabel: 'Black line vs blue line — straight black, curved blue detour',
         }
       : {
-          ariaLabel: '黑線 vs 藍線 — 同對人物的兩種層次',
-          blackLabel: '⚫ 黑線 = 成員關係(誰是誰的家人)',
-          blueLabel: '🔵 藍線 = 互動關係(誰跟誰互動程度)',
+          ariaLabel: '黑線 vs 藍線 — 黑線直線、藍線曲線繞過',
         };
   const px = 80;   // 爸 x
   const mx = 240;  // 媽 x
-  const cy = 50;   // 父母 y
+  const cy = 70;   // 父母 y
   const childX = 160;
-  const childY = 140;
-  const trunkY = 100;
-  // 婚姻線 y(黑線在 cy)+ 互動關係波浪線稍微下偏
-  const waveY = cy + 12;
-  // 波浪 path:從爸的右邊到媽的左邊,連續 q 曲線
-  const waveStart = px + 14 + 6;
-  const waveEnd = mx - 14 - 6;
-  const waveAmp = 6;
-  let wavePath = `M ${waveStart} ${waveY}`;
-  const segCount = 8;
-  const segLen = (waveEnd - waveStart) / segCount;
-  for (let i = 0; i < segCount; i++) {
-    const ctrlX = waveStart + segLen * i + segLen / 2;
-    const ctrlY = waveY + (i % 2 === 0 ? -waveAmp : waveAmp);
-    const endX = waveStart + segLen * (i + 1);
-    wavePath += ` Q ${ctrlX} ${ctrlY} ${endX} ${waveY}`;
-  }
+  const childY = 150;
+  const trunkY = 115;
+  // 黑色婚姻線端點(避開人物形狀邊緣)
+  const blackStart = px + 14;
+  const blackEnd = mx - 14;
+  // 藍色互動關係線 — 弧形向上繞過黑線(與真實 App 行為一致)
+  // 用 quadratic curve:起點/終點同高,控制點往上偏 30px,做出弧
+  const blueArcPath = `M ${blackStart} ${cy} Q ${(blackStart + blackEnd) / 2} ${cy - 36} ${blackEnd} ${cy}`;
   return (
     <svg
-      viewBox="0 0 320 200"
+      viewBox="0 0 320 175"
       width="100%"
       style={{
         display: 'block',
@@ -242,10 +230,10 @@ function BlackBlueLineMockup({ lang }: { lang: Lang }) {
       }}
       aria-label={t.ariaLabel}
     >
-      {/* 黑線:婚姻線 */}
-      <line x1={px + 14} y1={cy} x2={mx - 14} y2={cy} stroke="#404040" strokeWidth="2.25" />
-      {/* 藍線:互動關係波浪 */}
-      <path d={wavePath} stroke="#007aff" strokeWidth="2" fill="none" />
+      {/* 藍線:互動關係線 — 弧形向上繞過(在黑線下方層先畫,避免蓋住黑線端點) */}
+      <path d={blueArcPath} stroke="#007aff" strokeWidth="1.5" fill="none" />
+      {/* 黑線:婚姻線 — 直線 */}
+      <line x1={blackStart} y1={cy} x2={blackEnd} y2={cy} stroke="#404040" strokeWidth="2.25" />
       {/* 爸(方) */}
       <rect x={px - 14} y={cy - 14} width="28" height="28" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
       {/* 媽(圓) */}
@@ -256,9 +244,6 @@ function BlackBlueLineMockup({ lang }: { lang: Lang }) {
       <line x1={childX} y1={trunkY} x2={childX} y2={childY - 14} stroke="#404040" strokeWidth="2.25" />
       {/* 小孩(圓) */}
       <circle cx={childX} cy={childY} r="14" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
-      {/* 標籤 */}
-      <text x={160} y={178} textAnchor="middle" style={{ fontSize: 11, fill: '#1d1d1f' }}>{t.blackLabel}</text>
-      <text x={160} y={194} textAnchor="middle" style={{ fontSize: 11, fill: '#1d1d1f' }}>{t.blueLabel}</text>
     </svg>
   );
 }
@@ -270,20 +255,30 @@ function EcosystemMockup({ lang }: { lang: Lang }) {
   const t =
     lang === 'en'
       ? {
-          ariaLabel: 'Ecosystem polygon + pencil tool',
+          ariaLabel: 'Double-click ecosystem to edit',
           label: 'Family of origin',
-          pencilHint: '✏️ from bottom-right',
+          dblClick: 'double-click',
+          editHint: '→ edit mode',
         }
       : {
-          ariaLabel: '生態圈 + 畫筆工具',
+          ariaLabel: '雙擊生態圈進入編輯模式',
           label: '原生家庭',
-          pencilHint: '✏️ 在右下角',
+          dblClick: '雙擊',
+          editHint: '→ 編輯模式',
         };
-  // 多邊形圈起一群人
-  const polyPoints = '40,40 200,40 220,80 200,140 40,140 20,80';
+  // 多邊形頂點
+  const polyVerts = [
+    { x: 40, y: 50 },
+    { x: 200, y: 50 },
+    { x: 220, y: 90 },
+    { x: 200, y: 140 },
+    { x: 40, y: 140 },
+    { x: 20, y: 90 },
+  ];
+  const polyPoints = polyVerts.map((v) => `${v.x},${v.y}`).join(' ');
   return (
     <svg
-      viewBox="0 0 320 200"
+      viewBox="0 0 320 190"
       width="100%"
       style={{
         display: 'block',
@@ -294,28 +289,126 @@ function EcosystemMockup({ lang }: { lang: Lang }) {
       }}
       aria-label={t.ariaLabel}
     >
-      {/* 生態圈多邊形(粉色虛線邊) */}
+      {/* 生態圈多邊形(編輯模式 — 較粗的粉色邊) */}
       <polygon
         points={polyPoints}
         fill="rgba(255, 182, 193, 0.15)"
         stroke="#ff6b9d"
-        strokeWidth="2"
-        strokeDasharray="5 3"
+        strokeWidth="2.5"
       />
       {/* 標籤 */}
-      <text x={120} y={32} textAnchor="middle" style={{ fontSize: 11, fill: '#ff6b9d', fontWeight: 600 }}>{t.label}</text>
-      {/* 圈內的人物(方+圓+方,簡化示意)— 加婚姻線跟子女 */}
-      <line x1={74} y1={75} x2={106} y2={75} stroke="#404040" strokeWidth="2" />
-      <rect x={60} y={60} width="28" height="28" fill="#ffffff" stroke="#404040" strokeWidth="2" />
-      <circle cx={120} cy={75} r="14" fill="#ffffff" stroke="#404040" strokeWidth="2" />
-      <line x1={97} y1={75} x2={97} y2={105} stroke="#404040" strokeWidth="2" />
-      <rect x={83} y={105} width="28" height="28" fill="#ffffff" stroke="#404040" strokeWidth="2" />
-      {/* 右下角畫筆按鈕 + 從筆指向生態圈的箭頭 */}
-      <rect x={260} y={150} width="36" height="36" rx="6" fill="#ffffff" stroke="#d2d2d7" strokeWidth="1.5" />
-      <text x={278} y={175} textAnchor="middle" style={{ fontSize: 18 }}>✏️</text>
-      {/* 箭頭:從畫筆指向多邊形 */}
-      <path d="M 258 155 Q 230 130 220 100" stroke="#ff6b9d" strokeWidth="1.5" fill="none" strokeDasharray="3 2" />
-      <text x={245} y={195} textAnchor="middle" style={{ fontSize: 10, fill: '#86868b' }}>{t.pencilHint}</text>
+      <text x={120} y={42} textAnchor="middle" style={{ fontSize: 11, fill: '#ff6b9d', fontWeight: 600 }}>{t.label}</text>
+      {/* 圈內人物簡化示意 */}
+      <line x1={74} y1={90} x2={106} y2={90} stroke="#404040" strokeWidth="2" />
+      <rect x={60} y={76} width="28" height="28" fill="#ffffff" stroke="#404040" strokeWidth="2" />
+      <circle cx={120} cy={90} r="14" fill="#ffffff" stroke="#404040" strokeWidth="2" />
+      <line x1={97} y1={90} x2={97} y2={118} stroke="#404040" strokeWidth="2" />
+      <rect x={83} y={118} width="22" height="22" fill="#ffffff" stroke="#404040" strokeWidth="2" />
+      {/* 編輯模式:頂點藍色把手 + 邊中點粉色把手 */}
+      {polyVerts.map((v, i) => (
+        <circle key={i} cx={v.x} cy={v.y} r="4" fill="#007aff" stroke="#ffffff" strokeWidth="1.5" />
+      ))}
+      {/* 邊中點粉色把手(只標 2 個示意) */}
+      <circle cx={(polyVerts[0].x + polyVerts[1].x) / 2} cy={(polyVerts[0].y + polyVerts[1].y) / 2} r="3.5" fill="#ff6b9d" stroke="#ffffff" strokeWidth="1.5" />
+      <circle cx={(polyVerts[3].x + polyVerts[4].x) / 2} cy={(polyVerts[3].y + polyVerts[4].y) / 2} r="3.5" fill="#ff6b9d" stroke="#ffffff" strokeWidth="1.5" />
+      {/* 游標:落在生態圈內部,雙擊示意 */}
+      <g transform="translate(150, 85)">
+        <path d="M 0,0 L 0,16 L 5,12 L 9,20 L 12,18 L 7,11 L 13,11 Z" fill="#ffffff" stroke="#1d1d1f" strokeWidth="1.3" />
+        <text x={16} y={9} style={{ fontSize: 10, fill: '#007aff', fontWeight: 700 }}>×2</text>
+      </g>
+      {/* 右側說明 */}
+      <text x={260} y={88} textAnchor="middle" style={{ fontSize: 11, fill: '#007aff', fontWeight: 600 }}>{t.dblClick}</text>
+      <text x={260} y={108} textAnchor="middle" style={{ fontSize: 11, fill: '#1d1d1f' }}>{t.editHint}</text>
+      {/* 箭頭從說明指回生態圈 */}
+      <path d="M 240 100 Q 225 110 222 120" stroke="#86868b" strokeWidth="1.2" fill="none" />
+      <polygon points="222,120 225,113 218,116" fill="#86868b" />
+      {/* 底部小提示:畫筆建立(右下角畫筆 → 拖出多邊形) */}
+      <text x={160} y={178} textAnchor="middle" style={{ fontSize: 10, fill: '#86868b' }}>
+        {lang === 'en' ? '✏️ Pencil (bottom-right) to create' : '右下角 ✏️ 畫筆建立 · 雙擊編輯'}
+      </text>
+    </svg>
+  );
+}
+
+// ============================================================
+// 共用元件:保密功能 — 勾選前/後對比
+// ============================================================
+function PrivacyToggleMockup({ lang }: { lang: Lang }) {
+  const t =
+    lang === 'en'
+      ? {
+          ariaLabel: 'Privacy toggle: before vs after',
+          beforeTitle: '☐ Privacy off',
+          afterTitle: '☑ Privacy on',
+          name: 'Name',
+          age: 'Age',
+          job: 'Occupation',
+          arrow: 'check → hide',
+        }
+      : {
+          ariaLabel: '保密功能 — 勾選前/勾選後',
+          beforeTitle: '☐ 沒勾保密',
+          afterTitle: '☑ 勾起來保密',
+          name: '姓名',
+          age: '年齡',
+          job: '職業',
+          arrow: '勾 → 隱藏',
+        };
+  const renderCard = (xOff: number, isChecked: boolean) => {
+    const name = isChecked ? '●●●' : (lang === 'en' ? 'John Lee' : '王小明');
+    const age = isChecked ? '●●' : '30';
+    const job = isChecked ? '●●●●' : (lang === 'en' ? 'Teacher' : '老師');
+    const accent = isChecked ? '#34c759' : '#86868b';
+    return (
+      <g>
+        {/* 卡片 */}
+        <rect x={xOff} y={20} width="120" height="130" rx="6" fill="#ffffff" stroke="#d2d2d7" strokeWidth="1.5" />
+        {/* 勾選方塊 */}
+        <rect x={xOff + 10} y={32} width="14" height="14" rx="2" fill={isChecked ? accent : '#ffffff'} stroke={accent} strokeWidth="1.5" />
+        {isChecked && (
+          <path d={`M ${xOff + 13},${39} L ${xOff + 16},${42} L ${xOff + 21},${36}`} stroke="#ffffff" strokeWidth="2" fill="none" strokeLinecap="round" />
+        )}
+        <text x={xOff + 30} y={43} style={{ fontSize: 11, fill: '#1d1d1f', fontWeight: 600 }}>
+          {isChecked ? t.afterTitle.slice(2) : t.beforeTitle.slice(2)}
+        </text>
+        {/* 欄位 */}
+        <text x={xOff + 14} y={72} style={{ fontSize: 10, fill: '#86868b' }}>{t.name}</text>
+        <text x={xOff + 14} y={88} style={{ fontSize: 12, fill: '#1d1d1f', fontWeight: 500 }}>{name}</text>
+        <text x={xOff + 14} y={106} style={{ fontSize: 10, fill: '#86868b' }}>{t.age}</text>
+        <text x={xOff + 14} y={122} style={{ fontSize: 12, fill: '#1d1d1f', fontWeight: 500 }}>{age}</text>
+        <text x={xOff + 14} y={138} style={{ fontSize: 10, fill: '#86868b' }}>{t.job}</text>
+        <text x={xOff + 60} y={138} style={{ fontSize: 11, fill: '#1d1d1f' }}>{job}</text>
+      </g>
+    );
+  };
+  return (
+    <svg
+      viewBox="0 0 320 175"
+      width="100%"
+      style={{
+        display: 'block',
+        margin: '8px auto',
+        maxWidth: 400,
+        background: '#fafafa',
+        borderRadius: 8,
+      }}
+      aria-label={t.ariaLabel}
+    >
+      {/* 左卡:沒勾 */}
+      {renderCard(20, false)}
+      {/* 右卡:勾起來 */}
+      {renderCard(180, true)}
+      {/* 中間箭頭 */}
+      <line x1={148} y1={85} x2={172} y2={85} stroke="#86868b" strokeWidth="1.5" />
+      <polygon points="172,85 165,81 165,89" fill="#86868b" />
+      <text x={160} y={70} textAnchor="middle" style={{ fontSize: 9, fill: '#86868b' }}>{t.arrow}</text>
+      {/* 底部說明 */}
+      <text x={80} y={170} textAnchor="middle" style={{ fontSize: 10, fill: '#86868b' }}>
+        {lang === 'en' ? 'Sensitive data visible' : '敏感資料正常顯示'}
+      </text>
+      <text x={240} y={170} textAnchor="middle" style={{ fontSize: 10, fill: '#34c759' }}>
+        {lang === 'en' ? 'Hidden on canvas + export' : '畫布與匯出皆隱藏'}
+      </text>
     </svg>
   );
 }
@@ -884,10 +977,10 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         <P>家族結構的「黑色線條」分兩類:</P>
         <FamilyLineMockup lang="zh" />
         <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
-          <Strong>│ 實線</Strong> — biological 親生 / adopted 收養
+          <Strong>│ 實線</Strong> — 親生 / 收養
         </p>
         <p style={{ margin: '4px 0 8px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
-          <Strong>┊ 虛線</Strong> — fostered 寄養 / placed-out 出養 / sperm-donor 精子捐贈
+          <Strong>┊ 虛線</Strong> — 寄養 / 出養 / 精子捐贈
         </p>
         <P>
           <Strong>雙擊</Strong> 親子線可在實/虛之間切換(夫妻雙方的親子線會一起變)。
@@ -895,31 +988,6 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         </P>
         <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
           下一步看「黑線 vs 藍線」更完整的差別。
-        </p>
-      </>
-    ),
-  },
-  {
-    icon: '⚫🔵',
-    title: '黑線 vs 藍線 — 兩種關係層次',
-    content: (
-      <>
-        <P>
-          同一對人物可以同時有兩種線:
-        </P>
-        <BlackBlueLineMockup lang="zh" />
-        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
-          <Strong>⚫ 黑線 = 成員關係 (membership)</Strong>
-          <br />
-          婚姻線、親子線等「誰是誰家人」的<Strong>客觀結構</Strong>。
-        </p>
-        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
-          <Strong>🔵 藍線 = 互動關係 (relationship)</Strong>
-          <br />
-          密切、衝突、疏離、虐待…等「互動程度」的<Strong>主觀觀察</Strong>。
-        </p>
-        <p style={{ fontSize: 12, color: '#86868b', marginTop: 8, lineHeight: 1.6 }}>
-          在右側「網絡」分頁可加 15 種互動關係線。
         </p>
       </>
     ),
@@ -937,7 +1005,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
           自動改連對象(預覽會顯示橘色虛線)。
         </p>
         <p style={{ margin: '12px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f' }}>
-          B. 拖親子線到別對夫妻 → 加為出養父母
+          B. 拖親子線到別對夫妻 → 加為出養父母(已出養為例)
         </p>
         <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 4px' }}>
           場景:已知 C 是 AB 的小孩,後來發現其實 C 是 DE 出養給 AB 的:
@@ -946,6 +1014,26 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         <p style={{ fontSize: 12, color: '#86868b', marginTop: 8, lineHeight: 1.6 }}>
           兩種拖曳,拖到空白處 / 自己 = 取消。
         </p>
+      </>
+    ),
+  },
+  {
+    icon: '⚫🔵',
+    title: '黑線 vs 藍線 — Membership vs Relationship',
+    content: (
+      <>
+        <P>同一對人物可以同時有兩種線:</P>
+        <BlackBlueLineMockup lang="zh" />
+        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          ⚫ <Strong>黑線</Strong> = 成員關係(誰是誰的家人)
+        </p>
+        <p style={{ margin: '4px 0 8px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          🔵 <Strong>藍線</Strong> = 互動關係(誰跟誰互動程度)
+        </p>
+        <P>
+          在右側 <Strong>Tab2「網絡」</Strong> 可加 15 種互動關係線。
+          點選任一互動關係圖示後,<Strong>同一個圖示再點一次</Strong> 可反轉箭頭方向。
+        </P>
       </>
     ),
   },
@@ -979,6 +1067,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
     content: (
       <>
         <P>家系圖常含敏感資訊,本工具有兩層保密設計:</P>
+        <PrivacyToggleMockup lang="zh" />
         <p style={{ margin: '6px 0 4px', fontSize: 13.5, color: '#1d1d1f', lineHeight: 1.7 }}>
           <Strong>① 總開關</Strong>(Tab1 / Tab3 都看得到)
           <br />
@@ -989,13 +1078,8 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
           <br />
           不受總開關控制,隨時可勾,瞬間把所有互動關係線藏起來。
         </p>
-        <P>勾保密後:</P>
         <p style={{ margin: '4px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
-          • 該欄位 / 線條<Strong>畫布上即時消失</Strong>
-          <br />
-          • 匯出 PNG / JPG 時也消失(完整保護隱私)
-          <br />
-          • 內部資料還在,只是不顯示
+          勾保密後:該欄位/線條<Strong>畫布上即時消失</Strong>,匯出 PNG / JPG 時也一併隱藏(內部資料保留)。
         </p>
       </>
     ),
@@ -1130,33 +1214,6 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
     ),
   },
   {
-    icon: '⚫🔵',
-    title: 'Black Line vs Blue Line — Two Layers',
-    content: (
-      <>
-        <P>
-          The same pair of people can have both kinds of lines:
-        </P>
-        <BlackBlueLineMockup lang="en" />
-        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
-          <Strong>⚫ Black = Membership</Strong>
-          <br />
-          Marriage, parent-child, and other "who is whose family"
-          — the <Strong>objective structure</Strong>.
-        </p>
-        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
-          <Strong>🔵 Blue = Relationship (Interaction)</Strong>
-          <br />
-          Close, conflict, distant, abusive… — the <Strong>subjective
-          observation</Strong> of how they relate.
-        </p>
-        <p style={{ fontSize: 12, color: '#86868b', marginTop: 8, lineHeight: 1.6 }}>
-          Add any of 15 interaction line types under the "Network" tab.
-        </p>
-      </>
-    ),
-  },
-  {
     icon: '🖱️',
     title: 'Drag a Line — Two Uses',
     content: (
@@ -1170,7 +1227,7 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           orange dashed preview shows where it'll land.
         </p>
         <p style={{ margin: '12px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f' }}>
-          B. Drag a parent-child line to another couple → add as bio (placed-out)
+          B. Drag a parent-child line to another couple → add as bio (placed-out example)
         </p>
         <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 4px' }}>
           Scenario: C looked like AB's child; you later learn DE are the bio parents who placed C out to AB:
@@ -1179,6 +1236,27 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
         <p style={{ fontSize: 12, color: '#86868b', marginTop: 8, lineHeight: 1.6 }}>
           Both gestures: release on empty space / self = cancel.
         </p>
+      </>
+    ),
+  },
+  {
+    icon: '⚫🔵',
+    title: 'Black vs Blue — Membership vs Relationship',
+    content: (
+      <>
+        <P>The same pair of people can have both kinds of lines:</P>
+        <BlackBlueLineMockup lang="en" />
+        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          ⚫ <Strong>Black</Strong> = Membership (who is whose family)
+        </p>
+        <p style={{ margin: '4px 0 8px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          🔵 <Strong>Blue</Strong> = Relationship (how close they relate)
+        </p>
+        <P>
+          Add any of 15 interaction line types in <Strong>Tab2 "Network"</Strong>.
+          After picking a relation icon, <Strong>click the same icon again</Strong>
+          to flip the arrow direction.
+        </P>
       </>
     ),
   },
@@ -1215,6 +1293,7 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
     content: (
       <>
         <P>Genograms often contain sensitive info. Two-layer privacy design:</P>
+        <PrivacyToggleMockup lang="en" />
         <p style={{ margin: '6px 0 4px', fontSize: 13.5, color: '#1d1d1f', lineHeight: 1.7 }}>
           <Strong>① Master switch</Strong> (visible in Tab1 / Tab3)
           <br />
@@ -1225,13 +1304,8 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           <br />
           Independent of the master switch — instantly hide every blue line.
         </p>
-        <P>Once marked private:</P>
         <p style={{ margin: '4px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
-          • The field / line <Strong>disappears from the canvas instantly</Strong>
-          <br />
-          • Also hidden in PNG / JPG exports (full privacy)
-          <br />
-          • The underlying data is still kept — just not shown
+          Once marked private: the field/line <Strong>disappears from canvas instantly</Strong>, and is also hidden in PNG/JPG exports. The underlying data is still kept — just not shown.
         </p>
       </>
     ),
