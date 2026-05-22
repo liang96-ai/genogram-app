@@ -290,10 +290,11 @@ export default function NetworkUnitShape({
             : baseColor;
         const lineWidth = dragging ? 2 : isConnSelected ? 2.5 : 1.6;
         // 點線(distant)、虛線(其他保留為灰虛)
+        // distant 拉開間距,避免肉眼看像實線
         const dashPattern = !hasSubType
           ? '4 3'
           : conn.subType === 'distant'
-            ? '2 4'
+            ? '2 7'
             : undefined;
         const midX = (topAnchorX + target.x) / 2;
         const midY = (topAnchorY + target.y) / 2;

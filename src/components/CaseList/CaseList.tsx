@@ -19,6 +19,7 @@ import PrivacyWelcomeDialog, {
 } from './PrivacyWelcomeDialog';
 import FolderSetupModal from './FolderSetupModal';
 import { hasTutorialBeenSeen } from '../Tutorial/Tutorial';
+import AboutButton from '../About/AboutButton';
 
 export default function CaseList() {
   const t = useT();
@@ -144,9 +145,14 @@ export default function CaseList() {
                   color: '#1d1d1f',
                   margin: 0,
                   marginBottom: 6,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  flexWrap: 'wrap',
                 }}
               >
-                {t('caseList.title')}
+                <span>{t('caseList.title')}</span>
+                <AboutButton size="lg" />
               </h1>
               {/* 隱私標語 — 從淡灰 subtitle 升級為 badge 風格,讓所有人一進首頁就看到 */}
               <div
@@ -204,7 +210,7 @@ export default function CaseList() {
                   }}
                 />
                 <HomeMenuItem
-                  icon="📖"
+                  icon="📕"
                   label={t('menu.tutorialBasic')}
                   onClick={() => {
                     setShowTutorial(true);

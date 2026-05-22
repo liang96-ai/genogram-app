@@ -169,8 +169,27 @@ export default function Tab2Network({ person, lineTarget }: Props) {
     // member line(婚姻/親子)走另一個 toggle(solid/dashed),不歸 Tab2 管。
     // Inspector 端已經過濾過一次,這裡是 defense-in-depth。
     if (lineTarget && lineTarget.category === 'relation') {
-      // 編輯既有線:直接切類型,並清掉 pending(避免之後還有殘留 banner)
-      updateLine(lineTarget.id, { subType, category: 'relation' });
+      // 如果再點一次「同一個有箭頭的關係 subType」→ 反轉箭頭方向
+      // (swap from/to,箭頭自然從 to 跳到原本的 from)
+      const ARROW_REVERSIBLE = new Set<RelationSubType>([
+        'focus-on',
+        'negative-focus',
+        'physical-abuse',
+        'emotional-abuse',
+        'sexual-abuse',
+      ]);
+      if (
+        lineTarget.subType === subType &&
+        ARROW_REVERSIBLE.has(subType)
+      ) {
+        updateLine(lineTarget.id, {
+          fromPersonId: lineTarget.toPersonId,
+          toPersonId: lineTarget.fromPersonId,
+        });
+      } else {
+        // 編輯既有線:直接切類型,並清掉 pending(避免之後還有殘留 banner)
+        updateLine(lineTarget.id, { subType, category: 'relation' });
+      }
       if (pendingRelation) setPendingRelation(null);
       return;
     }

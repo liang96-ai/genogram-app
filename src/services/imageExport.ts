@@ -13,61 +13,8 @@ export interface ImageExportOptions {
   simplifyLines: boolean;
 }
 
-const PADDING = 80;
-const SHAPE_HALF = 28;
-const UNIT_HALF_W = 90;
-const UNIT_HALF_H = 20;
-
 function safeFilename(s: string): string {
   return s.replace(/[\\/:*?"<>|]/g, '_').slice(0, 60) || 'untitled';
-}
-
-/**
- * 算出畫布所有元素的 bounding box(SVG 座標)
- */
-function computeBBox(g: Genogram): {
-  minX: number;
-  minY: number;
-  maxX: number;
-  maxY: number;
-} {
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const p of g.persons) {
-    const half = p.shape === 'institution' ? UNIT_HALF_W : SHAPE_HALF;
-    const halfH = p.shape === 'institution' ? UNIT_HALF_H : SHAPE_HALF;
-    minX = Math.min(minX, p.position.x - half);
-    minY = Math.min(minY, p.position.y - halfH);
-    maxX = Math.max(maxX, p.position.x + half);
-    maxY = Math.max(maxY, p.position.y + halfH);
-  }
-  for (const u of g.networkUnits ?? []) {
-    if (!u.isActive) continue;
-    minX = Math.min(minX, u.position.x - UNIT_HALF_W);
-    minY = Math.min(minY, u.position.y - UNIT_HALF_H);
-    maxX = Math.max(maxX, u.position.x + UNIT_HALF_W);
-    maxY = Math.max(maxY, u.position.y + UNIT_HALF_H);
-  }
-  for (const eco of g.ecosystems ?? []) {
-    for (const pt of eco.points) {
-      minX = Math.min(minX, pt.x);
-      minY = Math.min(minY, pt.y);
-      maxX = Math.max(maxX, pt.x);
-      maxY = Math.max(maxY, pt.y);
-    }
-  }
-  if (!isFinite(minX)) {
-    // 沒任何內容 → 預設 600x400
-    return { minX: 0, minY: 0, maxX: 600, maxY: 400 };
-  }
-  return {
-    minX: minX - PADDING,
-    minY: minY - PADDING,
-    maxX: maxX + PADDING,
-    maxY: maxY + PADDING,
-  };
 }
 
 /**
@@ -114,11 +61,39 @@ export async function exportCanvasImage(
     // 4. 計算 viewBox
     let vbX: number, vbY: number, vbW: number, vbH: number;
     if (opts.range === 'auto') {
-      const bb = computeBBox(genogram);
-      vbX = bb.minX;
-      vbY = bb.minY;
-      vbW = bb.maxX - bb.minX;
-      vbH = bb.maxY - bb.minY;
+      // 用 SVG 原生 getBBox 算「實際渲染範圍」— 包含文字標籤、線、所有元素
+      // 比手動算 person.position±half 準確,不會切到邊緣人物的姓名/職業/醫療資訊
+      // 但要先暫時隱藏網點背景 rect,否則 bbox 會被整片背景撐大
+      const gridRects: SVGElement[] = [];
+      svg.querySelectorAll('rect').forEach((r) => {
+        const fill = r.getAttribute('fill') ?? '';
+        if (fill.startsWith('url(#dotGrid')) {
+          gridRects.push(r);
+          r.style.display = 'none';
+        }
+      });
+      let bb: DOMRect;
+      try {
+        bb = svg.getBBox();
+      } finally {
+        gridRects.forEach((r) => {
+          r.style.display = '';
+        });
+      }
+      // 沒任何內容 → 預設 600x400
+      if (bb.width === 0 && bb.height === 0) {
+        vbX = 0;
+        vbY = 0;
+        vbW = 600;
+        vbH = 400;
+      } else {
+        // getBBox 已經很緊,只需要小邊距(40px 即可,而非舊版 80px)
+        const PAD = 40;
+        vbX = bb.x - PAD;
+        vbY = bb.y - PAD;
+        vbW = bb.width + PAD * 2;
+        vbH = bb.height + PAD * 2;
+      }
     } else {
       // current view: 從 svg 實際渲染區域回推
       const rect = svg.getBoundingClientRect();

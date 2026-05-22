@@ -66,7 +66,7 @@ export function getDasharray(key: LineStyleKey): string | undefined {
     case 'dashed':
       return '6 4';
     case 'dotted':
-      return '2 3';
+      return '2 7';
     case 'dash-dot':
       return '6 3 2 3';
   }

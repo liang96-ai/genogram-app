@@ -3,13 +3,25 @@ import AboutDialog from './AboutDialog';
 import { useT } from '../../i18n';
 
 /**
- * 浮動的 ℹ️ 按鈕,固定在畫面右上角。
- * — 點開後顯示 AboutDialog
- * — 自己管理 open state,放哪都行
+ * ℹ️ 按鈕,點開後顯示 AboutDialog
+ * — 預設樣式:小型工具列按鈕(32x32),適合塞進現有 toolbar
+ * — 沒有 fixed 定位,由 caller 決定位置
+ * — 自己管理 open state
+ *
+ * 用法:
+ *   <AboutButton />                 // 預設小型(toolbar 用)
+ *   <AboutButton size="lg" />       // 大型(首頁標題旁)
  */
-export default function AboutButton() {
+export default function AboutButton({
+  size = 'sm',
+}: {
+  size?: 'sm' | 'lg';
+}) {
   const [open, setOpen] = useState(false);
   const t = useT();
+
+  const dim = size === 'lg' ? 36 : 28;
+  const fontSize = size === 'lg' ? 18 : 15;
 
   return (
     <>
@@ -18,31 +30,26 @@ export default function AboutButton() {
         title={t('about.openButton')}
         aria-label={t('about.openButton')}
         style={{
-          position: 'fixed',
-          top: 12,
-          right: 12,
-          width: 32,
-          height: 32,
+          width: dim,
+          height: dim,
           padding: 0,
-          background: 'rgba(255,255,255,0.92)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid #e5e4e7',
+          background: '#ffffff',
+          border: '1px solid #d2d2d7',
           borderRadius: 8,
-          fontSize: 16,
+          fontSize,
           cursor: 'pointer',
           fontFamily: 'inherit',
           color: '#1d1d1f',
-          display: 'flex',
+          display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-          zIndex: 50,
+          flexShrink: 0,
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = '#f5f5f7';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255,255,255,0.92)';
+          e.currentTarget.style.background = '#ffffff';
         }}
       >
         ℹ️

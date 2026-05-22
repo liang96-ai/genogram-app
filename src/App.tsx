@@ -295,7 +295,6 @@ export default function App() {
           <Tutorial onClose={() => setShowTutorial(false)} />
         )}
         <InstallBanner />
-        <AboutButton />
       </>
     );
   }
@@ -338,7 +337,6 @@ export default function App() {
       {showTutorial && (
         <Tutorial onClose={() => setShowTutorial(false)} />
       )}
-      <AboutButton />
     </>
   );
 }
@@ -488,6 +486,7 @@ function Toolbar({
             {currentCase?.caseName ?? '家系圖'} · {currentCase?.persons.length ?? 0} 人
           </span>
         )}
+        <AboutButton />
       </div>
 
       {open && (
@@ -536,7 +535,20 @@ function Toolbar({
           <MenuItem icon="💾" label="快照(記一個版本點)" disabled subtitle="即將推出" />
           <MenuItem
             icon="↑"
-            label={t('menu.export')}
+            label={
+              language === 'zh' ? (
+                <>
+                  輸
+                  <span style={{ color: '#d70015', fontWeight: 700 }}>出</span>
+                  檔案
+                </>
+              ) : (
+                <>
+                  <span style={{ color: '#d70015', fontWeight: 700 }}>Out</span>
+                  put File
+                </>
+              )
+            }
             onClick={() => {
               setExportOpen(true);
               setOpen(false);
@@ -544,7 +556,20 @@ function Toolbar({
           />
           <MenuItem
             icon="↓"
-            label={t('menu.import')}
+            label={
+              language === 'zh' ? (
+                <>
+                  輸
+                  <span style={{ color: '#1a7a3f', fontWeight: 700 }}>入</span>
+                  檔案
+                </>
+              ) : (
+                <>
+                  <span style={{ color: '#1a7a3f', fontWeight: 700 }}>In</span>
+                  put File
+                </>
+              )
+            }
             onClick={() => {
               setImportOpen(true);
               setOpen(false);
@@ -583,7 +608,7 @@ function Toolbar({
           />
           <MenuDivider />
           <MenuItem
-            icon="📖"
+            icon="📕"
             label={t('menu.tutorialBasic')}
             onClick={() => {
               setShowTutorial(true);
@@ -657,7 +682,7 @@ function MenuItem({
   onClick,
 }: {
   icon: string;
-  label: string;
+  label: React.ReactNode;
   shortcut?: string;
   subtitle?: string;
   disabled?: boolean;
