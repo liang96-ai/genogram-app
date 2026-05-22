@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import AboutDialog from './AboutDialog';
 import { useT } from '../../i18n';
 
@@ -54,7 +55,11 @@ export default function AboutButton({
       >
         ℹ️
       </button>
-      {open && <AboutDialog onClose={() => setOpen(false)} />}
+      {open &&
+        createPortal(
+          <AboutDialog onClose={() => setOpen(false)} />,
+          document.body,
+        )}
     </>
   );
 }

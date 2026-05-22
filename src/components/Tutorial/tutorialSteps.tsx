@@ -1200,7 +1200,7 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           <Strong>│ Solid</Strong> — biological / adopted
         </p>
         <p style={{ margin: '4px 0 8px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
-          <Strong>┊ Dashed</Strong> — fostered / placed-out / sperm-donor
+          <Strong>┊ Dashed</Strong> — fostered / placed-out / sperm donor
         </p>
         <P>
           <Strong>Double-click</Strong> a parent-child line to toggle solid/dashed
@@ -1253,7 +1253,7 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           🔵 <Strong>Blue</Strong> = Relationship (how close they relate)
         </p>
         <P>
-          Add any of 15 interaction line types in <Strong>Tab2 "Network"</Strong>.
+          Add any of 15 relation line types in <Strong>Tab2 "Network"</Strong>.
           After picking a relation icon, <Strong>click the same icon again</Strong>
           to flip the arrow direction.
         </P>
@@ -1300,7 +1300,7 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           Tick it → each tab gets <Strong>"Select-all-private per section"</Strong> + <Strong>per-field 🔒</Strong>.
         </p>
         <p style={{ margin: '6px 0 4px', fontSize: 13.5, color: '#1d1d1f', lineHeight: 1.7 }}>
-          <Strong>② Tab2: "All interaction lines private"</Strong>
+          <Strong>② Tab2: "All relation lines private"</Strong>
           <br />
           Independent of the master switch — instantly hide every blue line.
         </p>

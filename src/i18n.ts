@@ -532,7 +532,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'common.empty': 'No records yet',
 
     // ===== Confirm Dialog =====
-    'confirm.shortcut': 'Enter to confirm · Esc to cancel · Skip next time: {mod} + Delete',
+    'confirm.shortcut': 'Enter to confirm, Esc to cancel. Skip next time: {mod} + Delete',
 
     // ===== Main menu =====
     'menu.undo': 'Undo',
@@ -572,7 +572,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'tutorial.next': 'Next',
     'tutorial.done': 'Done',
     'menu.assessmentTools': 'Assessment Tools',
-    'menu.language': 'Language / 語言',
+    'menu.language': 'Language',
     'menu.copyrightNotice':
       '⚠️ Scale Copyright Notice: All built-in scales are public-domain or properly licensed versions (Taiwan MOHW, WHO, CDC, Pfizer, etc.). For commercial use, please contact the original copyright holders. Results are for reference only, not for clinical diagnosis.',
 
