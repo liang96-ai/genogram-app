@@ -192,7 +192,136 @@ function FamilyLineMockup({ lang }: { lang: Lang }) {
 }
 
 // ============================================================
-// 共用元件:拖親子線到別對夫妻(Step 5 子題 B)— AB+C → AB+DE+C
+// 共用元件:黑線 vs 藍線 — 同一對父母可以同時有「成員關係(黑)」
+// 和「互動關係(藍)」,疊在同一張圖上對比
+// ============================================================
+function BlackBlueLineMockup({ lang }: { lang: Lang }) {
+  const t =
+    lang === 'en'
+      ? {
+          ariaLabel: 'Black line vs blue line — same couple, different layers',
+          blackLabel: '⚫ Black = membership (who is whose family)',
+          blueLabel: '🔵 Blue = interaction (how close they relate)',
+        }
+      : {
+          ariaLabel: '黑線 vs 藍線 — 同對人物的兩種層次',
+          blackLabel: '⚫ 黑線 = 成員關係(誰是誰的家人)',
+          blueLabel: '🔵 藍線 = 互動關係(誰跟誰互動程度)',
+        };
+  const px = 80;   // 爸 x
+  const mx = 240;  // 媽 x
+  const cy = 50;   // 父母 y
+  const childX = 160;
+  const childY = 140;
+  const trunkY = 100;
+  // 婚姻線 y(黑線在 cy)+ 互動關係波浪線稍微下偏
+  const waveY = cy + 12;
+  // 波浪 path:從爸的右邊到媽的左邊,連續 q 曲線
+  const waveStart = px + 14 + 6;
+  const waveEnd = mx - 14 - 6;
+  const waveAmp = 6;
+  let wavePath = `M ${waveStart} ${waveY}`;
+  const segCount = 8;
+  const segLen = (waveEnd - waveStart) / segCount;
+  for (let i = 0; i < segCount; i++) {
+    const ctrlX = waveStart + segLen * i + segLen / 2;
+    const ctrlY = waveY + (i % 2 === 0 ? -waveAmp : waveAmp);
+    const endX = waveStart + segLen * (i + 1);
+    wavePath += ` Q ${ctrlX} ${ctrlY} ${endX} ${waveY}`;
+  }
+  return (
+    <svg
+      viewBox="0 0 320 200"
+      width="100%"
+      style={{
+        display: 'block',
+        margin: '8px auto',
+        maxWidth: 400,
+        background: '#fafafa',
+        borderRadius: 8,
+      }}
+      aria-label={t.ariaLabel}
+    >
+      {/* 黑線:婚姻線 */}
+      <line x1={px + 14} y1={cy} x2={mx - 14} y2={cy} stroke="#404040" strokeWidth="2.25" />
+      {/* 藍線:互動關係波浪 */}
+      <path d={wavePath} stroke="#007aff" strokeWidth="2" fill="none" />
+      {/* 爸(方) */}
+      <rect x={px - 14} y={cy - 14} width="28" height="28" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
+      {/* 媽(圓) */}
+      <circle cx={mx} cy={cy} r="14" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
+      {/* 親子黑線 — 婚姻線中點往下 + 分到小孩 */}
+      <line x1={(px + mx) / 2} y1={cy} x2={(px + mx) / 2} y2={trunkY} stroke="#404040" strokeWidth="2.25" />
+      <line x1={(px + mx) / 2} y1={trunkY} x2={childX} y2={trunkY} stroke="#404040" strokeWidth="2.25" />
+      <line x1={childX} y1={trunkY} x2={childX} y2={childY - 14} stroke="#404040" strokeWidth="2.25" />
+      {/* 小孩(圓) */}
+      <circle cx={childX} cy={childY} r="14" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
+      {/* 標籤 */}
+      <text x={160} y={178} textAnchor="middle" style={{ fontSize: 11, fill: '#1d1d1f' }}>{t.blackLabel}</text>
+      <text x={160} y={194} textAnchor="middle" style={{ fontSize: 11, fill: '#1d1d1f' }}>{t.blueLabel}</text>
+    </svg>
+  );
+}
+
+// ============================================================
+// 共用元件:生態圈 + 右下角畫筆 — 用畫筆按鈕沿格線畫多邊形圈出群組
+// ============================================================
+function EcosystemMockup({ lang }: { lang: Lang }) {
+  const t =
+    lang === 'en'
+      ? {
+          ariaLabel: 'Ecosystem polygon + pencil tool',
+          label: 'Family of origin',
+          pencilHint: '✏️ from bottom-right',
+        }
+      : {
+          ariaLabel: '生態圈 + 畫筆工具',
+          label: '原生家庭',
+          pencilHint: '✏️ 在右下角',
+        };
+  // 多邊形圈起一群人
+  const polyPoints = '40,40 200,40 220,80 200,140 40,140 20,80';
+  return (
+    <svg
+      viewBox="0 0 320 200"
+      width="100%"
+      style={{
+        display: 'block',
+        margin: '8px auto',
+        maxWidth: 400,
+        background: '#fafafa',
+        borderRadius: 8,
+      }}
+      aria-label={t.ariaLabel}
+    >
+      {/* 生態圈多邊形(粉色虛線邊) */}
+      <polygon
+        points={polyPoints}
+        fill="rgba(255, 182, 193, 0.15)"
+        stroke="#ff6b9d"
+        strokeWidth="2"
+        strokeDasharray="5 3"
+      />
+      {/* 標籤 */}
+      <text x={120} y={32} textAnchor="middle" style={{ fontSize: 11, fill: '#ff6b9d', fontWeight: 600 }}>{t.label}</text>
+      {/* 圈內的人物(方+圓+方,簡化示意)— 加婚姻線跟子女 */}
+      <line x1={74} y1={75} x2={106} y2={75} stroke="#404040" strokeWidth="2" />
+      <rect x={60} y={60} width="28" height="28" fill="#ffffff" stroke="#404040" strokeWidth="2" />
+      <circle cx={120} cy={75} r="14" fill="#ffffff" stroke="#404040" strokeWidth="2" />
+      <line x1={97} y1={75} x2={97} y2={105} stroke="#404040" strokeWidth="2" />
+      <rect x={83} y={105} width="28" height="28" fill="#ffffff" stroke="#404040" strokeWidth="2" />
+      {/* 右下角畫筆按鈕 + 從筆指向生態圈的箭頭 */}
+      <rect x={260} y={150} width="36" height="36" rx="6" fill="#ffffff" stroke="#d2d2d7" strokeWidth="1.5" />
+      <text x={278} y={175} textAnchor="middle" style={{ fontSize: 18 }}>✏️</text>
+      {/* 箭頭:從畫筆指向多邊形 */}
+      <path d="M 258 155 Q 230 130 220 100" stroke="#ff6b9d" strokeWidth="1.5" fill="none" strokeDasharray="3 2" />
+      <text x={245} y={195} textAnchor="middle" style={{ fontSize: 10, fill: '#86868b' }}>{t.pencilHint}</text>
+    </svg>
+  );
+}
+
+// ============================================================
+// 共用元件:拖親子線到別對夫妻(Step 6 子題 B)— AB+C → AB+DE+C
 // Frame 1: AB 夫妻 + C 子女(實線)
 // Frame 2: 拖 C 上面的線到 DE 婚姻 → AB→C 仍實線(法律父母)、DE→C 虛線(出養)、DE 縮小
 // ============================================================
@@ -464,21 +593,6 @@ function InstallButtonEN() {
       <strong>Chrome or Edge</strong> for the full App experience.
     </div>
   );
-}
-
-// 平台偵測 — Mac 顯示 ⌘ 符號;Windows/Linux 顯示 Ctrl
-const isMac =
-  typeof navigator !== 'undefined' &&
-  /Mac|iPhone|iPad|iPod/.test(navigator.platform);
-
-/** 渲染鍵盤組合鍵 — Mac: ⌘Z / Windows: Ctrl+Z */
-function kbd(...keys: string[]): string {
-  if (isMac) {
-    return keys
-      .map((k) => (k === 'Cmd' ? '⌘' : k === 'Shift' ? '⇧' : k))
-      .join('');
-  }
-  return keys.map((k) => (k === 'Cmd' ? 'Ctrl' : k)).join('+');
 }
 
 const P: React.FC<{ children: ReactNode }> = ({ children }) => (
@@ -757,7 +871,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
           • 想用<Strong>跨性別 / 障別 / 疾病</Strong>等更多形狀 → 點 ▶ 展開
         </P>
         <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
-          每個分頁的深入用法,請看主選單「📘 看進階教學」。
+          每個分頁的深入欄位,點 ▶ 展開區塊查看。
         </p>
       </>
     ),
@@ -780,7 +894,32 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
           <Strong>單擊</Strong> 任何線可在右側面板看完整屬性。
         </P>
         <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
-          婚姻、互動關係線、網絡連線等其他線條,在進階教學深入講解。
+          下一步看「黑線 vs 藍線」更完整的差別。
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '⚫🔵',
+    title: '黑線 vs 藍線 — 兩種關係層次',
+    content: (
+      <>
+        <P>
+          同一對人物可以同時有兩種線:
+        </P>
+        <BlackBlueLineMockup lang="zh" />
+        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
+          <Strong>⚫ 黑線 = 成員關係 (membership)</Strong>
+          <br />
+          婚姻線、親子線等「誰是誰家人」的<Strong>客觀結構</Strong>。
+        </p>
+        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
+          <Strong>🔵 藍線 = 互動關係 (relationship)</Strong>
+          <br />
+          密切、衝突、疏離、虐待…等「互動程度」的<Strong>主觀觀察</Strong>。
+        </p>
+        <p style={{ fontSize: 12, color: '#86868b', marginTop: 8, lineHeight: 1.6 }}>
+          在右側「網絡」分頁可加 15 種互動關係線。
         </p>
       </>
     ),
@@ -811,6 +950,57 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
     ),
   },
   {
+    icon: '🌳',
+    title: '生態圈 — 框出群組',
+    content: (
+      <>
+        <P>
+          除了人物與線,還可以用 <Strong>多邊形</Strong> 框起一群人,
+          表達<Strong>子系統</Strong>(原生家庭、學校、職場、親屬圈等)。
+        </P>
+        <EcosystemMockup lang="zh" />
+        <P>
+          畫法:點<Strong>右下角 ✏️ 畫筆</Strong> →
+          沿格線拖出多邊形 → 拖回起點 <Strong>3 格內</Strong> 放手 = 自動封閉。
+        </P>
+        <p style={{ margin: '6px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
+          • <Strong>雙擊既有生態圈</Strong> → 編輯模式 → 拖邊把手調形狀
+          <br />
+          • 標籤雙擊可改名,選中後 × 刪除
+          <br />
+          • 可建立多個圈,自由命名
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '🔒',
+    title: '保密功能 — 隱藏敏感欄位',
+    content: (
+      <>
+        <P>家系圖常含敏感資訊,本工具有兩層保密設計:</P>
+        <p style={{ margin: '6px 0 4px', fontSize: 13.5, color: '#1d1d1f', lineHeight: 1.7 }}>
+          <Strong>① 總開關</Strong>(Tab1 / Tab3 都看得到)
+          <br />
+          勾起來 → 各 Tab 出現<Strong>「區塊全選保密」</Strong>+ <Strong>欄位個別 🔒</Strong>
+        </p>
+        <p style={{ margin: '6px 0 4px', fontSize: 13.5, color: '#1d1d1f', lineHeight: 1.7 }}>
+          <Strong>② Tab2 互動關係線「全選保密」</Strong>
+          <br />
+          不受總開關控制,隨時可勾,瞬間把所有互動關係線藏起來。
+        </p>
+        <P>勾保密後:</P>
+        <p style={{ margin: '4px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
+          • 該欄位 / 線條<Strong>畫布上即時消失</Strong>
+          <br />
+          • 匯出 PNG / JPG 時也消失(完整保護隱私)
+          <br />
+          • 內部資料還在,只是不顯示
+        </p>
+      </>
+    ),
+  },
+  {
     icon: '🎉',
     title: '完成 + 安裝為 App',
     content: (
@@ -821,7 +1011,8 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         </P>
         <InstallButtonZH />
         <P>
-          想深入?主選單 <Code>☰</Code> → <Strong>「看進階教學」</Strong>(10 步教全部功能)。
+          有任何問題,點右上 <Code>ℹ️</Code> 可看「關於 / 支持本專案」,
+          或在主選單 <Code>☰</Code> → 「回報問題」直接寫信給開發者。
         </P>
         <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: '#86868b', lineHeight: 1.6 }}>
           祝你使用順利 🌳
@@ -909,7 +1100,7 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           • For more shapes (<Strong>transgender / disability / disease</Strong>) → click ▶ to expand
         </P>
         <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
-          Deep dive of each tab is in "📘 Advanced Tutorial" (main menu).
+          Click ▶ inside each tab to expand for more detailed fields.
         </p>
       </>
     ),
@@ -933,7 +1124,34 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           to see full properties on the right.
         </P>
         <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
-          Marriage / relation / network lines: see the advanced tutorial.
+          Next step: see "Black line vs Blue line" for the deeper picture.
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '⚫🔵',
+    title: 'Black Line vs Blue Line — Two Layers',
+    content: (
+      <>
+        <P>
+          The same pair of people can have both kinds of lines:
+        </P>
+        <BlackBlueLineMockup lang="en" />
+        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
+          <Strong>⚫ Black = Membership</Strong>
+          <br />
+          Marriage, parent-child, and other "who is whose family"
+          — the <Strong>objective structure</Strong>.
+        </p>
+        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
+          <Strong>🔵 Blue = Relationship (Interaction)</Strong>
+          <br />
+          Close, conflict, distant, abusive… — the <Strong>subjective
+          observation</Strong> of how they relate.
+        </p>
+        <p style={{ fontSize: 12, color: '#86868b', marginTop: 8, lineHeight: 1.6 }}>
+          Add any of 15 interaction line types under the "Network" tab.
         </p>
       </>
     ),
@@ -965,6 +1183,60 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
     ),
   },
   {
+    icon: '🌳',
+    title: 'Ecosystems — Frame a Group',
+    content: (
+      <>
+        <P>
+          Beyond people and lines, you can also draw a <Strong>polygon</Strong>
+          around a group to express a <Strong>subsystem</Strong>
+          (family of origin, school, workplace, kinship, etc.).
+        </P>
+        <EcosystemMockup lang="en" />
+        <P>
+          How: tap the <Strong>✏️ pencil at the bottom-right</Strong> →
+          drag along the grid to outline a polygon →
+          release within <Strong>3 grid cells of the start point</Strong>
+          to auto-close.
+        </P>
+        <p style={{ margin: '6px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
+          • <Strong>Double-click an existing ecosystem</Strong> → edit mode → drag handles to reshape
+          <br />
+          • Double-click the label to rename; press × after selecting to delete
+          <br />
+          • You can create multiple frames and name them freely
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '🔒',
+    title: 'Privacy — Hide Sensitive Fields',
+    content: (
+      <>
+        <P>Genograms often contain sensitive info. Two-layer privacy design:</P>
+        <p style={{ margin: '6px 0 4px', fontSize: 13.5, color: '#1d1d1f', lineHeight: 1.7 }}>
+          <Strong>① Master switch</Strong> (visible in Tab1 / Tab3)
+          <br />
+          Tick it → each tab gets <Strong>"Select-all-private per section"</Strong> + <Strong>per-field 🔒</Strong>.
+        </p>
+        <p style={{ margin: '6px 0 4px', fontSize: 13.5, color: '#1d1d1f', lineHeight: 1.7 }}>
+          <Strong>② Tab2: "All interaction lines private"</Strong>
+          <br />
+          Independent of the master switch — instantly hide every blue line.
+        </p>
+        <P>Once marked private:</P>
+        <p style={{ margin: '4px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
+          • The field / line <Strong>disappears from the canvas instantly</Strong>
+          <br />
+          • Also hidden in PNG / JPG exports (full privacy)
+          <br />
+          • The underlying data is still kept — just not shown
+        </p>
+      </>
+    ),
+  },
+  {
     icon: '🎉',
     title: 'Done + Install as App',
     content: (
@@ -975,7 +1247,8 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
         </P>
         <InstallButtonEN />
         <P>
-          Want to learn more? Main menu <Code>☰</Code> → <Strong>"Advanced Tutorial"</Strong> (10 steps covering all features).
+          Questions? Tap <Code>ℹ️</Code> in the top-right for "About / Support",
+          or main menu <Code>☰</Code> → "Report" to email the developer.
         </P>
         <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: '#86868b', lineHeight: 1.6 }}>
           Happy charting 🌳
@@ -988,461 +1261,6 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
   },
 ];
 
-// ============================================================
-// 🌿 進階教學 — 中文 (10 步)
-// ============================================================
-export const ADVANCED_STEPS_ZH: TutorialStep[] = [
-  {
-    icon: '👤',
-    title: 'Tab1 身分資料完整',
-    content: (
-      <>
-        <P>
-          • <Strong>☐ 案主</Strong>:勾起來 → 該人物會有指標識別(顯示底線)
-          <br />
-          • <Strong>☐ 在地年份</Strong>:勾起來 → 出生/死亡年的下拉與畫布顯示<Strong>民國年</Strong>
-          <br />
-          • <Strong>個人資訊 11 欄</Strong>:職業/聯絡方式/居住地/收入/教育+畢業狀態/宗教/族群/家庭角色/身心障礙
-        </P>
-        <P>
-          教育欄位後面可選 <Code>畢業/在學/肄業</Code>。
-          <br />
-          多筆欄位(職業/聯絡/家庭角色/身心障礙)點 + 加項。
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '🌀',
-    title: 'Tab2 網絡關係(互動關係線 + 單位)',
-    content: (
-      <>
-        <P>
-          <Strong>互動關係線</Strong>(15 種,分 5 小組):
-          <br />
-          正向 4 / 中性 2 / 負向 3 / 暴力 3 / 照顧斷裂 3
-        </P>
-        <P>
-          畫法:選人物 → 點關係小圖示按鈕 → <Strong>進入等待選人狀態</Strong>(畫面頂部出現藍色提示條)→
-          點另一人物完成連線。Esc 取消。
-        </P>
-        <P>
-          選中現有互動關係線時點別的按鈕 → 即時切類型。
-          <br />
-          <Strong>雙擊互動關係線</Strong> → 編輯備注。
-          <br />
-          標題旁 <Strong>🔒 全選保密</Strong> → 全部互動關係線即時消失。
-        </P>
-        <P>
-          <Strong>網絡單位</Strong>:按 <Code>＋</Code> 加機構 → 畫布上單位上方 <Strong>▲</Strong> 拖出去連到人/單位/生態圈。
-          服務中 / 曾經資源 兩欄切換。
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '🩺',
-    title: 'Tab3 醫療',
-    content: (
-      <>
-        <P>
-          • <Strong>疾病清單</Strong>:自由輸入,或從擴充庫勾(ICD-10 / ICD-11 / DSM-5)
-          <br />
-          • <Strong>用藥清單</Strong>:自由輸入,或從健保 / 自費藥物庫勾
-          <br />
-          • 每筆可設診斷年/就醫狀態/配合程度/病況/每日次數/時機/劑量
-        </P>
-        <P>欄位個別可設保密(總開關在「保密功能」勾起後出現)。</P>
-      </>
-    ),
-  },
-  {
-    icon: '📎',
-    title: 'Tab4 附件存放',
-    content: (
-      <>
-        <P>
-          • <Strong>量表分數</Strong>:每量表一卡片,顯示最新 + 歷次紀錄
-          <br />
-          • <Strong>訪談筆記</Strong>:時序卡片(日期/內容)
-          <br />
-          • <Strong>文件附件</Strong>:📎 上傳檔案(桌面 Chrome/Edge)或 🔗 加外部連結(iOS Safari)
-        </P>
-        <P>
-          桌面版第一次上傳會請你選資料夾,App 在裡面建 <Code>case_{`{id}`}/attachments/</Code>。
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '🧪',
-    title: '評估工具 — 14 量表',
-    content: (
-      <>
-        <P>主選單 <Code>☰</Code> → <Strong>評估工具</Strong> → 7 分類(滑鼠移上去會彈出子選單):</P>
-        <P>
-          👫 家庭功能 / 🧠 心理評估 / 🍶 物質使用 / 🚨 暴力創傷 / 👴 老人長照 / 🩼 身障失能 / 🔗 外部連結
-        </P>
-        <P>量表結果可儲存到目前個案 → 自動顯示在 Tab4「量表分數」。</P>
-      </>
-    ),
-  },
-  {
-    icon: '👶',
-    title: '親子線深入',
-    content: (
-      <>
-        <P>
-          <Strong>視覺只 2 種</Strong>:
-          <br />
-          • 實線 = 法定父母(現在合法照顧者)
-          <br />
-          • 虛線 = 非法定(出養/寄養/捐精等)
-        </P>
-        <P>
-          <Strong>雙擊切換</Strong>:
-          <br />
-          • 實 → 虛(該線降為次要,單線變動)
-          <br />
-          • 虛 → 實 + <Strong>自動互相替換</Strong>(配偶同升、其他主要線自動降虛、父母縮 70%)
-        </P>
-        <P>
-          <Strong>拖萬用接點</Strong>:選人物 → 拖父母端點 →
-          <br />
-          • 丟到另一對<Strong>婚姻線</Strong> → 加該對為虛線次要父母 + 縮小,小孩自動跳到分支點下方
-          <br />
-          • 丟到單一人 → 加該人為虛線次要父母 + 縮小
-          <br />
-          原本 X+Y 父母線都不會斷掉。
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '🌳',
-    title: '生態圈',
-    content: (
-      <>
-        <P>
-          右下浮動工具列最右邊 <Strong>✏️ 畫筆</Strong> →
-          沿格線拖出多邊形 → 拖回起點 <Strong>3 格內</Strong> 放手 = 自動封閉。
-        </P>
-        <P>可建立多個圈,圈起任何子群組(原生家庭 / 學校系統 / 親屬等)。</P>
-        <P>
-          <Strong>雙擊既有生態圈</Strong> → 編輯模式 → 推拉粉色邊把手,
-          或拖藍色頂點(自動維持直角)調形狀。
-          <br />
-          標籤雙擊可改名,選中後 × 刪除。
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '🎮',
-    title: '多選 / 縮放 / 快捷鍵',
-    content: (
-      <>
-        <P>
-          <Strong>多選</Strong>:
-          <br />
-          • <Code>Shift+點</Code> → 加減選一個
-          <br />
-          • 在空白拖框 → <Strong>拖框選取</Strong>範圍內全部
-        </P>
-        <P>
-          <Strong>縮放</Strong>(40%-100%):
-          <br />
-          • 滾輪 / 觸控雙指縮放 / 右下「+」「−」按鈕
-          <br />
-          • 點百分比 → 歸零回 100%
-        </P>
-        <P>
-          <Strong>鍵盤</Strong>:
-          <br />
-          • <Code>{kbd('Cmd', 'Z')}</Code> 撤銷 / <Code>{kbd('Cmd', 'Shift', 'Z')}</Code> 重做
-          <br />
-          • <Code>Delete</Code> 刪除選中 / <Code>{kbd('Cmd', 'Delete')}</Code> 跳過確認
-          <br />
-          • <Code>Esc</Code> 關彈窗 / 退出畫筆 / 取消等待選人狀態
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '🔒',
-    title: '保密系統',
-    content: (
-      <>
-        <P>兩層架構:</P>
-        <P>
-          • <Strong>總開關</Strong>(Tab1 / Tab3 都看得到)勾起來
-          → 各 Tab 出現 <Strong>區塊「全選保密」</Strong> + <Strong>欄位個別 🔒</Strong>
-          <br />
-          • <Strong>Tab2 互動關係線「全選保密」</Strong>不受總開關控制,隨時可勾
-        </P>
-        <P>
-          勾保密後:
-          <br />
-          • 該欄位 / 互動關係線在<Strong>畫布上即時消失</Strong>
-          <br />
-          • 匯出 PNG/JPG 時也消失(完整保護隱私)
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '💾',
-    title: '匯出 + 完成',
-    content: (
-      <>
-        <P>主選單 <Code>☰</Code> → <Strong>匯出成檔案</Strong>:</P>
-        <P>
-          • <Strong>📷 圖片</Strong>:PNG / JPG + 解析度(1x/2x/3x)+ 自動裁切 / 目前畫面 + 不畫網點背景 + 隱藏關係細節(私密線整條移除)
-          <br />
-          • <Strong>📄 資料 .json</Strong>:單筆 / 多選 / 全備份 + 可帶設定 + 歷史
-        </P>
-        <P>
-          進階教學結束。主選單 <Code>☰</Code> 還有:
-          <br />
-          • 🌐 中英文一鍵切換
-          <br />
-          • 📖 符號圖例(76 個符號 + 搜尋)
-        </P>
-        <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: '#86868b', lineHeight: 1.6 }}>
-          祝你使用順利 🌳
-        </p>
-      </>
-    ),
-  },
-];
-
-// ============================================================
-// 🌿 Advanced Tutorial — EN (10 steps)
-// ============================================================
-export const ADVANCED_STEPS_EN: TutorialStep[] = [
-  {
-    icon: '👤',
-    title: 'Tab1: Complete Identity Data',
-    content: (
-      <>
-        <P>
-          • <Strong>☐ Proband</Strong>: Mark the focal case (shown with an underline)
-          <br />
-          • <Strong>☐ Local Year</Strong>: Show <Strong>ROC year</Strong> in birth/death dropdowns and on canvas
-          <br />
-          • <Strong>11 Personal Info Fields</Strong>: Occupation / Contact / Location / Income / Education+Status / Religion / Ethnicity / Family Role / Disability
-        </P>
-        <P>
-          Education has a status selector: <Code>Graduated / Attending / Dropped</Code>.
-          <br />
-          Multi-value fields (Occupation / Contact / Family Role / Disability) use the + button to add entries.
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '🌀',
-    title: 'Tab2: Network Relations (Lines + Units)',
-    content: (
-      <>
-        <P>
-          <Strong>Relation Lines</Strong> (15 types in 5 groups):
-          <br />
-          Positive 4 / Neutral 2 / Negative 3 / Violence 3 / Care-Cutoff 3
-        </P>
-        <P>
-          To draw: select a person → tap a relation icon → <Strong>enter the waiting state</Strong> (blue banner at the top) →
-          click another person to complete. Press Esc to cancel.
-        </P>
-        <P>
-          When a relation line is selected, tapping another icon → instantly change its type.
-          <br />
-          <Strong>Double-click a relation line</Strong> → edit note.
-          <br />
-          Next to the section title: <Strong>🔒 Mark All Private</Strong> → all relation lines instantly hidden.
-        </P>
-        <P>
-          <Strong>Network Units</Strong>: Tap <Code>＋</Code> to add an institution → on canvas, drag the <Strong>▲</Strong> above the unit to connect to a person / unit / ecosystem.
-          Switch between Active and Past Resources via the two columns.
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '🩺',
-    title: 'Tab3: Medical',
-    content: (
-      <>
-        <P>
-          • <Strong>Diseases</Strong>: Type freely, or check from the expansion library (ICD-10 / ICD-11 / DSM-5)
-          <br />
-          • <Strong>Medications</Strong>: Type freely, or check from the NHI / Self-pay medication library
-          <br />
-          • Each entry can have: diagnosis year / visit status / compliance / condition / daily frequency / timing / dosage
-        </P>
-        <P>Individual fields can be marked private (master switch needs to be on first).</P>
-      </>
-    ),
-  },
-  {
-    icon: '📎',
-    title: 'Tab4: Attachments',
-    content: (
-      <>
-        <P>
-          • <Strong>Scale Scores</Strong>: One card per scale, showing latest + history
-          <br />
-          • <Strong>Interview Notes</Strong>: Time-ordered cards (date / content)
-          <br />
-          • <Strong>File Attachments</Strong>: 📎 Upload files (desktop Chrome/Edge) or 🔗 add external links (iOS Safari)
-        </P>
-        <P>
-          On desktop, your first upload prompts you to pick a folder; the app creates <Code>case_{`{id}`}/attachments/</Code> inside.
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '🧪',
-    title: 'Assessment Tools — 14 Scales',
-    content: (
-      <>
-        <P>Main menu <Code>☰</Code> → <Strong>Assessment Tools</Strong> → 7 categories (hover to expand submenu):</P>
-        <P>
-          👫 Family / 🧠 Mental / 🍶 Substance Use / 🚨 Violence-Trauma / 👴 Elderly Care / 🩼 Disability / 🔗 External Links
-        </P>
-        <P>Save scale results to the current case → automatically shown in Tab4 "Scale Scores".</P>
-      </>
-    ),
-  },
-  {
-    icon: '👶',
-    title: 'Parent-Child Lines In Depth',
-    content: (
-      <>
-        <P>
-          <Strong>Only 2 visual styles</Strong>:
-          <br />
-          • Solid line = legal parent (current legal guardian)
-          <br />
-          • Dashed line = non-legal (placed-out / fostered / sperm donor, etc.)
-        </P>
-        <P>
-          <Strong>Double-click to toggle</Strong>:
-          <br />
-          • Solid → dashed (this line demoted to secondary, single change)
-          <br />
-          • Dashed → solid + <Strong>auto-swap</Strong> (spouse promoted too, other primary lines auto-demoted to dashed, parents shrink to 70%)
-        </P>
-        <P>
-          <Strong>Universal drag-drop endpoint</Strong>: Select a person → drag the parent endpoint →
-          <br />
-          • Drop on another <Strong>marriage line</Strong> → add that couple as dashed secondary parents + shrink; child jumps below the fork
-          <br />
-          • Drop on a single person → add them as a dashed secondary parent + shrink
-          <br />
-          The original X+Y parent lines stay connected.
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '🌳',
-    title: 'Ecosystem',
-    content: (
-      <>
-        <P>
-          Bottom-right floating toolbar: <Strong>✏️ Pen</Strong> →
-          drag along grid lines to draw a polygon → release within <Strong>3 grid cells</Strong> of the start point = auto-close.
-        </P>
-        <P>You can build multiple ecosystems to enclose any subgroup (family of origin / school system / kinship, etc.).</P>
-        <P>
-          <Strong>Double-click an existing ecosystem</Strong> → edit mode → drag pink edge handles,
-          or drag blue corners (auto-keeps right angles) to reshape.
-          <br />
-          Double-click the label to rename; × to delete when selected.
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '🎮',
-    title: 'Multi-select / Zoom / Shortcuts',
-    content: (
-      <>
-        <P>
-          <Strong>Multi-select</Strong>:
-          <br />
-          • <Code>Shift+click</Code> → toggle one
-          <br />
-          • Drag on empty space → <Strong>marquee</Strong> selects everything inside
-        </P>
-        <P>
-          <Strong>Zoom</Strong> (40%-100%):
-          <br />
-          • Mouse wheel / pinch / "+" "−" buttons
-          <br />
-          • Click the percentage → reset to 100%
-        </P>
-        <P>
-          <Strong>Keyboard</Strong>:
-          <br />
-          • <Code>{kbd('Cmd', 'Z')}</Code> Undo / <Code>{kbd('Cmd', 'Shift', 'Z')}</Code> Redo
-          <br />
-          • <Code>Delete</Code> Remove selected / <Code>{kbd('Cmd', 'Delete')}</Code> Skip confirmation
-          <br />
-          • <Code>Esc</Code> Close popup / exit pen mode / cancel waiting state
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '🔒',
-    title: 'Privacy System',
-    content: (
-      <>
-        <P>Two-layer architecture:</P>
-        <P>
-          • <Strong>Master switch</Strong> (visible in Tab1 / Tab3) when on
-          → each tab shows <Strong>"Mark All Private" buttons</Strong> + <Strong>per-field 🔒 toggles</Strong>
-          <br />
-          • <Strong>Tab2 Relation Lines "Mark All Private"</Strong> is independent of the master switch — always available
-        </P>
-        <P>
-          When marked private:
-          <br />
-          • The field / relation line <Strong>instantly disappears on canvas</Strong>
-          <br />
-          • Also hidden when exporting PNG/JPG (full privacy protection)
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '💾',
-    title: 'Export + Done',
-    content: (
-      <>
-        <P>Main menu <Code>☰</Code> → <Strong>Export to file</Strong>:</P>
-        <P>
-          • <Strong>📷 Image</Strong>: PNG / JPG + resolution (1x/2x/3x) + auto-crop / current view + no dot background + hide relation details (private lines removed)
-          <br />
-          • <Strong>📄 Data .json</Strong>: Single / multi-select / full backup + optional settings + history
-        </P>
-        <P>
-          Advanced tutorial complete. The main menu <Code>☰</Code> also has:
-          <br />
-          • 🌐 One-click language toggle (Chinese / English)
-          <br />
-          • 📖 Symbol Legend (76 symbols + search)
-        </P>
-        <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: '#86868b', lineHeight: 1.6 }}>
-          Happy charting 🌳
-        </p>
-      </>
-    ),
-  },
-];
 
 // ============================================================
 // 公開介面:依語言挑對應步驟
@@ -1451,11 +1269,6 @@ export function getBasicSteps(lang: 'zh' | 'en'): TutorialStep[] {
   return lang === 'en' ? BASIC_STEPS_EN : BASIC_STEPS_ZH;
 }
 
-export function getAdvancedSteps(lang: 'zh' | 'en'): TutorialStep[] {
-  return lang === 'en' ? ADVANCED_STEPS_EN : ADVANCED_STEPS_ZH;
-}
-
 // 向後相容:舊名稱
 export const BASIC_STEPS = BASIC_STEPS_ZH;
-export const ADVANCED_STEPS = ADVANCED_STEPS_ZH;
 export const TUTORIAL_STEPS = BASIC_STEPS_ZH;

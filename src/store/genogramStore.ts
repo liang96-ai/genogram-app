@@ -481,9 +481,6 @@ type GenogramStore = {
   // 教學
   showTutorial: boolean;
   setShowTutorial: (v: boolean) => void;
-  /** 進階教學:從主選單觸發,不會自動跳 */
-  showTutorialAdvanced: boolean;
-  setShowTutorialAdvanced: (v: boolean) => void;
 
   // App routing
   appMode: AppMode;
@@ -810,8 +807,6 @@ function pushHistory(
 export const useGenogramStore = create<GenogramStore>((set, get) => ({
   showTutorial: false,
   setShowTutorial: (v) => set({ showTutorial: v }),
-  showTutorialAdvanced: false,
-  setShowTutorialAdvanced: (v) => set({ showTutorialAdvanced: v }),
 
   appMode: 'list',
   caseList: [],

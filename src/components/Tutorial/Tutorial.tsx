@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
-import { getBasicSteps, getAdvancedSteps } from './tutorialSteps';
+import { getBasicSteps } from './tutorialSteps';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
-
-export type TutorialLevel = 'basic' | 'advanced';
 
 const BASIC_SEEN_KEY = 'genogram_tutorial_basic_seen';
 
@@ -23,35 +21,21 @@ export function hasTutorialBeenSeen(): boolean {
   }
 }
 
-export default function Tutorial({
-  onClose,
-  level = 'basic',
-}: {
-  onClose: () => void;
-  level?: TutorialLevel;
-}) {
+export default function Tutorial({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(0);
   const t = useT();
   const language = useGenogramStore((s) => s.language);
-  const STEPS =
-    level === 'advanced'
-      ? getAdvancedSteps(language)
-      : getBasicSteps(language);
+  const STEPS = getBasicSteps(language);
   const total = STEPS.length;
   const cur = STEPS[step];
   const isFirst = step === 0;
   const isLast = step === total - 1;
 
-  // 切換 level 時重置
-  useEffect(() => {
-    setStep(0);
-  }, [level]);
-
   // 鍵盤:Esc 關閉,左右鍵切換
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (level === 'basic') markTutorialSeen();
+        markTutorialSeen();
         onClose();
       }
       if (e.key === 'ArrowRight' && !isLast) {
@@ -63,10 +47,10 @@ export default function Tutorial({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isFirst, isLast, onClose, level]);
+  }, [isFirst, isLast, onClose]);
 
   const handleClose = () => {
-    if (level === 'basic') markTutorialSeen();
+    markTutorialSeen();
     onClose();
   };
 
@@ -78,9 +62,8 @@ export default function Tutorial({
     }
   };
 
-  const levelBadge =
-    level === 'advanced' ? t('tutorial.levelAdvanced') : t('tutorial.levelBasic');
-  const accent = level === 'advanced' ? '#34c759' : '#007aff';
+  const levelBadge = t('tutorial.levelBasic');
+  const accent = '#007aff';
 
   return (
     <div

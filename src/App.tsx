@@ -42,10 +42,6 @@ export default function App() {
   const renameCase = useGenogramStore((s) => s.renameCase);
   const showTutorial = useGenogramStore((s) => s.showTutorial);
   const setShowTutorial = useGenogramStore((s) => s.setShowTutorial);
-  const showTutorialAdvanced = useGenogramStore((s) => s.showTutorialAdvanced);
-  const setShowTutorialAdvanced = useGenogramStore(
-    (s) => s.setShowTutorialAdvanced,
-  );
   const currentCase = useGenogramStore((s) => s.currentCase);
   const selectedPersonIds = useGenogramStore((s) => s.selectedPersonIds);
   const selectedLineIds = useGenogramStore((s) => s.selectedLineIds);
@@ -296,13 +292,7 @@ export default function App() {
           />
         )}
         {showTutorial && (
-          <Tutorial onClose={() => setShowTutorial(false)} level="basic" />
-        )}
-        {showTutorialAdvanced && (
-          <Tutorial
-            onClose={() => setShowTutorialAdvanced(false)}
-            level="advanced"
-          />
+          <Tutorial onClose={() => setShowTutorial(false)} />
         )}
         <InstallBanner />
         <AboutButton />
@@ -346,13 +336,7 @@ export default function App() {
         />
       )}
       {showTutorial && (
-        <Tutorial onClose={() => setShowTutorial(false)} level="basic" />
-      )}
-      {showTutorialAdvanced && (
-        <Tutorial
-          onClose={() => setShowTutorialAdvanced(false)}
-          level="advanced"
-        />
+        <Tutorial onClose={() => setShowTutorial(false)} />
       )}
       <AboutButton />
     </>
@@ -374,9 +358,6 @@ function Toolbar({
   const canUndo = useGenogramStore((s) => s.history.past.length > 0);
   const canRedo = useGenogramStore((s) => s.history.future.length > 0);
   const setShowTutorial = useGenogramStore((s) => s.setShowTutorial);
-  const setShowTutorialAdvanced = useGenogramStore(
-    (s) => s.setShowTutorialAdvanced,
-  );
   const language = useGenogramStore((s) => s.language);
   const setLanguage = useGenogramStore((s) => s.setLanguage);
   const t = useT();
@@ -606,14 +587,6 @@ function Toolbar({
             label={t('menu.tutorialBasic')}
             onClick={() => {
               setShowTutorial(true);
-              setOpen(false);
-            }}
-          />
-          <MenuItem
-            icon="📘"
-            label={t('menu.tutorialAdvanced')}
-            onClick={() => {
-              setShowTutorialAdvanced(true);
               setOpen(false);
             }}
           />

@@ -30,9 +30,6 @@ export default function CaseList() {
   const deleteCase = useGenogramStore((s) => s.deleteCase);
   const showConfirm = useGenogramStore((s) => s.showConfirm);
   const setShowTutorial = useGenogramStore((s) => s.setShowTutorial);
-  const setShowTutorialAdvanced = useGenogramStore(
-    (s) => s.setShowTutorialAdvanced,
-  );
   const language = useGenogramStore((s) => s.language);
   const setLanguage = useGenogramStore((s) => s.setLanguage);
 
@@ -211,14 +208,6 @@ export default function CaseList() {
                   label={t('menu.tutorialBasic')}
                   onClick={() => {
                     setShowTutorial(true);
-                    setMenuOpen(false);
-                  }}
-                />
-                <HomeMenuItem
-                  icon="📘"
-                  label={t('menu.tutorialAdvanced')}
-                  onClick={() => {
-                    setShowTutorialAdvanced(true);
                     setMenuOpen(false);
                   }}
                 />
