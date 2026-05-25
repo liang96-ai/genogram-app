@@ -199,16 +199,16 @@ export type Line = {
 export type LineCategory = 'member' | 'relation';
 
 export type MemberSubType =
-  // 婚姻系列
+  // 婚姻系列(v1.1: 移除 legal-cohabitation/legal-separation/widowed — 字母標記無國際標準,自創)
+  // - 法律狀態 → 改用生態圈表達
+  // - 喪偶 → Tab1 ☑ 已往生 checkbox 自動畫 X
+  // - 舊資料若有這 3 個 subType,會在 store migrateGenogram 自動轉成最接近的(cohabitation/separation/marriage)
   | 'marriage'
   | 'engagement'
   | 'divorce'
   | 'separation' // 事實分居
-  | 'legal-separation'
   | 'engagement-separation'
-  | 'widowed'
   | 'cohabitation'
-  | 'legal-cohabitation'
   | 'engagement-cohabitation'
   | 'love-affair'
   // 舊名(保留向後相容,會在載入時 migrate 到新名)
@@ -216,6 +216,10 @@ export type MemberSubType =
   | 'partnership'
   | 'secret-affair'
   | 'divorce-remarriage'
+  // v1.1 已移除但保留 union 給 migration 識別(載入時轉成現行)
+  | 'legal-cohabitation'
+  | 'legal-separation'
+  | 'widowed'
   // 親子系列
   | 'biological'
   | 'adopted'
@@ -295,6 +299,11 @@ export type NetworkConnector = {
   subType?: RelationSubType;
   /** 線條備注(雙擊線可編輯) */
   note?: string;
+  /** 翻轉箭頭方向 — v1.1
+   *  - 預設 false:箭頭從 unit 指向 target
+   *  - true:箭頭從 target 指向 unit(雙擊 Tab2 同按鈕觸發翻轉)
+   *  - 僅對有箭頭的 subType 有視覺效果(focus-on / abuse 系列 / caregiver / negative-focus) */
+  reversed?: boolean;
 };
 
 export type NetworkUnit = {

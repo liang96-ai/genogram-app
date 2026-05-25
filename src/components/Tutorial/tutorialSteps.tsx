@@ -193,6 +193,343 @@ function FamilyLineMockup({ lang }: { lang: Lang }) {
 }
 
 // ============================================================
+// 共用元件:婚姻線雙擊循環 — 教使用者點兩下可在常用婚姻型態間切換
+// 結婚(實) → 分居(實+斜) → 離婚(實+雙斜) → 結婚
+// ============================================================
+function MarriageCycleMockup({ lang }: { lang: Lang }) {
+  const t =
+    lang === 'en'
+      ? {
+          ariaLabel: 'Marriage line cycle on double-click',
+          marriage: 'Married',
+          separation: 'Separated',
+          divorce: 'Divorced',
+          hint: 'Double-click → cycle',
+        }
+      : {
+          ariaLabel: '婚姻線雙擊循環示意',
+          marriage: '結婚',
+          separation: '分居',
+          divorce: '離婚',
+          hint: '雙擊 → 循環',
+        };
+  // 通用一對夫妻 + 不同婚姻線中段標記
+  const renderCouple = (
+    xOff: number,
+    label: string,
+    decorate: 'none' | 'slash1' | 'slash2',
+  ) => {
+    const px = xOff + 22;
+    const mx = xOff + 102;
+    const cy = 56;
+    const mid = (px + mx) / 2;
+    return (
+      <g>
+        <text x={xOff + 62} y={20} textAnchor="middle" style={{ fontSize: 11, fill: '#007aff', fontWeight: 600 }}>{label}</text>
+        {/* 婚姻線 */}
+        <line x1={px + 14} y1={cy} x2={mx - 14} y2={cy} stroke="#404040" strokeWidth="2.25" />
+        {/* 中段斜線(分居/離婚)*/}
+        {decorate === 'slash1' && (
+          <line x1={mid - 3} y1={cy - 9} x2={mid + 3} y2={cy + 9} stroke="#404040" strokeWidth="2.25" />
+        )}
+        {decorate === 'slash2' && (
+          <>
+            <line x1={mid - 7} y1={cy - 9} x2={mid - 1} y2={cy + 9} stroke="#404040" strokeWidth="2.25" />
+            <line x1={mid + 1} y1={cy - 9} x2={mid + 7} y2={cy + 9} stroke="#404040" strokeWidth="2.25" />
+          </>
+        )}
+        {/* 男 */}
+        <rect x={px - 14} y={cy - 14} width="28" height="28" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
+        {/* 女 */}
+        <circle cx={mx} cy={cy} r="14" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
+      </g>
+    );
+  };
+  return (
+    <svg
+      viewBox="0 0 420 130"
+      width="100%"
+      style={{
+        display: 'block',
+        margin: '8px auto',
+        maxWidth: 460,
+        background: '#fafafa',
+        borderRadius: 8,
+      }}
+      aria-label={t.ariaLabel}
+    >
+      {renderCouple(8, t.marriage, 'none')}
+      {/* 箭頭 1 → 2 */}
+      <text x={146} y={62} textAnchor="middle" style={{ fontSize: 18, fill: '#007aff', fontWeight: 700 }}>›</text>
+      {renderCouple(156, t.separation, 'slash1')}
+      {/* 箭頭 2 → 3 */}
+      <text x={294} y={62} textAnchor="middle" style={{ fontSize: 18, fill: '#007aff', fontWeight: 700 }}>›</text>
+      {renderCouple(304, t.divorce, 'slash2')}
+      {/* 底部提示 */}
+      <text x="210" y="115" textAnchor="middle" style={{ fontSize: 11, fill: '#1d1d1f' }}>{t.hint}</text>
+    </svg>
+  );
+}
+
+// ============================================================
+// 共用元件:三角形(未知性別)雙擊妊娠 4 段循環
+// △ 懷孕 → ⊟ 死產(菱形+X) → ● 流產(小實心圓) → ▲+/ 人工流產 → △ 懷孕
+// 對齊 McGoldrick 4th ed + NSGC 2008/2022 標準
+// ============================================================
+function PregnancyCycleMockup({ lang }: { lang: Lang }) {
+  const t =
+    lang === 'en'
+      ? {
+          ariaLabel: 'Pregnancy outcome cycle on double-click',
+          pregnancy: 'Pregnancy',
+          stillbirth: 'Stillbirth',
+          miscarriage: 'Miscarriage',
+          abortion: 'Abortion',
+          hint: 'Double-click △ → cycle 4 outcomes',
+        }
+      : {
+          ariaLabel: '三角形雙擊妊娠 4 段循環示意',
+          pregnancy: '懷孕',
+          stillbirth: '死產',
+          miscarriage: '流產',
+          abortion: '人工流產',
+          hint: '雙擊 △ → 4 段循環',
+        };
+  const stroke = '#404040';
+  const sw = 2;
+  // 4 個 stage 中心 x 座標(svg viewBox 0..380)
+  const xs = [48, 138, 228, 318];
+  const cy = 56;
+  // 各 stage 形狀渲染
+  const renderShape = (cx: number, kind: 'preg' | 'still' | 'misc' | 'abort') => {
+    if (kind === 'preg') {
+      const h = 18;
+      return (
+        <polygon
+          points={`${cx},${cy - h} ${cx + h},${cy + h} ${cx - h},${cy + h}`}
+          fill="#ffffff"
+          stroke={stroke}
+          strokeWidth={sw}
+        />
+      );
+    }
+    if (kind === 'still') {
+      // McGoldrick ⊟ 菱形 + X 超出邊框(對齊 Gallery #13 / Canvas + #17 過世女視覺風格)
+      const h = 18;
+      // X 用比菱形大一點的 ±h*1.0(等於菱形的 bounding box 對角線),自然超出四邊
+      return (
+        <g>
+          <polygon
+            points={`${cx},${cy - h} ${cx + h},${cy} ${cx},${cy + h} ${cx - h},${cy}`}
+            fill="#ffffff"
+            stroke={stroke}
+            strokeWidth={sw}
+          />
+          <line x1={cx - h} y1={cy - h} x2={cx + h} y2={cy + h} stroke={stroke} strokeWidth={sw * 1.3} />
+          <line x1={cx - h} y1={cy + h} x2={cx + h} y2={cy - h} stroke={stroke} strokeWidth={sw * 1.3} />
+        </g>
+      );
+    }
+    if (kind === 'misc') {
+      // NSGC SAB 小實心圓
+      return <circle cx={cx} cy={cy} r={8} fill={stroke} />;
+    }
+    // abort — NSGC TOP 三角+對角線
+    const h = 18;
+    return (
+      <g>
+        <polygon
+          points={`${cx},${cy - h} ${cx + h},${cy + h} ${cx - h},${cy + h}`}
+          fill="#ffffff"
+          stroke={stroke}
+          strokeWidth={sw}
+        />
+        <line x1={cx - h} y1={cy + h} x2={cx + h} y2={cy - h} stroke={stroke} strokeWidth={sw * 1.3} />
+      </g>
+    );
+  };
+  const labels = [t.pregnancy, t.stillbirth, t.miscarriage, t.abortion];
+  const kinds: Array<'preg' | 'still' | 'misc' | 'abort'> = ['preg', 'still', 'misc', 'abort'];
+  return (
+    <svg
+      viewBox="0 0 380 130"
+      width="100%"
+      style={{
+        display: 'block',
+        margin: '8px auto',
+        maxWidth: 460,
+        background: '#fafafa',
+        borderRadius: 8,
+      }}
+      aria-label={t.ariaLabel}
+    >
+      {xs.map((cx, i) => (
+        <g key={i}>
+          {/* 階段名稱(上方) */}
+          <text x={cx} y={22} textAnchor="middle" style={{ fontSize: 10, fill: '#007aff', fontWeight: 600 }}>
+            {labels[i]}
+          </text>
+          {/* 形狀 */}
+          {renderShape(cx, kinds[i])}
+          {/* 箭頭(往下個 stage)— 最後一個沒有箭頭(改用底部 cycle-back) */}
+          {i < xs.length - 1 && (
+            <text
+              x={(cx + xs[i + 1]) / 2}
+              y={62}
+              textAnchor="middle"
+              style={{ fontSize: 18, fill: '#007aff', fontWeight: 700 }}
+            >
+              ›
+            </text>
+          )}
+        </g>
+      ))}
+      {/* Cycle-back 弧:從第 4 個 stage 底部繞回第 1 個(視覺暗示循環) */}
+      <path
+        d={`M ${xs[3]} ${cy + 24} Q ${(xs[0] + xs[3]) / 2} ${cy + 44} ${xs[0]} ${cy + 24}`}
+        fill="none"
+        stroke="#007aff"
+        strokeWidth="1.2"
+        strokeDasharray="4 3"
+      />
+      <polygon points={`${xs[0]},${cy + 24} ${xs[0] + 5},${cy + 19} ${xs[0] + 5},${cy + 29}`} fill="#007aff" />
+      {/* 底部提示 */}
+      <text x="190" y="120" textAnchor="middle" style={{ fontSize: 11, fill: '#1d1d1f' }}>
+        {t.hint}
+      </text>
+    </svg>
+  );
+}
+
+// ============================================================
+// 共用元件:重疊提示 — 兩個圖形太近時各自有橘色虛線匡警告
+// ============================================================
+function OverlapWarningMockup({ lang }: { lang: Lang }) {
+  const t =
+    lang === 'en'
+      ? {
+          ariaLabel: 'Orange dashed warning ring when shapes overlap',
+          hint: 'Too close → orange dashed ring',
+          action: '↔ Drag them apart',
+        }
+      : {
+          ariaLabel: '圖形太近時的橘色虛線提示匡',
+          hint: '靠太近 → 浮出橘色虛線匡',
+          action: '↔ 拉開它們',
+        };
+  return (
+    <svg
+      viewBox="0 0 380 140"
+      width="100%"
+      style={{
+        display: 'block',
+        margin: '8px auto',
+        maxWidth: 440,
+        background: '#fafafa',
+        borderRadius: 8,
+      }}
+      aria-label={t.ariaLabel}
+    >
+      {/* 提示文字 */}
+      <text x="190" y="20" textAnchor="middle" style={{ fontSize: 11.5, fill: '#1d1d1f', fontWeight: 600 }}>{t.hint}</text>
+      {/* 方框 — 橘色虛線匡 + 黑色實體 */}
+      <rect x="92" y="46" width="64" height="64" fill="none" stroke="#ff9500" strokeWidth="2" strokeDasharray="4 3" />
+      <rect x="104" y="58" width="40" height="40" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
+      {/* 圓形 — 橘色虛線匡 + 黑色實體 */}
+      <circle cx="256" cy="78" r="32" fill="none" stroke="#ff9500" strokeWidth="2" strokeDasharray="4 3" />
+      <circle cx="256" cy="78" r="20" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
+      {/* 雙向箭頭(中間 = 太近、要拉開) */}
+      <line x1="170" y1="78" x2="210" y2="78" stroke="#ff9500" strokeWidth="1.5" />
+      <polygon points="170,78 178,74 178,82" fill="#ff9500" />
+      <polygon points="210,78 202,74 202,82" fill="#ff9500" />
+      {/* 底部說明 */}
+      <text x="190" y="130" textAnchor="middle" style={{ fontSize: 11, fill: '#3a3a3c' }}>{t.action}</text>
+    </svg>
+  );
+}
+
+// ============================================================
+// 共用元件:藍線翻轉箭頭 — 點藍線後在 Tab2 點同一按鈕翻轉方向
+// 左:箭頭 A→B / 右:箭頭 B→A
+// ============================================================
+function BlueLineFlipMockup({ lang }: { lang: Lang }) {
+  const t =
+    lang === 'en'
+      ? {
+          ariaLabel: 'Click same Tab2 button to flip blue arrow direction',
+          before: 'Before',
+          after: 'After',
+          hint: 'Select line → tap same Tab2 button → arrow flips',
+        }
+      : {
+          ariaLabel: '點同一個 Tab2 按鈕讓藍色箭頭翻轉方向',
+          before: '之前',
+          after: '之後',
+          hint: '選中藍線 → 在 Tab2 點同一按鈕 → 箭頭翻轉',
+        };
+  // 通用一對人物 + 一條 focus-on 藍線(從 from → to)
+  const renderPair = (
+    xOff: number,
+    label: string,
+    direction: 'forward' | 'reverse',
+  ) => {
+    const ax = xOff + 22;
+    const bx = xOff + 122;
+    const cy = 50;
+    const fromX = direction === 'forward' ? ax + 14 : bx - 14;
+    const toX = direction === 'forward' ? bx - 14 : ax + 14;
+    // 箭頭三角:在 toX, cy 終點
+    const arrowLen = 8;
+    const arrowWid = 7;
+    const ux = direction === 'forward' ? 1 : -1;
+    const arrowBaseX = toX - ux * arrowLen;
+    return (
+      <g>
+        <text x={xOff + 72} y={20} textAnchor="middle" style={{ fontSize: 11, fill: '#007aff', fontWeight: 600 }}>{label}</text>
+        {/* 藍線(留 arrowLen 給箭頭) */}
+        <line
+          x1={fromX}
+          y1={cy}
+          x2={arrowBaseX}
+          y2={cy}
+          stroke="#007aff"
+          strokeWidth="1.5"
+        />
+        {/* 箭頭三角 */}
+        <polygon
+          points={`${toX},${cy} ${arrowBaseX},${cy - arrowWid / 2} ${arrowBaseX},${cy + arrowWid / 2}`}
+          fill="#1d1d1f"
+        />
+        {/* A(方) */}
+        <rect x={ax - 14} y={cy - 14} width="28" height="28" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
+        {/* B(圓) */}
+        <circle cx={bx} cy={cy} r="14" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
+      </g>
+    );
+  };
+  return (
+    <svg
+      viewBox="0 0 380 110"
+      width="100%"
+      style={{
+        display: 'block',
+        margin: '8px auto',
+        maxWidth: 440,
+        background: '#fafafa',
+        borderRadius: 8,
+      }}
+      aria-label={t.ariaLabel}
+    >
+      {renderPair(8, t.before, 'forward')}
+      {/* 箭頭符號 → */}
+      <text x={184} y={56} textAnchor="middle" style={{ fontSize: 18, fill: '#007aff', fontWeight: 700 }}>↔</text>
+      {renderPair(196, t.after, 'reverse')}
+      <text x="190" y="98" textAnchor="middle" style={{ fontSize: 11, fill: '#1d1d1f' }}>{t.hint}</text>
+    </svg>
+  );
+}
+
+// ============================================================
 // 共用元件:黑線 vs 藍線 — 同一對父母可以同時有「成員關係(黑)」
 // 和「互動關係(藍)」,疊在同一張圖上對比
 // ============================================================
@@ -205,17 +542,15 @@ function BlackBlueLineMockup({ lang }: { lang: Lang }) {
       : {
           ariaLabel: '黑線 vs 藍線 — 黑線直線、藍線曲線繞過',
         };
-  const px = 80;   // 爸 x
-  const mx = 240;  // 媽 x
-  const cy = 70;   // 父母 y
+  const px = 80;
+  const mx = 240;
+  const cy = 70;
   const childX = 160;
   const childY = 150;
   const trunkY = 115;
-  // 黑色婚姻線端點(避開人物形狀邊緣)
   const blackStart = px + 14;
   const blackEnd = mx - 14;
   // 藍色互動關係線 — 弧形向上繞過黑線(與真實 App 行為一致)
-  // 用 quadratic curve:起點/終點同高,控制點往上偏 30px,做出弧
   const blueArcPath = `M ${blackStart} ${cy} Q ${(blackStart + blackEnd) / 2} ${cy - 36} ${blackEnd} ${cy}`;
   return (
     <svg
@@ -230,7 +565,7 @@ function BlackBlueLineMockup({ lang }: { lang: Lang }) {
       }}
       aria-label={t.ariaLabel}
     >
-      {/* 藍線:互動關係線 — 弧形向上繞過(在黑線下方層先畫,避免蓋住黑線端點) */}
+      {/* 藍線:互動關係線 — 弧形向上繞過 */}
       <path d={blueArcPath} stroke="#007aff" strokeWidth="1.5" fill="none" />
       {/* 黑線:婚姻線 — 直線 */}
       <line x1={blackStart} y1={cy} x2={blackEnd} y2={cy} stroke="#404040" strokeWidth="2.25" />
@@ -238,7 +573,7 @@ function BlackBlueLineMockup({ lang }: { lang: Lang }) {
       <rect x={px - 14} y={cy - 14} width="28" height="28" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
       {/* 媽(圓) */}
       <circle cx={mx} cy={cy} r="14" fill="#ffffff" stroke="#404040" strokeWidth="2.25" />
-      {/* 親子黑線 — 婚姻線中點往下 + 分到小孩 */}
+      {/* 親子黑線 */}
       <line x1={(px + mx) / 2} y1={cy} x2={(px + mx) / 2} y2={trunkY} stroke="#404040" strokeWidth="2.25" />
       <line x1={(px + mx) / 2} y1={trunkY} x2={childX} y2={trunkY} stroke="#404040" strokeWidth="2.25" />
       <line x1={childX} y1={trunkY} x2={childX} y2={childY - 14} stroke="#404040" strokeWidth="2.25" />
@@ -688,8 +1023,19 @@ function InstallButtonEN() {
   );
 }
 
-const P: React.FC<{ children: ReactNode }> = ({ children }) => (
-  <p style={{ margin: '8px 0', lineHeight: 1.7, fontSize: 14, color: '#1d1d1f' }}>
+const P: React.FC<{
+  children: ReactNode;
+  style?: React.CSSProperties;
+}> = ({ children, style }) => (
+  <p
+    style={{
+      margin: '8px 0',
+      lineHeight: 1.7,
+      fontSize: 14,
+      color: '#1d1d1f',
+      ...style,
+    }}
+  >
     {children}
   </p>
 );
@@ -894,8 +1240,8 @@ function InspectorMockup({ lang }: { lang: Lang }) {
 // ============================================================
 export const BASIC_STEPS_ZH: TutorialStep[] = [
   {
-    icon: '🖼️',
-    title: '畫面總覽 — 人物、4 個箭頭',
+    icon: '',
+    title: '畫布 & 4 個快捷箭頭',
     content: (
       <>
         <P>進入個案後中央就是 <Strong>畫布</Strong>。</P>
@@ -910,8 +1256,8 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
     ),
   },
   {
-    icon: '🔄',
-    title: '雙擊切換',
+    icon: '',
+    title: '雙擊人物切形狀',
     content: (
       <>
         <P><Strong>雙擊畫布上的人物</Strong> 直接切形狀,不用回屬性面板:</P>
@@ -919,10 +1265,11 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         <P>
           • <Code>□</Code> ↔ <Code>○</Code> 男女互切(最常用)
           <br />
-          • <Code>△</Code> 懷孕 → 死產 → 流產 → 人工流產 4 段循環
+          • <Code>△</Code> 懷孕 → 死產 → 流產 → 人工流產 4 段循環(對齊 McGoldrick / NSGC 標準)
           <br />
           • <Code>◇</Code> 未知性別 / <Code>機構</Code> / <Code>寵物</Code> 不循環
         </P>
+        <PregnancyCycleMockup lang="zh" />
         <P>
           想用更多形狀(<Strong>跨性別 / 同性戀 / 障別 / 疾病</Strong>等)
           → 走右側屬性面板基本分頁的展開區塊(下一步圖解)。
@@ -931,8 +1278,28 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
     ),
   },
   {
-    icon: '📑',
-    title: '右側屬性面板(4 個分頁)',
+    icon: '',
+    title: '重疊提示 — 橘色虛線匡',
+    content: (
+      <>
+        <P style={{ textAlign: 'left' }}>
+          當兩個圖形太靠近、會擋到彼此時,
+          畫布會自動加上 <Strong>橘色虛線外匡</Strong> 提醒:
+        </P>
+        <OverlapWarningMockup lang="zh" />
+        <p style={{ margin: '8px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
+          • <Strong>把它們拉開</Strong> 就好 — 不影響資料,只是版面提醒
+          <br />
+          • 系統<Strong>不會自動分開</Strong>,保留你的版面決定權
+          <br />
+          • 安全距離預設 1 格(約 80px)
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '',
+    title: '右側面板 — 基本 / 網絡 / 醫療 / 自訂',
     content: (
       <>
         <P>右側屬性面板共 <Strong>4 個分頁</Strong>:</P>
@@ -962,59 +1329,11 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
     ),
   },
   {
-    icon: '➰',
-    title: '線條入門 — 親子線實/虛',
+    icon: '',
+    title: '線條總覽 — 黑線 vs 藍線',
     content: (
       <>
-        <P>家族結構的「黑色線條」分兩類:</P>
-        <FamilyLineMockup lang="zh" />
-        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
-          <Strong>│ 實線</Strong> — 親生 / 收養
-        </p>
-        <p style={{ margin: '4px 0 8px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
-          <Strong>┊ 虛線</Strong> — 寄養 / 出養 / 精子捐贈
-        </p>
-        <P>
-          <Strong>雙擊</Strong> 親子線可在實/虛之間切換(夫妻雙方的親子線會一起變)。
-          <Strong>單擊</Strong> 任何線可在右側面板看完整屬性。
-        </P>
-        <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
-          下一步看「黑線 vs 藍線」更完整的差別。
-        </p>
-      </>
-    ),
-  },
-  {
-    icon: '🖱️',
-    title: '拖曳線條 — 兩種用法',
-    content: (
-      <>
-        <p style={{ margin: '6px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f' }}>
-          A. 拖既有線端點 → 改連接對象
-        </p>
-        <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 12px' }}>
-          婚姻線、親子線、互動關係線都能<Strong>按住線端點 → 拖到另一個人 → 放開</Strong>,
-          自動改連對象(預覽會顯示橘色虛線)。
-        </p>
-        <p style={{ margin: '12px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f' }}>
-          B. 拖親子線到別對夫妻 → 加為出養父母(已出養為例)
-        </p>
-        <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 4px' }}>
-          場景:已知 C 是 AB 的小孩,後來發現其實 C 是 DE 出養給 AB 的:
-        </p>
-        <DragToMarriageMockup lang="zh" />
-        <p style={{ fontSize: 12, color: '#86868b', marginTop: 8, lineHeight: 1.6 }}>
-          兩種拖曳,拖到空白處 / 自己 = 取消。
-        </p>
-      </>
-    ),
-  },
-  {
-    icon: '⚫🔵',
-    title: '黑線 vs 藍線',
-    content: (
-      <>
-        <P>同一對人物可以同時有兩種線:</P>
+        <P style={{ textAlign: 'left' }}>同一對人物可以同時有兩種線:</P>
         <BlackBlueLineMockup lang="zh" />
         <p style={{ margin: '10px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
           ⚫ <Strong>黑線</Strong> = 成員關係(誰是誰的家人 - Membership)
@@ -1022,16 +1341,102 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         <p style={{ margin: '6px 0 10px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
           🔵 <Strong>藍線</Strong> = 互動關係(誰跟誰互動程度 - Relationship)
         </p>
-        <P>
-          在右側 <Strong>Tab2「網絡」</Strong> 可加 15 種互動關係線。
-          點選任一互動關係圖示後,<Strong>同一個圖示再點一次</Strong> 可反轉箭頭方向。
+        <P style={{ textAlign: 'left' }}>
+          先教<Strong>黑線</Strong>(婚姻 / 親子)→ 下一步;
+          <Strong>藍線</Strong>互動關係見後續步驟,共 15 種(連結 / 親密 / 敵意 / 截斷…)。
         </P>
       </>
     ),
   },
   {
-    icon: '🌳',
-    title: '生態圈 — 框出群組',
+    icon: '',
+    title: '黑線 — 婚姻 / 親子(雙擊循環)',
+    content: (
+      <>
+        <p style={{ margin: '6px 0', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          <Strong>婚姻線</Strong>:<Strong>雙擊</Strong>可在常用型態間循環:
+        </p>
+        <MarriageCycleMockup lang="zh" />
+        <p style={{ margin: '6px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
+          想用更多婚姻型態(訂婚 / 同居 / 喪偶 / 秘密外遇 等)→ 右側 <Strong>Tab2「常用線條 → 婚姻線」</Strong> 點按鈕。
+        </p>
+        <p style={{ margin: '14px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          <Strong>親子線</Strong>:分實 / 虛兩類,<Strong>雙擊</Strong>切換:
+        </p>
+        <FamilyLineMockup lang="zh" />
+        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          <Strong>│ 實線</Strong> — 親生 / 收養
+        </p>
+        <p style={{ margin: '4px 0 8px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          <Strong>┊ 虛線</Strong> — 寄養 / 出養 / 精子捐贈
+        </p>
+        <p style={{ fontSize: 12, color: '#86868b', lineHeight: 1.6, textAlign: 'left' }}>
+          夫妻雙方的親子線會一起變;單擊任何線可在右側面板看完整屬性。
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '',
+    title: '拖曳線條 — 改連接 / 改父母',
+    content: (
+      <>
+        <p style={{ margin: '6px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f', textAlign: 'left' }}>
+          A. 拖既有線端點 → 改連接對象
+        </p>
+        <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 12px', textAlign: 'left' }}>
+          婚姻線、親子線、互動關係線都能<Strong>按住線端點 → 拖到另一個人 → 放開</Strong>,
+          自動改連對象(預覽會顯示橘色虛線)。
+        </p>
+        <p style={{ margin: '12px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f', textAlign: 'left' }}>
+          B. 拖親子線到別對夫妻 → 加為出養父母(已出養為例)
+        </p>
+        <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 4px', textAlign: 'left' }}>
+          場景:已知 C 是 AB 的小孩,後來發現其實 C 是 DE 出養給 AB 的:
+        </p>
+        <DragToMarriageMockup lang="zh" />
+        <p style={{ fontSize: 12, color: '#86868b', marginTop: 8, lineHeight: 1.6, textAlign: 'left' }}>
+          兩種拖曳,拖到空白處 / 自己 = 取消。
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '',
+    title: '藍線 — 互動關係 & Tab2 翻轉',
+    content: (
+      <>
+        <P style={{ textAlign: 'left' }}>
+          <Strong>藍線 = 互動關係</Strong>(誰跟誰互動程度),共 15 種,在右側
+          <Strong> Tab2「常用線條 → 互動關係線」</Strong> 加。
+        </P>
+        <p style={{ margin: '6px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
+          分 4 群:
+          <br />
+          • <Strong>正向</Strong>:連結 / 親密 / 過度緊密
+          <br />
+          • <Strong>互動程度</Strong>:疏離 / 敵意 / 親密-敵意 / 靈性 / 專注於 / 負向關注
+          <br />
+          • <Strong>暴力</Strong>:身體 / 情緒 / 性虐待
+          <br />
+          • <Strong>照顧 / 斷裂</Strong>:照顧者 / 截斷 / 修復截斷
+        </p>
+        <p style={{ margin: '14px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          有箭頭的 6 種(專注於 / 負向關注 / 三種虐待 / 照顧者)可<Strong>翻轉方向</Strong>:
+        </p>
+        <BlueLineFlipMockup lang="zh" />
+        <p style={{ margin: '6px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
+          操作:畫布上<Strong>選中藍線</Strong> → 在 Tab2 點<Strong>同一個按鈕</Strong> → 箭頭起終點對調。
+        </p>
+        <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6, textAlign: 'left' }}>
+          沒選任何線時點按鈕 → 進入 pending mode → 再點兩個人物完成連線。
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '',
+    title: '生態圈 — 圈出子系統',
     content: (
       <>
         <P>
@@ -1054,8 +1459,8 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
     ),
   },
   {
-    icon: '🔒',
-    title: '保密功能 — 隱藏敏感欄位',
+    icon: '',
+    title: '保密 — 雙層隱藏設計',
     content: (
       <>
         <P>家系圖常含敏感資訊,本工具有兩層保密設計:</P>
@@ -1077,8 +1482,8 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
     ),
   },
   {
-    icon: '🎉',
-    title: '完成 + 安裝為 App',
+    icon: '',
+    title: '完成 — 裝成 App 用更順',
     content: (
       <>
         <P>
@@ -1106,8 +1511,8 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
 // ============================================================
 export const BASIC_STEPS_EN: TutorialStep[] = [
   {
-    icon: '🖼️',
-    title: 'Screen Overview — Person, 4 Arrows',
+    icon: '',
+    title: 'Canvas & 4 Quick Arrows',
     content: (
       <>
         <P>After opening a case, the center is the <Strong>canvas</Strong>.</P>
@@ -1122,8 +1527,8 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
     ),
   },
   {
-    icon: '🔄',
-    title: 'Double-click to Switch',
+    icon: '',
+    title: 'Double-click Person to Switch Shape',
     content: (
       <>
         <P><Strong>Double-click a person</Strong> on the canvas to cycle shape — no need to go back to the inspector:</P>
@@ -1131,10 +1536,11 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
         <P>
           • <Code>□</Code> ↔ <Code>○</Code> Male / Female (most common)
           <br />
-          • <Code>△</Code> Pregnancy → Stillbirth → Miscarriage → Abortion (4-cycle)
+          • <Code>△</Code> Pregnancy → Stillbirth → Miscarriage → Abortion (4-cycle, McGoldrick / NSGC aligned)
           <br />
           • <Code>◇</Code> Unknown / <Code>Institution</Code> / <Code>Pet</Code> do not cycle
         </P>
+        <PregnancyCycleMockup lang="en" />
         <P>
           For more shapes (<Strong>transgender / gay / disability / disease</Strong>)
           → use the expandable sections in the inspector's Basic tab (next step illustrates).
@@ -1143,8 +1549,28 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
     ),
   },
   {
-    icon: '📑',
-    title: 'Right Inspector (4 Tabs)',
+    icon: '',
+    title: 'Overlap Warning — Orange Dashed Ring',
+    content: (
+      <>
+        <P style={{ textAlign: 'left' }}>
+          When two shapes get too close and start to overlap, the canvas adds an
+          <Strong> orange dashed ring</Strong> as a reminder:
+        </P>
+        <OverlapWarningMockup lang="en" />
+        <p style={{ margin: '8px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
+          • <Strong>Just drag them apart</Strong> — data is not affected, only a layout reminder
+          <br />
+          • The app <Strong>does not auto-separate</Strong> — your layout decisions stay yours
+          <br />
+          • Safe distance is ~1 grid (80px)
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '',
+    title: 'Right Panel — Basic / Network / Medical / Custom',
     content: (
       <>
         <P>The right Inspector has <Strong>4 tabs</Strong>:</P>
@@ -1174,62 +1600,11 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
     ),
   },
   {
-    icon: '➰',
-    title: 'Lines Intro — Parent-child Solid / Dashed',
+    icon: '',
+    title: 'Lines Overview — Black vs Blue',
     content: (
       <>
-        <P>Black family-structure lines come in two flavors:</P>
-        <FamilyLineMockup lang="en" />
-        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
-          <Strong>│ Solid</Strong> — biological / adopted
-        </p>
-        <p style={{ margin: '4px 0 8px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f' }}>
-          <Strong>┊ Dashed</Strong> — fostered / placed-out / sperm donor
-        </p>
-        <P>
-          <Strong>Double-click</Strong> a parent-child line to toggle solid/dashed
-          (both spouses' lines flip together). <Strong>Single-click</Strong> any line
-          to see full properties on the right.
-        </P>
-        <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
-          Next step: see "Black line vs Blue line" for the deeper picture.
-        </p>
-      </>
-    ),
-  },
-  {
-    icon: '🖱️',
-    title: 'Drag a Line — Two Uses',
-    content: (
-      <>
-        <p style={{ margin: '6px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f' }}>
-          A. Drag an existing endpoint → change target
-        </p>
-        <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 12px' }}>
-          Marriage / parent-child / relation lines: <Strong>press and
-          hold the line's endpoint → drag onto another person →
-          release</Strong>. An orange dashed preview shows where it'll
-          land.
-        </p>
-        <p style={{ margin: '12px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f' }}>
-          B. Drag a parent-child line to another couple → add as bio (placed-out example)
-        </p>
-        <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 4px' }}>
-          Scenario: C looked like AB's child; you later learn DE are the bio parents who placed C out to AB:
-        </p>
-        <DragToMarriageMockup lang="en" />
-        <p style={{ fontSize: 12, color: '#86868b', marginTop: 8, lineHeight: 1.6 }}>
-          Both gestures: release on empty space / self = cancel.
-        </p>
-      </>
-    ),
-  },
-  {
-    icon: '⚫🔵',
-    title: 'Black vs Blue',
-    content: (
-      <>
-        <P>The same pair of people can have both kinds of lines:</P>
+        <P style={{ textAlign: 'left' }}>The same pair of people can have both kinds of lines:</P>
         <BlackBlueLineMockup lang="en" />
         <p style={{ margin: '10px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
           ⚫ <Strong>Black</Strong> = Membership (who is whose family)
@@ -1237,17 +1612,104 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
         <p style={{ margin: '6px 0 10px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
           🔵 <Strong>Blue</Strong> = Relationship (how close they relate)
         </p>
-        <P>
-          Add any of 15 relation line types in <Strong>Tab2 "Network"</Strong>.
-          After picking a relation icon, <Strong>click the same icon again</Strong>
-          to flip the arrow direction.
+        <P style={{ textAlign: 'left' }}>
+          We teach <Strong>Black</Strong> (marriage / parent-child) next; <Strong>Blue</Strong> relation
+          lines are covered in later steps — 15 types (Connected / Close / Hostile / Cutoff…).
         </P>
       </>
     ),
   },
   {
-    icon: '🌳',
-    title: 'Ecosystems — Frame a Group',
+    icon: '',
+    title: 'Black Lines — Marriage / Parent-child (Double-click Cycle)',
+    content: (
+      <>
+        <p style={{ margin: '6px 0', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          <Strong>Marriage line</Strong>: <Strong>Double-click</Strong> to cycle the common states:
+        </p>
+        <MarriageCycleMockup lang="en" />
+        <p style={{ margin: '6px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
+          For more marriage types (engagement / cohabitation / widowed / secret affair…) → use right-side <Strong>Tab2 "Common Lines → Marriage"</Strong> buttons.
+        </p>
+        <p style={{ margin: '14px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          <Strong>Parent-child line</Strong>: solid or dashed, <Strong>double-click</Strong> to toggle:
+        </p>
+        <FamilyLineMockup lang="en" />
+        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          <Strong>│ Solid</Strong> — biological / adopted
+        </p>
+        <p style={{ margin: '4px 0 8px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          <Strong>┊ Dashed</Strong> — fostered / placed-out / sperm donor
+        </p>
+        <p style={{ fontSize: 12, color: '#86868b', lineHeight: 1.6, textAlign: 'left' }}>
+          Both spouses' parent-child lines flip together. Single-click any line for full properties on the right.
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '',
+    title: 'Drag Lines — Change Target / Change Parents',
+    content: (
+      <>
+        <p style={{ margin: '6px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f', textAlign: 'left' }}>
+          A. Drag an existing endpoint → change target
+        </p>
+        <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 12px', textAlign: 'left' }}>
+          Marriage / parent-child / relation lines: <Strong>press and
+          hold the line's endpoint → drag onto another person →
+          release</Strong>. An orange dashed preview shows where it'll
+          land.
+        </p>
+        <p style={{ margin: '12px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f', textAlign: 'left' }}>
+          B. Drag a parent-child line to another couple → add as bio (placed-out example)
+        </p>
+        <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 4px', textAlign: 'left' }}>
+          Scenario: C looked like AB's child; you later learn DE are the bio parents who placed C out to AB:
+        </p>
+        <DragToMarriageMockup lang="en" />
+        <p style={{ fontSize: 12, color: '#86868b', marginTop: 8, lineHeight: 1.6, textAlign: 'left' }}>
+          Both gestures: release on empty space / self = cancel.
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '',
+    title: 'Blue Lines — Relations & Tab2 Flip',
+    content: (
+      <>
+        <P style={{ textAlign: 'left' }}>
+          <Strong>Blue = Relationship</Strong> (interaction quality), 15 types,
+          added on the right via <Strong>Tab2 "Common Lines → Relation"</Strong>.
+        </P>
+        <p style={{ margin: '6px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
+          Grouped into 4:
+          <br />
+          • <Strong>Positive</Strong>: connected / close / fused
+          <br />
+          • <Strong>Interaction</Strong>: distant / hostile / close-hostile / spiritual / focus-on / negative-focus
+          <br />
+          • <Strong>Violence</Strong>: physical / emotional / sexual abuse
+          <br />
+          • <Strong>Care / Cutoff</Strong>: caregiver / cutoff / cutoff repaired
+        </p>
+        <p style={{ margin: '14px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          The 6 types with arrows (focus-on / negative-focus / 3 abuses / caregiver) can be <Strong>flipped</Strong>:
+        </p>
+        <BlueLineFlipMockup lang="en" />
+        <p style={{ margin: '6px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
+          How: <Strong>select the blue line</Strong> on canvas → tap the <Strong>same button</Strong> in Tab2 → start/end swap.
+        </p>
+        <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6, textAlign: 'left' }}>
+          Tap a button without selecting anything → pending mode → tap 2 persons to draw a new relation line.
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '',
+    title: 'Ecosystems — Frame Subsystems',
     content: (
       <>
         <P>
@@ -1273,8 +1735,8 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
     ),
   },
   {
-    icon: '🔒',
-    title: 'Privacy — Hide Sensitive Fields',
+    icon: '',
+    title: 'Privacy — Two-layer Hiding',
     content: (
       <>
         <P>Genograms often contain sensitive info. Two-layer privacy design:</P>
@@ -1296,8 +1758,8 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
     ),
   },
   {
-    icon: '🎉',
-    title: 'Done + Install as App',
+    icon: '',
+    title: 'Done — Install as App for Smoother Use',
     content: (
       <>
         <P>

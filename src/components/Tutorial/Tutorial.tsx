@@ -167,7 +167,7 @@ export default function Tutorial({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {/* Title */}
+        {/* Title — v1.1 純文字 minimal,icon 留欄位但只在非空時渲染 */}
         <div
           style={{
             padding: '0 20px 4px',
@@ -177,7 +177,7 @@ export default function Tutorial({ onClose }: { onClose: () => void }) {
             flexShrink: 0,
           }}
         >
-          <span style={{ fontSize: 28 }}>{cur.icon}</span>
+          {cur.icon && <span style={{ fontSize: 28 }}>{cur.icon}</span>}
           <span
             style={{
               fontSize: 18,

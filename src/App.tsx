@@ -25,7 +25,6 @@ import {
 import { db } from './services/database';
 import {
   loadRootDirHandle,
-  selectRootFolder,
   writeCaseJson,
   loadAllCasesFromFolder,
 } from './services/fileSystem';
@@ -47,9 +46,11 @@ export default function App() {
   const selectedLineIds = useGenogramStore((s) => s.selectedLineIds);
   const selectedUnitIds = useGenogramStore((s) => s.selectedUnitIds);
   const selectedEcosystemId = useGenogramStore((s) => s.selectedEcosystemId);
+  const selectedConnector = useGenogramStore((s) => s.selectedConnector);
   const removePersons = useGenogramStore((s) => s.removePersons);
   const removeLine = useGenogramStore((s) => s.removeLine);
   const removeNetworkUnit = useGenogramStore((s) => s.removeNetworkUnit);
+  const removeConnector = useGenogramStore((s) => s.removeConnector);
   const removeEcosystem = useGenogramStore((s) => s.removeEcosystem);
   const showConfirm = useGenogramStore((s) => s.showConfirm);
   const undo = useGenogramStore((s) => s.undo);
@@ -231,6 +232,24 @@ export default function App() {
             const ok = await showConfirm(`確定要刪除「${name}」嗎?`);
             if (ok) removeEcosystem(selectedEcosystemId);
           }
+        } else if (selectedConnector) {
+          // v1.1 修:Delete 鍵也可刪 connector(單位 ↔ 人物/生態圈 的連線)
+          // — 過去只有 X 按鈕可刪,跟其他選取類型不一致
+          e.preventDefault();
+          if (skipConfirm) {
+            removeConnector(
+              selectedConnector.unitId,
+              selectedConnector.connectorId,
+            );
+          } else {
+            const ok = await showConfirm('確定要刪除這條連接線嗎?');
+            if (ok) {
+              removeConnector(
+                selectedConnector.unitId,
+                selectedConnector.connectorId,
+              );
+            }
+          }
         }
       }
     };
@@ -241,11 +260,13 @@ export default function App() {
     selectedLineIds,
     selectedUnitIds,
     selectedEcosystemId,
+    selectedConnector,
     currentCase,
     showConfirm,
     removePersons,
     removeLine,
     removeNetworkUnit,
+    removeConnector,
     removeEcosystem,
     undo,
     redo,
@@ -554,27 +575,9 @@ function Toolbar({
               setOpen(false);
             }}
           />
-          <MenuItem
-            icon="↓"
-            label={
-              language === 'zh' ? (
-                <>
-                  輸
-                  <span style={{ color: '#1a7a3f', fontWeight: 700 }}>入</span>
-                  檔案
-                </>
-              ) : (
-                <>
-                  <span style={{ color: '#1a7a3f', fontWeight: 700 }}>In</span>
-                  put File
-                </>
-              )
-            }
-            onClick={() => {
-              setImportOpen(true);
-              setOpen(false);
-            }}
-          />
+          {/* v1.1 拿掉「輸入檔案」— 個案內漢堡不再提供匯入入口
+              理由:個案內按匯入語意混亂(匯入別份檔案不會插進此個案,只會新增到 case list)
+              首頁 CaseList 已有完整匯入入口 */}
           <MenuDivider />
           <MenuLabel>{t('menu.assessmentTools')}</MenuLabel>
           {getScalesByCategory().map((group) => (
@@ -590,23 +593,9 @@ function Toolbar({
             />
           ))}
           <MenuDivider />
-          <MenuItem
-            icon="📁"
-            label={t('menu.folderSetup')}
-            onClick={async () => {
-              setOpen(false);
-              const h = await selectRootFolder();
-              if (h) {
-                try {
-                  const allCases = await db.cases.toArray();
-                  for (const g of allCases) await writeCaseJson(g);
-                } catch (err) {
-                  console.error('sync to folder failed:', err);
-                }
-              }
-            }}
-          />
-          <MenuDivider />
+          {/* v1.1 拿掉「設定資料夾」— 改成只在首頁漢堡顯示
+              理由:個案內漢堡聚焦在「當前個案操作」,設定資料夾是全 app 級設定
+              首頁 CaseList 已有此入口 */}
           <MenuItem
             icon="📕"
             label={t('menu.tutorialBasic')}
@@ -761,12 +750,12 @@ function MenuInfo({ children }: { children: React.ReactNode }) {
 }
 
 function ScaleCategoryItem({
-  icon,
+  // v1.1: icon prop 保留(call site 還在傳),但內部不再渲染 — 評估工具區改純文字
   label,
   scales,
   onSelectScale,
 }: {
-  icon: string;
+  icon?: string;
   label: string;
   scales: { id: string; name: string }[];
   onSelectScale: (id: string) => void;
@@ -808,7 +797,7 @@ function ScaleCategoryItem({
           userSelect: 'none',
         }}
       >
-        <span style={{ width: 16, textAlign: 'center' }}>{icon}</span>
+        {/* v1.1 拿掉量表分類 icon — 評估工具區塊改純文字 */}
         <span style={{ flex: 1 }}>{label}</span>
         <span style={{ color: '#86868b', fontSize: 11 }}>▸</span>
       </div>

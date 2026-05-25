@@ -216,6 +216,71 @@ export function wavyPathArc(
   return path;
 }
 
+/** 靈性連結用 — sin/cos 雙波(兩條交織波浪,相位差 90°)
+ *  用密集 sampling + L 命令確保兩條曲線真的交錯,不會看起來像兩條獨立波
+ *  phaseShift: 'sin' = 0°(正弦), 'cos' = 90°(餘弦) — 兩條疊起來呈 X 交織 */
+export function wavyPathStraightPhase(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  amp: number,
+  waves: number,
+  phase: 'sin' | 'cos',
+): string {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if (len === 0) return '';
+  const ux = dx / len;
+  const uy = dy / len;
+  const nx = -uy;
+  const ny = ux;
+  const samplesPerWave = 12;
+  const segs = waves * samplesPerWave;
+  const phaseOffset = phase === 'cos' ? Math.PI / 2 : 0;
+  // 起點對齊兩端,不偏移
+  let path = `M ${x1} ${y1}`;
+  for (let i = 1; i <= segs; i++) {
+    const t = i / segs;
+    const cxp = x1 + dx * t;
+    const cyp = y1 + dy * t;
+    // 端點 amplitude → 0,中間最大(避免兩端離開原線)
+    const endTaper = Math.sin(Math.PI * t); // t=0,1 時 0;t=0.5 時 1
+    const wave = Math.sin(2 * Math.PI * waves * t + phaseOffset);
+    const offset = amp * wave * endTaper;
+    path += ` L ${cxp + nx * offset} ${cyp + ny * offset}`;
+  }
+  return path;
+}
+
+/** 弧形版 — 同上但沿 bezier 走 */
+export function wavyPathArcPhase(
+  x0: number,
+  y0: number,
+  cx: number,
+  cy: number,
+  x2: number,
+  y2: number,
+  amp: number,
+  waves: number,
+  phase: 'sin' | 'cos',
+): string {
+  const samplesPerWave = 12;
+  const segs = waves * samplesPerWave;
+  const phaseOffset = phase === 'cos' ? Math.PI / 2 : 0;
+  let path = `M ${x0} ${y0}`;
+  for (let i = 1; i <= segs; i++) {
+    const t = i / segs;
+    const p = bezierAt(t, x0, y0, cx, cy, x2, y2);
+    const endTaper = Math.sin(Math.PI * t);
+    const wave = Math.sin(2 * Math.PI * waves * t + phaseOffset);
+    const offset = amp * wave * endTaper;
+    path += ` L ${p.x + p.nx * offset} ${p.y + p.ny * offset}`;
+  }
+  return path;
+}
+
 /** 弧形 control point 工具 — 給 arcDetour='up'/'right' 算出 ctrl */
 export function arcControlPoint(
   x0: number,

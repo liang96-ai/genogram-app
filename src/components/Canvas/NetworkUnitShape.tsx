@@ -229,10 +229,15 @@ export default function NetworkUnitShape({
             };
           }
           if (synthTo) {
+            // v1.1 reversed:把 from/to 對調,Line 元件渲染箭頭就會反向
+            //   - 對「有箭頭的 subType」(focus-on / 三種虐待 / negative-focus / caregiver)有視覺差異
+            //   - 對其他 subType 無視覺差異(但 flag 仍保存,切回時箭頭方向會延續使用者意圖)
+            const fromForLine = conn.reversed ? synthTo : synthFrom;
+            const toForLine = conn.reversed ? synthFrom : synthTo;
             const synthLine: LineType = {
               id: conn.id,
-              fromPersonId: synthFrom.id,
-              toPersonId: synthTo.id,
+              fromPersonId: fromForLine.id,
+              toPersonId: toForLine.id,
               category: 'relation',
               // legacy connectors 沒 subType 的視為 'focus-on'(全藍色,不再有灰虛線)
               subType: conn.subType ?? 'focus-on',
@@ -243,8 +248,8 @@ export default function NetworkUnitShape({
               <g key={conn.id}>
                 <Line
                   line={synthLine}
-                  from={synthFrom}
-                  to={synthTo}
+                  from={fromForLine}
+                  to={toForLine}
                   selected={isConnSelected}
                   dragging={false}
                   onLinePointerDown={(e) => {

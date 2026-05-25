@@ -6,6 +6,7 @@ import type {
   Genogram,
   Line,
   LineSubType,
+  MemberSubType,
   NetworkConnector,
   NetworkUnit,
   Person,
@@ -36,18 +37,22 @@ export interface SubtypeSpec {
 }
 
 export const SUBTYPE_SPEC: Partial<Record<LineSubType, SubtypeSpec>> = {
-  // 婚姻系列
+  // 婚姻系列 — v1.1 移除 legal-cohabitation/legal-separation/widowed 主項
+  // (字母標記無國際標準,migration 會把舊資料轉到現行 subType)
+  // 但保留 spec 作為「migration 萬一漏掉」的 fallback 渲染
   marriage: { lineStyle: 'solid' },
   engagement: { lineStyle: 'dashed' },
   divorce: { lineStyle: 'solid', midSymbol: 'slash-double' },
   separation: { lineStyle: 'solid', midSymbol: 'slash-single' },
-  'legal-separation': { lineStyle: 'solid', midSymbol: 'slash-back' },
   'engagement-separation': { lineStyle: 'dashed', midSymbol: 'slash-single' },
-  widowed: { lineStyle: 'solid', midSymbol: 'x' },
   cohabitation: { lineStyle: 'dashed', midSymbol: 'house' },
-  'legal-cohabitation': { lineStyle: 'dashed', midSymbol: 'house' },
   'engagement-cohabitation': { lineStyle: 'dashed', midSymbol: 'house' },
-  'love-affair': { lineStyle: 'dash-dot' },
+  // 以下 3 個為 v1.1 移除的 subType — 保留 spec 防舊資料 migration 萬一漏掉
+  'legal-separation': { lineStyle: 'solid', midSymbol: 'slash-single' },
+  'legal-cohabitation': { lineStyle: 'dashed', midSymbol: 'house' },
+  widowed: { lineStyle: 'solid' },
+  // v1.1: 改 dotted(對齊 Gallery #51 秘密外遇 DOT 視覺,跟麥氏標準)
+  'love-affair': { lineStyle: 'dotted' },
   // 親子 — 視覺只有 2 種:實線(法定父母) / 虛線(非法定)
   // 內部 subType 保留 5 種供舊資料相容,但 fostered 不再用點線(改虛線)
   biological: { lineStyle: 'solid' },
@@ -84,11 +89,18 @@ export function getLineStyleKey(line: Line): LineStyleKey {
 }
 
 // ==================== Migration: 舊 subType → 新 subType ====================
+// v1.1 新加:legal-cohabitation/legal-separation/widowed 移除主項 → 自動轉現行
+//   - legal-cohabitation → cohabitation (法律狀態改用生態圈表達)
+//   - legal-separation → separation (法律狀態改用生態圈表達)
+//   - widowed → marriage (喪偶改用 Tab1 ☑ 已往生 自動畫 X 於配偶圖示)
 const SUBTYPE_MIGRATE: Partial<Record<LineSubType, LineSubType>> = {
   'cohabitation-commit': 'cohabitation',
   partnership: 'cohabitation',
   'secret-affair': 'love-affair',
   'divorce-remarriage': 'divorce',
+  'legal-cohabitation': 'cohabitation',
+  'legal-separation': 'separation',
+  widowed: 'marriage',
 };
 
 function migrateGenogram(g: Genogram): Genogram {
@@ -236,21 +248,7 @@ function collectKin(
   personId: string,
   lines: Line[],
 ): string[] {
-  const MARRIAGE_LIKE = new Set<LineSubType>([
-    'marriage',
-    'engagement',
-    'partnership',
-    'cohabitation',
-    'cohabitation-commit',
-    'legal-cohabitation',
-    'engagement-cohabitation',
-    'divorce',
-    'separation',
-    'legal-separation',
-    'engagement-separation',
-    'widowed',
-    'love-affair',
-  ]);
+  // v1.1: 用共用常數,新增婚姻 subType 不會漏掉
   const BIO = new Set<LineSubType>([
     'biological',
     'adopted',
@@ -260,7 +258,7 @@ function collectKin(
   const ids = new Set<string>([personId]);
   const spouseIds: string[] = [];
   for (const l of lines) {
-    if (!MARRIAGE_LIKE.has(l.subType)) continue;
+    if (!MARRIAGE_SUBTYPE_SET.has(l.subType)) continue;
     if (l.fromPersonId === personId) {
       spouseIds.push(l.toPersonId);
       ids.add(l.toPersonId);
@@ -347,6 +345,65 @@ export const createEmptyCase = (name = '我的家系圖'): Genogram => {
 const flipShape = (s: BasicShape): BasicShape =>
   s === 'square' ? 'circle' : s === 'circle' ? 'square' : s;
 
+// v1.1: 婚姻線 subType 共用名單(Canvas/store 多處都要判斷「這是婚姻嗎?」)
+// — 包含新+舊 14 個,確保新加婚姻 subType 不會漏改 Canvas 渲染分組
+// — 漏改的後果:子女找不到該綁哪條線,看起來「亂連」(實際是斷開)
+export const MARRIAGE_SUBTYPE_SET: Set<LineSubType> = new Set<LineSubType>([
+  // 現行
+  'marriage',
+  'engagement',
+  'cohabitation',
+  'legal-cohabitation',
+  'engagement-cohabitation',
+  'separation',
+  'legal-separation',
+  'engagement-separation',
+  'divorce',
+  'widowed',
+  'love-affair',
+  // 舊名(向後相容,migration 會自動轉現行)
+  'cohabitation-commit',
+  'partnership',
+  'secret-affair',
+  'divorce-remarriage',
+]);
+
+// v1.1: 把 member subType 集中管理(對齊 MemberSubType union),避免每次新增婚姻 subtype 都要漏改 mkLine
+const MEMBER_SUBTYPE_SET: Set<LineSubType> = new Set<LineSubType>([
+  // 婚姻
+  'marriage',
+  'engagement',
+  'divorce',
+  'separation',
+  'legal-separation',
+  'engagement-separation',
+  'widowed',
+  'cohabitation',
+  'legal-cohabitation',
+  'engagement-cohabitation',
+  'love-affair',
+  // 舊名(向後相容)
+  'cohabitation-commit',
+  'partnership',
+  'secret-affair',
+  'divorce-remarriage',
+  // 親子
+  'biological',
+  'adopted',
+  'fostered',
+  'placed-out',
+  'sperm-donor',
+  // 手足
+  'twins',
+  'identical-twins',
+  // 妊娠
+  'miscarriage',
+  'stillbirth',
+  'abortion',
+  // 未明
+  'unknown-family',
+]);
+
 const mkLine = (
   from: string,
   to: string,
@@ -356,27 +413,7 @@ const mkLine = (
   id: uid('l'),
   fromPersonId: from,
   toPersonId: to,
-  category:
-    subType === 'marriage' ||
-    subType === 'cohabitation-commit' ||
-    subType === 'partnership' ||
-    subType === 'separation' ||
-    subType === 'divorce' ||
-    subType === 'secret-affair' ||
-    subType === 'divorce-remarriage' ||
-    subType === 'biological' ||
-    subType === 'adopted' ||
-    subType === 'fostered' ||
-    subType === 'placed-out' ||
-    subType === 'sperm-donor' ||
-    subType === 'twins' ||
-    subType === 'identical-twins' ||
-    subType === 'miscarriage' ||
-    subType === 'stillbirth' ||
-    subType === 'abortion' ||
-    subType === 'unknown-family'
-      ? 'member'
-      : 'relation',
+  category: MEMBER_SUBTYPE_SET.has(subType) ? 'member' : 'relation',
   subType,
   visual: { lineStyle },
 });
@@ -536,9 +573,13 @@ type GenogramStore = {
   setSectionFields: (section: PrivacySection, value: boolean) => void;
 
   // Inspector 展開/擴充勾選 — 跨人物/線條/Tab 持久(session 內)
-  expandMultiIdentity: boolean;
-  expandMedicalBasic: boolean;
-  expandAdvanced: boolean;
+  // v1.1: 重命名對齊 Tab1 新 4 群結構
+  //   multiIdentity → extended (擴充選項:性別亞型 #7-11 + 標記 #42-47)
+  //   medicalBasic  → medical  (醫務:#18-19 疑似 + #22-33 成癮系列)
+  //   advanced      → genetic  (遺傳:#34-37 + #40-41)
+  expandMedical: boolean;
+  expandExtended: boolean;
+  expandGenetic: boolean;
   expandIcd10cm: boolean;
   expandIcd11: boolean;
   expandDsm5: boolean;
@@ -546,9 +587,9 @@ type GenogramStore = {
   expandSelfPayMed: boolean;
   setExpand: (
     key:
-      | 'multiIdentity'
-      | 'medicalBasic'
-      | 'advanced'
+      | 'medical'
+      | 'extended'
+      | 'genetic'
       | 'icd10cm'
       | 'icd11'
       | 'dsm5'
@@ -587,6 +628,14 @@ type GenogramStore = {
   /** Tab2 關係線 pending mode:點按鈕後等使用者點下一個人物完成連線 */
   pendingRelation: RelationSubType | null;
   setPendingRelation: (sub: RelationSubType | null) => void;
+  /** Tab2 婚姻線 pending mode(v1.1):選好婚姻 subType 後等使用者點 2 個人物完成 */
+  pendingMember: MemberSubType | null;
+  setPendingMember: (sub: MemberSubType | null) => void;
+  /** Tab2「常用線條」section 顯示 toggle(v1.1)— 持久化到 localStorage */
+  tab2ShowMarriage: boolean;
+  tab2ShowRelation: boolean;
+  setTab2ShowMarriage: (v: boolean) => void;
+  setTab2ShowRelation: (v: boolean) => void;
   /** 建立關係線(person→person)
    *  注意:person→unit 的關係改走 connector subType 機制,
    *  見 addConnector / setConnectorSubType */
@@ -594,6 +643,14 @@ type GenogramStore = {
     fromPersonId: string,
     toPersonId: string,
     subType: RelationSubType,
+  ) => void;
+  /** v1.1: 建立婚姻線(member line)
+   *  - 同一對人物已有任何 member line(婚姻/親子)→ 不重複建
+   *  - 用於 Tab2 婚姻 pending mode */
+  createMarriageLine: (
+    fromPersonId: string,
+    toPersonId: string,
+    subType: MemberSubType,
   ) => void;
   /** 從人物 ▲ 長按拖到另一人物時建立的線
    *  — 預設 biological 親生線(實線、灰黑、跟其他 member line 同樣樣式)
@@ -701,6 +758,8 @@ type GenogramStore = {
     connectorId: string,
     subType: RelationSubType | null,
   ) => void;
+  /** 翻轉 connector 的箭頭方向(v1.1)— toggle reversed flag */
+  toggleConnectorReversed: (unitId: string, connectorId: string) => void;
   /** 找 connector(若 unitId/connectorId 是某對人物-單位的 connector,直接拿到)*/
   findUnitConnectorByPerson: (
     unitId: string,
@@ -942,6 +1001,25 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   selectedEcosystemId: null,
   editingEcosystemId: null,
   pendingRelation: null,
+  // v1.1 婚姻線 pending mode:點 Tab2 婚姻按鈕後等使用者點 2 個人物完成連線
+  pendingMember: null,
+  // v1.1 Tab2「常用線條」兩個 section toggle(從 localStorage 讀,沒設預設都打勾)
+  tab2ShowMarriage: (() => {
+    try {
+      const v = localStorage.getItem('tab2.showMarriage');
+      return v === null ? true : v === '1';
+    } catch {
+      return true;
+    }
+  })(),
+  tab2ShowRelation: (() => {
+    try {
+      const v = localStorage.getItem('tab2.showRelation');
+      return v === null ? true : v === '1';
+    } catch {
+      return true;
+    }
+  })(),
   inspectorTarget: null,
   inspectorSide: 'right',
   inspectorCollapsed: false,
@@ -1010,9 +1088,9 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     }
   },
 
-  expandMultiIdentity: false,
-  expandMedicalBasic: false,
-  expandAdvanced: false,
+  expandMedical: false,
+  expandExtended: false,
+  expandGenetic: false,
   // 疾病/藥物 5 個擴充庫:預設全勾(使用者可手動取消)
   expandIcd10cm: true,
   expandIcd11: true,
@@ -1021,9 +1099,9 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   expandSelfPayMed: true,
   setExpand: (key, value) => {
     const map = {
-      multiIdentity: 'expandMultiIdentity',
-      medicalBasic: 'expandMedicalBasic',
-      advanced: 'expandAdvanced',
+      medical: 'expandMedical',
+      extended: 'expandExtended',
+      genetic: 'expandGenetic',
       icd10cm: 'expandIcd10cm',
       icd11: 'expandIcd11',
       dsm5: 'expandDsm5',
@@ -1366,6 +1444,23 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   },
 
   setPendingRelation: (sub) => set({ pendingRelation: sub }),
+  setPendingMember: (sub) => set({ pendingMember: sub }),
+  setTab2ShowMarriage: (v) => {
+    try {
+      localStorage.setItem('tab2.showMarriage', v ? '1' : '0');
+    } catch {
+      // ignore
+    }
+    set({ tab2ShowMarriage: v });
+  },
+  setTab2ShowRelation: (v) => {
+    try {
+      localStorage.setItem('tab2.showRelation', v ? '1' : '0');
+    } catch {
+      // ignore
+    }
+    set({ tab2ShowRelation: v });
+  },
 
   createRelationLine: (fromPersonId, toPersonId, subType) => {
     const { currentCase: c, history } = get();
@@ -1387,6 +1482,36 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     set({
       ...pushHistory(c, history, newCase),
       pendingRelation: null,
+      selectedLineIds: [line.id],
+      inspectorTarget: { type: 'line', id: line.id },
+    });
+  },
+
+  /** v1.1 建立婚姻線(Tab2 pending mode 用) */
+  createMarriageLine: (fromPersonId, toPersonId, subType) => {
+    const { currentCase: c, history } = get();
+    if (!c) return;
+    if (fromPersonId === toPersonId) return;
+    // 同一對人物已有 member line → 不重複建,選中既有那條
+    const existing = c.lines.find(
+      (l) =>
+        l.category === 'member' &&
+        ((l.fromPersonId === fromPersonId && l.toPersonId === toPersonId) ||
+          (l.fromPersonId === toPersonId && l.toPersonId === fromPersonId)),
+    );
+    if (existing) {
+      set({
+        pendingMember: null,
+        selectedLineIds: [existing.id],
+        inspectorTarget: { type: 'line', id: existing.id },
+      });
+      return;
+    }
+    const line = mkLine(fromPersonId, toPersonId, subType);
+    const newCase = touch({ ...c, lines: [...c.lines, line] });
+    set({
+      ...pushHistory(c, history, newCase),
+      pendingMember: null,
       selectedLineIds: [line.id],
       inspectorTarget: { type: 'line', id: line.id },
     });
@@ -1462,27 +1587,10 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     if (BIO_LIKE.has(target.subType)) {
       const childId = target.toPersonId;
       const parentId = target.fromPersonId;
-      // 找這個 parent 的配偶(透過 marriage-like)
-      const MARRIAGE_LIKE = new Set<LineSubType>([
-        'marriage',
-        'engagement',
-        'cohabitation',
-        'legal-cohabitation',
-        'engagement-cohabitation',
-        'divorce',
-        'separation',
-        'legal-separation',
-        'engagement-separation',
-        'widowed',
-        'love-affair',
-        'partnership',
-        'cohabitation-commit',
-        'secret-affair',
-        'divorce-remarriage',
-      ]);
+      // 找這個 parent 的配偶(透過 marriage-like)— v1.1 用共用常數
       const spouseLine = c.lines.find(
         (l) =>
-          MARRIAGE_LIKE.has(l.subType) &&
+          MARRIAGE_SUBTYPE_SET.has(l.subType) &&
           (l.fromPersonId === parentId || l.toPersonId === parentId),
       );
       if (spouseLine) {
@@ -1581,26 +1689,10 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
         // 不然會出現「A 是養父、B 是親生」這種視覺不一致的狀態
         const childId = line.toPersonId;
         const clickedParentId = line.fromPersonId;
-        const MARRIAGE_LIKE_LOCAL = new Set<LineSubType>([
-          'marriage',
-          'engagement',
-          'cohabitation',
-          'legal-cohabitation',
-          'engagement-cohabitation',
-          'divorce',
-          'separation',
-          'legal-separation',
-          'engagement-separation',
-          'widowed',
-          'love-affair',
-          'partnership',
-          'cohabitation-commit',
-          'secret-affair',
-          'divorce-remarriage',
-        ]);
+        // v1.1 共用常數
         const spouseLine = c.lines.find(
           (l) =>
-            MARRIAGE_LIKE_LOCAL.has(l.subType) &&
+            MARRIAGE_SUBTYPE_SET.has(l.subType) &&
             (l.fromPersonId === clickedParentId ||
               l.toPersonId === clickedParentId),
         );
@@ -1640,26 +1732,10 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       //  其他連到同 child 的 bio 線降為 placed-out(虛線)
       const childId = line.toPersonId;
       const promotedParentId = line.fromPersonId;
-      const MARRIAGE_LIKE = new Set<LineSubType>([
-        'marriage',
-        'engagement',
-        'cohabitation',
-        'legal-cohabitation',
-        'engagement-cohabitation',
-        'divorce',
-        'separation',
-        'legal-separation',
-        'engagement-separation',
-        'widowed',
-        'love-affair',
-        'partnership',
-        'cohabitation-commit',
-        'secret-affair',
-        'divorce-remarriage',
-      ]);
+      // v1.1 共用常數
       const spouseLine = c.lines.find(
         (l) =>
-          MARRIAGE_LIKE.has(l.subType) &&
+          MARRIAGE_SUBTYPE_SET.has(l.subType) &&
           (l.fromPersonId === promotedParentId ||
             l.toPersonId === promotedParentId),
       );
@@ -1895,27 +1971,10 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const promotedParentId = line.fromPersonId;
 
     // 找 promotedParent 的「目前配偶」(透過 marriage-like 線),配偶那條線也一起升
-    const MARRIAGE_LIKE = new Set<LineSubType>([
-      'marriage',
-      'engagement',
-      'cohabitation',
-      'legal-cohabitation',
-      'engagement-cohabitation',
-      'divorce',
-      'separation',
-      'legal-separation',
-      'engagement-separation',
-      'widowed',
-      'love-affair',
-      // 舊名相容
-      'partnership',
-      'cohabitation-commit',
-      'secret-affair',
-      'divorce-remarriage',
-    ]);
+    // v1.1 共用常數
     const spouseLine = c.lines.find(
       (l) =>
-        MARRIAGE_LIKE.has(l.subType) &&
+        MARRIAGE_SUBTYPE_SET.has(l.subType) &&
         (l.fromPersonId === promotedParentId ||
           l.toPersonId === promotedParentId),
     );
@@ -2215,21 +2274,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
 
     // ==================== 配偶跟動 ====================
     // 每個被移動的現有子女,若有配偶,配偶同步平移相同 (dx, dy)
-    const MARRIAGE_LIKE = new Set([
-      'marriage',
-      'engagement',
-      'partnership',
-      'cohabitation',
-      'cohabitation-commit',
-      'legal-cohabitation',
-      'engagement-cohabitation',
-      'divorce',
-      'separation',
-      'legal-separation',
-      'engagement-separation',
-      'widowed',
-      'love-affair',
-    ]);
+    // v1.1 共用常數
     const spouseMoves: { id: string; dx: number; dy: number }[] = [];
     for (let i = 0; i < childrenIds.length; i++) {
       const cid = childrenIds[i];
@@ -2241,7 +2286,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       const spouseIds = c.lines
         .filter(
           (l) =>
-            MARRIAGE_LIKE.has(l.subType) &&
+            MARRIAGE_SUBTYPE_SET.has(l.subType) &&
             (l.fromPersonId === cid || l.toPersonId === cid),
         )
         .map((l) => (l.fromPersonId === cid ? l.toPersonId : l.fromPersonId));
@@ -2811,6 +2856,25 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
         connectors: (u.connectors ?? []).map((conn) =>
           conn.id === connectorId
             ? { ...conn, subType: subType ?? undefined }
+            : conn,
+        ),
+      };
+    });
+    const newCase = touch({ ...c, networkUnits: newUnits });
+    set({ ...pushHistory(c, history, newCase) });
+  },
+  /** 翻轉 connector 箭頭方向(v1.1)— 點 Tab2 同一個按鈕雙擊觸發 */
+  toggleConnectorReversed: (unitId, connectorId) => {
+    const { currentCase: c, history } = get();
+    if (!c) return;
+    const units = c.networkUnits ?? [];
+    const newUnits = units.map((u) => {
+      if (u.id !== unitId) return u;
+      return {
+        ...u,
+        connectors: (u.connectors ?? []).map((conn) =>
+          conn.id === connectorId
+            ? { ...conn, reversed: !conn.reversed }
             : conn,
         ),
       };

@@ -107,15 +107,6 @@ const BASIC_ITEMS: TabItem[] = [
   },
 ];
 
-// ===== 性別亞型 (#7-11) =====
-const IDENTITY_ITEMS: TabItem[] = [
-  { code: 'mtf', tooltip: '#7 MTF', isActive: (p) => p.genderVariant === 'mtf', apply: () => ({ genderVariant: 'mtf' }) },
-  { code: 'ftm', tooltip: '#8 FTM', isActive: (p) => p.genderVariant === 'ftm', apply: () => ({ genderVariant: 'ftm' }) },
-  { code: 'gay', tooltip: '#9 男同志', isActive: (p) => p.genderVariant === 'gay', apply: () => ({ genderVariant: 'gay' }) },
-  { code: 'lesbian', tooltip: '#10 女同志', isActive: (p) => p.genderVariant === 'lesbian', apply: () => ({ genderVariant: 'lesbian' }) },
-  { code: 'bisexual', tooltip: '#11 雙性戀', isActive: (p) => p.genderVariant === 'bisexual', apply: () => ({ genderVariant: 'bisexual' }) },
-];
-
 // ===== 基本醫療用 (#18-33, 不含 20/21) =====
 const patternMedItem = (
   code: string,
@@ -128,24 +119,6 @@ const patternMedItem = (
   isActive: (p) => p.shape === shape && (p.fillPatterns ?? []).includes(pattern),
   apply: () => ({ shape, fillPatterns: [pattern] }),
 });
-const MEDICAL_ITEMS: TabItem[] = [
-  patternMedItem('susp-ill-m', '#18 疑似疾病 男', 'square', 'left-diagonal-stripes'),
-  patternMedItem('susp-ill-f', '#19 疑似疾病 女', 'circle', 'left-diagonal-stripes'),
-  patternMedItem('rec-ill-m', '#22 疾病復原 男', 'square', 'left-horizontal-stripes'),
-  patternMedItem('rec-ill-f', '#23 疾病復原 女', 'circle', 'left-horizontal-stripes'),
-  patternMedItem('susp-sub-m', '#24 疑似成癮 男', 'square', 'bottom-diagonal-stripes'),
-  patternMedItem('susp-sub-f', '#25 疑似成癮 女', 'circle', 'bottom-diagonal-stripes'),
-  patternMedItem('conf-sub-m', '#26 確診成癮 男', 'square', 'bottom-half-filled'),
-  patternMedItem('conf-sub-f', '#27 確診成癮 女', 'circle', 'bottom-half-filled'),
-  patternMedItem('rec-sub-m', '#28 成癮復原 男', 'square', 'bottom-horizontal-stripes'),
-  patternMedItem('rec-sub-f', '#29 成癮復原 女', 'circle', 'bottom-horizontal-stripes'),
-  patternMedItem('comb-ill-m', '#30 合併 男', 'square', 'combined-filled'),
-  patternMedItem('comb-ill-f', '#31 合併 女', 'circle', 'combined-filled'),
-  patternMedItem('rec-comb-m', '#32 合併復原 男', 'square', 'combined-recovery'),
-  patternMedItem('rec-comb-f', '#33 合併復原 女', 'circle', 'combined-recovery'),
-];
-
-// ===== 進階(#34-47, 遺傳+標記) =====
 const markItem = (
   code: string,
   tooltip: string,
@@ -176,21 +149,52 @@ const markItem = (
     };
   },
 });
-const ADVANCED_ITEMS: TabItem[] = [
-  patternMedItem('carr-m', '#34 帶因 男', 'square', 'carrier-dot'),
-  patternMedItem('carr-f', '#35 帶因 女', 'circle', 'carrier-dot'),
-  patternMedItem('aff-m', '#36 確診遺傳 男', 'square', 'affected-cross'),
-  patternMedItem('aff-f', '#37 確診遺傳 女', 'circle', 'affected-cross'),
-  patternMedItem('susp-aff-m', '#38 疑似遺傳 男', 'square', 'suspected-vertical'),
-  patternMedItem('susp-aff-f', '#39 疑似遺傳 女', 'circle', 'suspected-vertical'),
-  patternMedItem('poss-aff-m', '#40 可能遺傳 男', 'square', 'possibly-question'),
-  patternMedItem('poss-aff-f', '#41 可能遺傳 女', 'circle', 'possibly-question'),
+
+// ===== 醫務 (#18-19 疑似 + #22-33 成癮系列) =====
+const MEDICAL_ITEMS: TabItem[] = [
+  patternMedItem('susp-ill-m', '#18 疑似疾病 男', 'square', 'left-diagonal-stripes'),
+  patternMedItem('susp-ill-f', '#19 疑似疾病 女', 'circle', 'left-diagonal-stripes'),
+  patternMedItem('rec-ill-m', '#22 疾病復原 男', 'square', 'left-horizontal-stripes'),
+  patternMedItem('rec-ill-f', '#23 疾病復原 女', 'circle', 'left-horizontal-stripes'),
+  patternMedItem('susp-sub-m', '#24 疑似成癮 男', 'square', 'bottom-diagonal-stripes'),
+  patternMedItem('susp-sub-f', '#25 疑似成癮 女', 'circle', 'bottom-diagonal-stripes'),
+  patternMedItem('conf-sub-m', '#26 確診成癮 男', 'square', 'bottom-half-filled'),
+  patternMedItem('conf-sub-f', '#27 確診成癮 女', 'circle', 'bottom-half-filled'),
+  patternMedItem('rec-sub-m', '#28 成癮復原 男', 'square', 'bottom-horizontal-stripes'),
+  patternMedItem('rec-sub-f', '#29 成癮復原 女', 'circle', 'bottom-horizontal-stripes'),
+  patternMedItem('comb-ill-m', '#30 合併 男', 'square', 'combined-filled'),
+  patternMedItem('comb-ill-f', '#31 合併 女', 'circle', 'combined-filled'),
+  patternMedItem('rec-comb-m', '#32 合併復原 男', 'square', 'combined-recovery'),
+  patternMedItem('rec-comb-f', '#33 合併復原 女', 'circle', 'combined-recovery'),
+];
+
+// ===== 擴充選項 (性別亞型 #7-11 + 標記 S/L/O #42-47) =====
+// v1.1 改名:原「multiIdentity」→「extended」,把標記從 advanced 合進來
+// 命名考量:避免「非生理標記」隱含「男女才是正常生理」對多元性別不友善
+const EXTENDED_ITEMS: TabItem[] = [
+  { code: 'mtf', tooltip: '#7 MTF', isActive: (p) => p.genderVariant === 'mtf', apply: () => ({ genderVariant: 'mtf' }) },
+  { code: 'ftm', tooltip: '#8 FTM', isActive: (p) => p.genderVariant === 'ftm', apply: () => ({ genderVariant: 'ftm' }) },
+  { code: 'gay', tooltip: '#9 男同志', isActive: (p) => p.genderVariant === 'gay', apply: () => ({ genderVariant: 'gay' }) },
+  { code: 'lesbian', tooltip: '#10 女同志', isActive: (p) => p.genderVariant === 'lesbian', apply: () => ({ genderVariant: 'lesbian' }) },
+  { code: 'bisexual', tooltip: '#11 雙性戀', isActive: (p) => p.genderVariant === 'bisexual', apply: () => ({ genderVariant: 'bisexual' }) },
   markItem('mark-S-m', '#42 抽煙 男', 'square', 'S'),
   markItem('mark-S-f', '#43 抽煙 女', 'circle', 'S'),
   markItem('mark-L-m', '#44 語言 男', 'square', 'L'),
   markItem('mark-L-f', '#45 語言 女', 'circle', 'L'),
   markItem('mark-O-m', '#46 過胖 男', 'square', 'O'),
   markItem('mark-O-f', '#47 過胖 女', 'circle', 'O'),
+];
+
+// ===== 遺傳 ⚠️ (#34-37 帶因/確診 + #38-39 可能遺傳[原 #40-41]) =====
+// v1.1 改名:原「advanced」→「genetic」,移除 #38-39 疑似遺傳(susp-aff,無國際依據)
+// #40-41 可能遺傳(?)在 symbolData 刪 #38-39 後自動變 #38-39 編號,但 pattern key 不變
+const GENETIC_ITEMS: TabItem[] = [
+  patternMedItem('carr-m', '#34 帶因 男 (McGoldrick 中央黑點)', 'square', 'carrier-dot'),
+  patternMedItem('carr-f', '#35 帶因 女 (McGoldrick 中央黑點)', 'circle', 'carrier-dot'),
+  patternMedItem('aff-m', '#36 確診遺傳 男', 'square', 'affected-cross'),
+  patternMedItem('aff-f', '#37 確診遺傳 女', 'circle', 'affected-cross'),
+  patternMedItem('poss-aff-m', '#38 可能遺傳 男 (?)', 'square', 'possibly-question'),
+  patternMedItem('poss-aff-f', '#39 可能遺傳 女 (?)', 'circle', 'possibly-question'),
 ];
 
 // 注意:這個是 value(資料層),別翻;label 透過 t() 翻譯後傳入 MultiContactList
@@ -214,6 +218,8 @@ const EDUCATION_PRESETS = [
   '碩士',
   '博士',
 ];
+// 不適用畢業 / 在學 / 肄業狀態的學歷(顯示 dropdown 沒意義)
+const EDUCATION_NO_STATUS = new Set(['不識字']);
 const ETHNICITY_PRESETS = ['閩南', '客家', '外省', '原住民'];
 const RELIGION_PRESETS = [
   '無',
@@ -269,14 +275,15 @@ export default function Tab1Basic({ person }: Props) {
 
   const hasVariant =
     !!person.genderVariant && person.genderVariant !== 'cisgender';
-  const multiIdentity = useGenogramStore((s) => s.expandMultiIdentity);
-  const medicalBasic = useGenogramStore((s) => s.expandMedicalBasic);
-  const advanced = useGenogramStore((s) => s.expandAdvanced);
+  // v1.1: 對齊 Tab1 新 4 群結構(常用永遠顯示 + 醫務/擴充選項/遺傳 可勾)
+  const medical = useGenogramStore((s) => s.expandMedical);
+  const extended = useGenogramStore((s) => s.expandExtended);
+  const genetic = useGenogramStore((s) => s.expandGenetic);
   const setExpand = useGenogramStore((s) => s.setExpand);
-  // 進入有性別變體的人物時自動展開「性別亞型」(否則 variant 改不到)
+  // 進入有性別變體的人物時自動展開「擴充選項」(性別亞型在這群,否則 variant 改不到)
   useEffect(() => {
-    if (hasVariant && !multiIdentity) setExpand('multiIdentity', true);
-  }, [hasVariant, multiIdentity, setExpand]);
+    if (hasVariant && !extended) setExpand('extended', true);
+  }, [hasVariant, extended, setExpand]);
   const computedAge = computeAge(person.birthDate, person.deathDate);
   const hasBirthYear = !!person.birthDate?.year;
   const deceased = person.lifeStatus === 'deceased';
@@ -335,34 +342,36 @@ export default function Tab1Basic({ person }: Props) {
             <label style={tinyCheckLabel}>
               <input
                 type="checkbox"
-                checked={multiIdentity}
+                checked={medical}
+                style={uniCheckboxStyle}
+                onChange={(e) => setExpand('medical', e.target.checked)}
+              />
+              {t('tab1.medical')}
+            </label>
+            <label style={tinyCheckLabel}>
+              <input
+                type="checkbox"
+                checked={extended}
                 style={uniCheckboxStyle}
                 onChange={(e) => {
-                  setExpand('multiIdentity', e.target.checked);
+                  setExpand('extended', e.target.checked);
+                  // 取消勾「擴充選項」時自動把 genderVariant 重設為 cisgender
+                  // (否則使用者看不到性別亞型按鈕,但人物仍套用)
                   if (!e.target.checked) {
                     updatePerson(person.id, { genderVariant: 'cisgender' });
                   }
                 }}
               />
-              {t('tab1.multiIdentity')}
+              {t('tab1.extended')}
             </label>
             <label style={tinyCheckLabel}>
               <input
                 type="checkbox"
-                checked={medicalBasic}
+                checked={genetic}
                 style={uniCheckboxStyle}
-                onChange={(e) => setExpand('medicalBasic', e.target.checked)}
+                onChange={(e) => setExpand('genetic', e.target.checked)}
               />
-              {t('tab1.medicalBasic')}
-            </label>
-            <label style={tinyCheckLabel}>
-              <input
-                type="checkbox"
-                checked={advanced}
-                style={uniCheckboxStyle}
-                onChange={(e) => setExpand('advanced', e.target.checked)}
-              />
-              {t('tab1.advanced')}
+              {t('tab1.genetic')}
             </label>
           </div>
         }
@@ -391,20 +400,8 @@ export default function Tab1Basic({ person }: Props) {
             />
           ))}
 
-          {/* 性別亞型(勾選展開) */}
-          {multiIdentity &&
-            IDENTITY_ITEMS.map((item) => (
-              <MiniSymbolBtn
-                key={item.code}
-                code={item.code}
-                tooltip={item.tooltip}
-                active={item.isActive(person)}
-                onClick={() => updatePerson(person.id, item.apply(person))}
-              />
-            ))}
-
-          {/* 基本醫療用(勾選展開) */}
-          {medicalBasic &&
+          {/* 醫務(勾選展開)— #18-19 疑似 + #22-33 成癮系列 */}
+          {medical &&
             MEDICAL_ITEMS.map((item) => (
               <MiniSymbolBtn
                 key={item.code}
@@ -415,9 +412,21 @@ export default function Tab1Basic({ person }: Props) {
               />
             ))}
 
-          {/* 進階(勾選展開) */}
-          {advanced &&
-            ADVANCED_ITEMS.map((item) => (
+          {/* 擴充選項(勾選展開)— 性別亞型 + 標記 S/L/O */}
+          {extended &&
+            EXTENDED_ITEMS.map((item) => (
+              <MiniSymbolBtn
+                key={item.code}
+                code={item.code}
+                tooltip={item.tooltip}
+                active={item.isActive(person)}
+                onClick={() => updatePerson(person.id, item.apply(person))}
+              />
+            ))}
+
+          {/* 遺傳 ⚠️(勾選展開)— 帶因/確診/可能遺傳 */}
+          {genetic &&
+            GENETIC_ITEMS.map((item) => (
               <MiniSymbolBtn
                 key={item.code}
                 code={item.code}
@@ -892,8 +901,11 @@ function PersonalAttributes({ person }: { person: Person }) {
               <EditableSelect
                 value={person.basicInfo?.education ?? ''}
                 onChange={(v) => {
-                  // 第一次填值時自動帶 'graduated'
-                  if (v && !person.basicInfo?.educationStatus) {
+                  // v1.1: 切到「不識字」時清掉 educationStatus(否則殘留無意義);
+                  //       第一次填一般學歷時自動帶 'graduated'
+                  if (v && EDUCATION_NO_STATUS.has(v)) {
+                    setBasic({ education: v, educationStatus: undefined });
+                  } else if (v && !person.basicInfo?.educationStatus) {
                     setBasic({ education: v, educationStatus: 'graduated' });
                   } else {
                     setBasic({ education: v });
@@ -904,7 +916,8 @@ function PersonalAttributes({ person }: { person: Person }) {
                 placeholder={t('tab1.educationPlaceholder')}
               />
             </div>
-            {person.basicInfo?.education && (
+            {person.basicInfo?.education &&
+              !EDUCATION_NO_STATUS.has(person.basicInfo.education) && (
               <select
                 value={person.basicInfo?.educationStatus ?? 'graduated'}
                 onChange={(e) =>

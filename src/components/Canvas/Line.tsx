@@ -15,23 +15,27 @@ import DeleteButton from './DeleteButton';
 import {
   parallelBezierPath,
   zigzagPathArc,
-  wavyPathArc,
+  wavyPathArcPhase,
+  wavyPathStraightPhase,
 } from './relationVisual';
 
 // 哪些 RelationSubType 用「自訂幾何」渲染(取代預設 stroke/dasharray)
+// v1.1 對齊標準圖:#62 連結=單線, #63 親密=雙線, #64 過度緊密=三線,
+//                  #65 靈性=sin+cos 雙波交織, #73 性虐待=鋸齒+上下雙線,
+//                  #74 照顧者=單向(>>) 且可翻轉
 const RELATION_GEOMETRY_TYPES = new Set<LineSubType>([
-  'connected', // 雙線
-  'close', // 三線
-  'fused', // 四線
-  'spiritual', // 波浪
+  'connected', // 單線(對齊標準圖,不再加雙線)
+  'close', // 雙線
+  'fused', // 三線
+  'spiritual', // sin+cos 雙波交織
   'focus-on', // 單線+箭頭
   'hostile', // 鋸齒
   'close-hostile', // 雙線+鋸齒
   'negative-focus', // 鋸齒+箭頭
-  'physical-abuse', // 粗鋸齒+箭頭
-  'emotional-abuse', // 細鋸齒+箭頭
-  'sexual-abuse', // 超粗鋸齒+箭頭
-  'caregiver', // 雙向箭頭
+  'physical-abuse', // 粗鋸齒+實心箭頭
+  'emotional-abuse', // 細鋸齒+空心箭頭
+  'sexual-abuse', // 鋸齒+上下平行線+實心箭頭
+  'caregiver', // 單向+雙倒角(>>)
   'cutoff', // 中央雙短橫
   'cutoff-repaired', // 中央小圓
 ]);
@@ -75,43 +79,6 @@ function edgeOffset(shape: BasicShape, ux: number, uy: number): number {
     default:
       return SHAPE_HALF;
   }
-}
-
-/** 波浪 path — 用 Q + T 命令做平滑正弦波 */
-function wavyPath(
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
-  amp: number,
-  waves: number,
-): string {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const len = Math.hypot(dx, dy);
-  if (len === 0) return '';
-  const uy = dy / len;
-  const ux = dx / len;
-  const nx = -uy;
-  const ny = ux;
-  let path = `M ${x1} ${y1}`;
-  for (let i = 1; i <= waves; i++) {
-    const tEnd = i / waves;
-    const cx = x1 + dx * tEnd;
-    const cy = y1 + dy * tEnd;
-    if (i === 1) {
-      const tCtrl = (i - 0.5) / waves;
-      const ctrlMidX = x1 + dx * tCtrl;
-      const ctrlMidY = y1 + dy * tCtrl;
-      const offset = -amp;
-      const ctrlX = ctrlMidX + nx * offset;
-      const ctrlY = ctrlMidY + ny * offset;
-      path += ` Q ${ctrlX} ${ctrlY} ${cx} ${cy}`;
-    } else {
-      path += ` T ${cx} ${cy}`;
-    }
-  }
-  return path;
 }
 
 // 鋸齒 path:從 (x1,y1) 到 (x2,y2),指定振幅 amp 跟波長 wavelen
@@ -238,8 +205,12 @@ export default function Line({
       : isRelation
         ? '#007aff'
         : '#404040';
-  const strokeWidth = dragging ? 4 : selected ? 4 : isRelation ? 1.5 : 2.25;
-  const dash = getDasharray(getLineStyleKey(line));
+  const strokeWidth = dragging ? 4 : selected ? 4 : isRelation ? 1.2 : 2.25;
+  // 疏離(distant)專屬 — 點線間距加倍(對齊標準圖),不影響其他 dotted 線條
+  const dash =
+    line.subType === 'distant'
+      ? '2 6'
+      : getDasharray(getLineStyleKey(line));
 
   const midX = (startX + endX) / 2;
   const midY = (startY + endY) / 2;
@@ -255,11 +226,11 @@ export default function Line({
   const nx = -uy;
   const ny = ux;
   // 箭頭固定大小 — 像「上下左右」directional pad 那種明顯等邊三角,不再隨線粗細變動
-  // 唯一例外:超粗鋸齒(sexual-abuse)略大一些,讓視覺重量平衡
+  // 唯一例外:身體/性虐待略大一些,讓視覺重量平衡
   const arrowLen =
-    line.subType === 'sexual-abuse' ? 18 : line.subType === 'physical-abuse' ? 16 : 14;
+    line.subType === 'sexual-abuse' || line.subType === 'physical-abuse' ? 16 : 14;
   const arrowWid =
-    line.subType === 'sexual-abuse' ? 16 : line.subType === 'physical-abuse' ? 14 : 12;
+    line.subType === 'sexual-abuse' || line.subType === 'physical-abuse' ? 14 : 12;
   // 終點箭頭(focus-on / abuse 系列 / negative-focus / caregiver)
   const needArrowEnd =
     line.subType === 'focus-on' ||
@@ -268,8 +239,13 @@ export default function Line({
     line.subType === 'physical-abuse' ||
     line.subType === 'emotional-abuse' ||
     line.subType === 'sexual-abuse';
-  // 起點箭頭(只有 caregiver 是雙向)
-  const needArrowStart = line.subType === 'caregiver';
+  // 起點箭頭 — v1.1 起 caregiver 改單向,沒有 subtype 需要起點箭頭
+  const needArrowStart = false;
+  // 情緒虐待的箭頭用「空心」(stroke 描邊 + 白色填充),跟身體/性虐待的實心三角區隔
+  const arrowEndIsHollow = line.subType === 'emotional-abuse';
+  // 照顧者用「雙倒角」(>>) — 額外多畫一個箭頭往後 offset
+  const arrowEndIsDouble = line.subType === 'caregiver';
+  const doubleArrowGap = 7; // 第二個箭頭往線尾方向 offset 的距離
 
   // 線條實際終止點 — 端點留 arrowLen 給箭頭,讓尾巴不會從箭頭周圍露出
   // arrowGap=1 微重疊,避免接縫處有空白
@@ -334,8 +310,10 @@ export default function Line({
           // ===== 弧形 + 幾何 — 全 15 subtype 沿曲線渲染 =====
           const cx = arcCtrlX;
           const cy = arcCtrlY;
-          // 多線(connected/close/fused/close-hostile)用 parallelBezierPath
-          if (line.subType === 'connected') {
+          // 多線(close/fused/close-hostile)用 parallelBezierPath
+          // v1.1: connected 已對齊標準圖改單線,走 default arcPath
+          if (line.subType === 'close') {
+            // 親密 = 雙線(從原本三線減 1)
             const off = 3;
             return (
               <>
@@ -344,7 +322,8 @@ export default function Line({
               </>
             );
           }
-          if (line.subType === 'close') {
+          if (line.subType === 'fused') {
+            // 過度緊密 = 三線(從原本四線減 1)
             const off = 5;
             return (
               <>
@@ -354,27 +333,24 @@ export default function Line({
               </>
             );
           }
-          if (line.subType === 'fused') {
-            const o1 = 2;
-            const o2 = 6;
-            return (
-              <>
-                <path d={parallelBezierPath(startX, startY, cx, cy, endX, endY, o2)} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
-                <path d={parallelBezierPath(startX, startY, cx, cy, endX, endY, o1)} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
-                <path d={parallelBezierPath(startX, startY, cx, cy, endX, endY, -o1)} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
-                <path d={parallelBezierPath(startX, startY, cx, cy, endX, endY, -o2)} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
-              </>
-            );
-          }
           if (line.subType === 'spiritual') {
+            // 靈性 = sin + cos 雙波交織(相位差 90°)
             const waves = Math.max(3, Math.floor(segLen / 18));
             return (
-              <path
-                d={wavyPathArc(startX, startY, cx, cy, endX, endY, 5, waves)}
-                stroke={stroke}
-                strokeWidth={strokeWidth}
-                fill="none"
-              />
+              <>
+                <path
+                  d={wavyPathArcPhase(startX, startY, cx, cy, endX, endY, 5, waves, 'sin')}
+                  stroke={stroke}
+                  strokeWidth={strokeWidth}
+                  fill="none"
+                />
+                <path
+                  d={wavyPathArcPhase(startX, startY, cx, cy, endX, endY, 5, waves, 'cos')}
+                  stroke={stroke}
+                  strokeWidth={strokeWidth}
+                  fill="none"
+                />
+              </>
             );
           }
           if (line.subType === 'close-hostile') {
@@ -387,18 +363,33 @@ export default function Line({
               </>
             );
           }
+          if (line.subType === 'sexual-abuse') {
+            // 性虐待 = 鋸齒 + 上下兩條平行線 + 實心箭頭(身體+親密 組合)
+            const off = 6;
+            return (
+              <>
+                <path d={parallelBezierPath(startX, startY, cx, cy, endX, endY, off)} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
+                <path d={parallelBezierPath(startX, startY, cx, cy, endX, endY, -off)} stroke={stroke} strokeWidth={strokeWidth} fill="none" />
+                <path
+                  d={zigzagPathArc(startX, startY, cx, cy, arcLineEndX, arcLineEndY, 4, 10)}
+                  stroke={stroke}
+                  strokeWidth={2.4}
+                  fill="none"
+                  strokeLinejoin="miter"
+                />
+              </>
+            );
+          }
           if (
             line.subType === 'hostile' ||
             line.subType === 'negative-focus' ||
             line.subType === 'physical-abuse' ||
-            line.subType === 'emotional-abuse' ||
-            line.subType === 'sexual-abuse'
+            line.subType === 'emotional-abuse'
           ) {
             const zigW =
               line.subType === 'emotional-abuse' ? 1
                 : line.subType === 'physical-abuse' ? 3
-                  : line.subType === 'sexual-abuse' ? 4
-                    : strokeWidth;
+                  : strokeWidth;
             return (
               <path
                 d={zigzagPathArc(startX, startY, cx, cy, arcLineEndX, arcLineEndY, 5, 10)}
@@ -409,7 +400,7 @@ export default function Line({
               />
             );
           }
-          // 其餘(focus-on / caregiver / cutoff / cutoff-repaired):單一 bezier
+          // 其餘(connected / focus-on / caregiver / cutoff / cutoff-repaired):單一 bezier
           return (
             <path
               d={`M ${startX} ${startY} Q ${cx} ${cy} ${arcLineEndX} ${arcLineEndY}`}
@@ -421,8 +412,21 @@ export default function Line({
         })()}
       {!arcEnabled && useGeometry &&
         (() => {
-          // #62 連結(connected)— 雙線
+          // #62 連結(connected)— 單線(對齊標準圖,從雙線減為單線)
           if (line.subType === 'connected') {
+            return (
+              <line
+                x1={startX}
+                y1={startY}
+                x2={endX}
+                y2={endY}
+                stroke={stroke}
+                strokeWidth={strokeWidth}
+              />
+            );
+          }
+          // #63 親密(close)— 雙線(從三線減 1)
+          if (line.subType === 'close') {
             const off = 3;
             return (
               <>
@@ -431,8 +435,8 @@ export default function Line({
               </>
             );
           }
-          // #63 親密(close)— 三線
-          if (line.subType === 'close') {
+          // #64 過度緊密(fused)— 三線(從四線減 1)
+          if (line.subType === 'fused') {
             const off = 5;
             return (
               <>
@@ -442,29 +446,24 @@ export default function Line({
               </>
             );
           }
-          // #64 過度緊密(fused)— 四線
-          if (line.subType === 'fused') {
-            const o1 = 2;
-            const o2 = 6;
-            return (
-              <>
-                <line x1={startX + nx * o2} y1={startY + ny * o2} x2={endX + nx * o2} y2={endY + ny * o2} stroke={stroke} strokeWidth={strokeWidth} />
-                <line x1={startX + nx * o1} y1={startY + ny * o1} x2={endX + nx * o1} y2={endY + ny * o1} stroke={stroke} strokeWidth={strokeWidth} />
-                <line x1={startX - nx * o1} y1={startY - ny * o1} x2={endX - nx * o1} y2={endY - ny * o1} stroke={stroke} strokeWidth={strokeWidth} />
-                <line x1={startX - nx * o2} y1={startY - ny * o2} x2={endX - nx * o2} y2={endY - ny * o2} stroke={stroke} strokeWidth={strokeWidth} />
-              </>
-            );
-          }
-          // #65 靈性連結(spiritual)— 波浪
+          // #65 靈性連結(spiritual)— sin + cos 雙波交織(相位差 90°)
           if (line.subType === 'spiritual') {
             const waves = Math.max(3, Math.floor(segLen / 18));
             return (
-              <path
-                d={wavyPath(startX, startY, endX, endY, 5, waves)}
-                stroke={stroke}
-                strokeWidth={strokeWidth}
-                fill="none"
-              />
+              <>
+                <path
+                  d={wavyPathStraightPhase(startX, startY, endX, endY, 5, waves, 'sin')}
+                  stroke={stroke}
+                  strokeWidth={strokeWidth}
+                  fill="none"
+                />
+                <path
+                  d={wavyPathStraightPhase(startX, startY, endX, endY, 5, waves, 'cos')}
+                  stroke={stroke}
+                  strokeWidth={strokeWidth}
+                  fill="none"
+                />
+              </>
             );
           }
           // #69 親密-敵意(close-hostile)— 雙線 + 中央鋸齒,無箭頭
@@ -478,20 +477,35 @@ export default function Line({
               </>
             );
           }
-          // 鋸齒系列(hostile / negative-focus / physical-abuse / emotional-abuse / sexual-abuse)
+          // #73 性虐待(sexual-abuse)— 鋸齒 + 上下兩條平行線 + 實心箭頭(身體+親密 組合)
+          if (line.subType === 'sexual-abuse') {
+            const off = 6;
+            return (
+              <>
+                <line x1={startX + nx * off} y1={startY + ny * off} x2={lineEndX + nx * off} y2={lineEndY + ny * off} stroke={stroke} strokeWidth={strokeWidth} />
+                <line x1={startX - nx * off} y1={startY - ny * off} x2={lineEndX - nx * off} y2={lineEndY - ny * off} stroke={stroke} strokeWidth={strokeWidth} />
+                <path
+                  d={zigzagPath(startX, startY, lineEndX, lineEndY, 4, 10)}
+                  stroke={stroke}
+                  strokeWidth={2.4}
+                  fill="none"
+                  strokeLinejoin="miter"
+                />
+              </>
+            );
+          }
+          // 鋸齒系列(hostile / negative-focus / physical-abuse / emotional-abuse)
           // 振幅/波長一致,粗細不同;有箭頭的尾端用 lineEndX/Y(縮短留給箭頭)
           if (
             line.subType === 'hostile' ||
             line.subType === 'negative-focus' ||
             line.subType === 'physical-abuse' ||
-            line.subType === 'emotional-abuse' ||
-            line.subType === 'sexual-abuse'
+            line.subType === 'emotional-abuse'
           ) {
             const zigW =
               line.subType === 'emotional-abuse' ? 1
                 : line.subType === 'physical-abuse' ? 3
-                  : line.subType === 'sexual-abuse' ? 4
-                    : strokeWidth; // hostile / negative-focus 用預設
+                  : strokeWidth; // hostile / negative-focus 用預設
             return (
               <path
                 d={zigzagPath(startX, startY, lineEndX, lineEndY, 5, 10)}
@@ -554,29 +568,63 @@ export default function Line({
             />
           );
         })()}
-      {/* 終點箭頭 — 全黑填滿,在藍色關係線上明顯 */}
+      {/* 終點箭頭 — 直線模式
+          - 預設:實心填滿(#1d1d1f)
+          - 情緒虐待:空心(stroke 描邊 + 白填),跟身體虐待視覺對比
+          - 照顧者:雙倒角(>>)— 再多畫一個往線尾方向 offset 的箭頭 */}
       {!arcEnabled && useGeometry && needArrowEnd && (
-        <polygon
-          points={`${endX},${endY} ${endX - ux * arrowLen - nx * arrowWid * 0.5},${endY - uy * arrowLen - ny * arrowWid * 0.5} ${endX - ux * arrowLen + nx * arrowWid * 0.5},${endY - uy * arrowLen + ny * arrowWid * 0.5}`}
-          fill="#1d1d1f"
-        />
+        <>
+          <polygon
+            points={`${endX},${endY} ${endX - ux * arrowLen - nx * arrowWid * 0.5},${endY - uy * arrowLen - ny * arrowWid * 0.5} ${endX - ux * arrowLen + nx * arrowWid * 0.5},${endY - uy * arrowLen + ny * arrowWid * 0.5}`}
+            fill={arrowEndIsHollow ? '#ffffff' : '#1d1d1f'}
+            stroke={arrowEndIsHollow ? '#1d1d1f' : 'none'}
+            strokeWidth={arrowEndIsHollow ? 1.4 : 0}
+            strokeLinejoin="miter"
+          />
+          {arrowEndIsDouble && (() => {
+            // 第二個箭頭往線起點方向 offset doubleArrowGap,形成 >> 樣式
+            const ex2 = endX - ux * doubleArrowGap;
+            const ey2 = endY - uy * doubleArrowGap;
+            return (
+              <polygon
+                points={`${ex2},${ey2} ${ex2 - ux * arrowLen - nx * arrowWid * 0.5},${ey2 - uy * arrowLen - ny * arrowWid * 0.5} ${ex2 - ux * arrowLen + nx * arrowWid * 0.5},${ey2 - uy * arrowLen + ny * arrowWid * 0.5}`}
+                fill="#1d1d1f"
+              />
+            );
+          })()}
+        </>
       )}
-      {/* 起點箭頭(只有 caregiver — 雙向)*/}
+      {/* 起點箭頭(v1.1 已停用 — caregiver 改單向) */}
       {!arcEnabled && useGeometry && needArrowStart && (
         <polygon
           points={`${startX},${startY} ${startX + ux * arrowLen - nx * arrowWid * 0.5},${startY + uy * arrowLen - ny * arrowWid * 0.5} ${startX + ux * arrowLen + nx * arrowWid * 0.5},${startY + uy * arrowLen + ny * arrowWid * 0.5}`}
           fill="#1d1d1f"
         />
       )}
-      {/* Arc 模式終點箭頭(用切線方向定向) */}
+      {/* Arc 模式終點箭頭(用切線方向定向) — 同樣支援空心 / 雙倒角 */}
       {arcEnabled && needArrowEnd && (() => {
         const aNx = -arcEndUy;
         const aNy = arcEndUx;
         return (
-          <polygon
-            points={`${endX},${endY} ${endX - arcEndUx * arrowLen - aNx * arrowWid * 0.5},${endY - arcEndUy * arrowLen - aNy * arrowWid * 0.5} ${endX - arcEndUx * arrowLen + aNx * arrowWid * 0.5},${endY - arcEndUy * arrowLen + aNy * arrowWid * 0.5}`}
-            fill="#1d1d1f"
-          />
+          <>
+            <polygon
+              points={`${endX},${endY} ${endX - arcEndUx * arrowLen - aNx * arrowWid * 0.5},${endY - arcEndUy * arrowLen - aNy * arrowWid * 0.5} ${endX - arcEndUx * arrowLen + aNx * arrowWid * 0.5},${endY - arcEndUy * arrowLen + aNy * arrowWid * 0.5}`}
+              fill={arrowEndIsHollow ? '#ffffff' : '#1d1d1f'}
+              stroke={arrowEndIsHollow ? '#1d1d1f' : 'none'}
+              strokeWidth={arrowEndIsHollow ? 1.4 : 0}
+              strokeLinejoin="miter"
+            />
+            {arrowEndIsDouble && (() => {
+              const ex2 = endX - arcEndUx * doubleArrowGap;
+              const ey2 = endY - arcEndUy * doubleArrowGap;
+              return (
+                <polygon
+                  points={`${ex2},${ey2} ${ex2 - arcEndUx * arrowLen - aNx * arrowWid * 0.5},${ey2 - arcEndUy * arrowLen - aNy * arrowWid * 0.5} ${ex2 - arcEndUx * arrowLen + aNx * arrowWid * 0.5},${ey2 - arcEndUy * arrowLen + aNy * arrowWid * 0.5}`}
+                  fill="#1d1d1f"
+                />
+              );
+            })()}
+          </>
         );
       })()}
       {/* Hit area — arc 模式時用沿弧線的 bezier path,否則用直線

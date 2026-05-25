@@ -54,6 +54,8 @@ export function ExportDialog({
   const caseList = useGenogramStore((s) => s.caseList);
   const loadCaseList = useGenogramStore((s) => s.loadCaseList);
   const currentCase = useGenogramStore((s) => s.currentCase);
+  // v1.1 匯出 json 前個資警告(用全域 confirm dialog 跳)
+  const showConfirm = useGenogramStore((s) => s.showConfirm);
   // 預設 tab:有 currentCase 時 = image,否則 = data
   const [tab, setTab] = useState<ExportTab>(
     defaultTab ?? (currentCase ? 'image' : 'data'),
@@ -120,6 +122,9 @@ export function ExportDialog({
     if (tab === 'data') {
       const cases = caseList.filter((c) => selectedIds.has(c.id));
       if (cases.length === 0) return;
+      // v1.1 個資警告 — 匯出 .json 前提醒外洩風險
+      const ok = await showConfirm(t('export.privacyWarning'));
+      if (!ok) return;
       if (includeSettings) {
         // backup 模式(可能是子集 + 設定)
         const bundle = await buildBackupExport();

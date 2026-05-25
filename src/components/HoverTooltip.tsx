@@ -16,15 +16,39 @@ export default function HoverTooltip() {
   const lastElementRef = useRef<Element | null>(null);
 
   useEffect(() => {
+    // v1.1 — 同時支援 data-tooltip 跟 title attribute
+    //   1. 優先讀 data-tooltip
+    //   2. 退而求其次讀 title(同時抑制瀏覽器原生 tooltip,延遲也統一成 500ms)
+    //   3. 離開時把 title 還原(維持 screen reader 可讀性)
     const findTooltipEl = (el: Element | null): Element | null => {
       let cur: Element | null = el;
       while (cur) {
-        if (cur instanceof Element && cur.hasAttribute?.('data-tooltip')) {
-          return cur;
+        if (cur instanceof Element) {
+          if (cur.hasAttribute?.('data-tooltip')) return cur;
+          // title 也算 tooltip 候選(JSX <Section title="..."> 等自訂組件不會有 title attribute 在 DOM 上,
+          // 所以只會掃到真正的 HTML 屬性 title="...")
+          if (cur.hasAttribute?.('title')) return cur;
         }
         cur = cur.parentElement;
       }
       return null;
+    };
+
+    // 暫存 title 屬性的元素,避免瀏覽器原生提示插隊
+    const stripTitle = (el: Element) => {
+      const original = el.getAttribute('title');
+      if (original !== null) {
+        el.setAttribute('data-original-title', original);
+        el.removeAttribute('title');
+      }
+    };
+    const restoreTitle = (el: Element | null) => {
+      if (!el) return;
+      const orig = el.getAttribute('data-original-title');
+      if (orig !== null) {
+        el.setAttribute('title', orig);
+        el.removeAttribute('data-original-title');
+      }
     };
 
     const onMove = (e: MouseEvent) => {
@@ -32,11 +56,12 @@ export default function HoverTooltip() {
       const tipEl = findTooltipEl(target);
 
       if (!tipEl) {
-        // 離開有 tooltip 的元素
+        // 離開有 tooltip 的元素 — 還原前一個元素的 title(若有)
         if (timerRef.current !== null) {
           window.clearTimeout(timerRef.current);
           timerRef.current = null;
         }
+        restoreTitle(lastElementRef.current);
         if (visible) setVisible(false);
         lastElementRef.current = null;
         return;
@@ -48,9 +73,17 @@ export default function HoverTooltip() {
         return;
       }
 
-      // 切到新元素 → 重設計時器
+      // 切到新元素 — 還原前一個 + 抑制新的 title
+      restoreTitle(lastElementRef.current);
       lastElementRef.current = tipEl;
-      const newText = tipEl.getAttribute('data-tooltip') ?? '';
+      // 文字:優先讀 data-tooltip,沒有就讀(被暫存的)title
+      const dataTip = tipEl.getAttribute('data-tooltip');
+      const titleTip = tipEl.getAttribute('title');
+      const newText = dataTip ?? titleTip ?? '';
+      // 如果是用 title,把 title 暫存起來避免瀏覽器原生提示(離開時還原)
+      if (!dataTip && titleTip !== null) {
+        stripTitle(tipEl);
+      }
       setText(newText);
       setPos({ x: e.clientX + 14, y: e.clientY + 18 });
       setVisible(false);

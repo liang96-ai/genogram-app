@@ -2,6 +2,7 @@ import { useState } from 'react';
 import PinyinMatch from 'pinyin-match';
 import type {
   Line,
+  MemberSubType,
   NetworkUnit,
   Person,
   RelationSubType,
@@ -12,7 +13,31 @@ import { SYMBOLS } from '../Gallery/symbolData';
 // LineProperties 已不再嵌入 Tab2 — 線條屬性都在畫布上直接編輯
 // (點兩下改備注、Tab2 關係按鈕改類型、× 按鈕刪線)
 
+// v1.1 婚姻線按鈕(8 個)— 對齊 Gallery,只列「現行」subType
+// 秘密外遇用 'love-affair' subType + 借 'secret' 圖示(DOT 點線)
+// v1.1 移除 3 個:
+//   - legal-cohabitation (LP):字母自創,法律狀態改用生態圈表達
+//   - legal-separation (L):字母自創,法律狀態改用生態圈表達
+//   - widowed (W):字母自創,喪偶改用 Tab1 ☑ 已往生 自動畫 X
+//   舊資料這 3 個 subType 在 store migrateGenogram 自動轉成 cohabitation/separation/marriage
+const MARRIAGE_ITEMS: { subType: MemberSubType; symCode: string; labelKey: string }[] = [
+  { subType: 'marriage', symCode: 'marriage', labelKey: 'lineProps.subType.marriage' },
+  { subType: 'engagement', symCode: 'engagement', labelKey: 'lineProps.subType.engagement' },
+  { subType: 'cohabitation', symCode: 'cohabitation', labelKey: 'lineProps.subType.cohabitation' },
+  { subType: 'engagement-cohabitation', symCode: 'engagement-cohabitation', labelKey: 'lineProps.subType.engagementCohabitation' },
+  { subType: 'separation', symCode: 'separation', labelKey: 'lineProps.subType.separation' },
+  { subType: 'engagement-separation', symCode: 'engagement-separation', labelKey: 'lineProps.subType.engagementSeparation' },
+  { subType: 'divorce', symCode: 'divorce', labelKey: 'lineProps.subType.divorce' },
+  // 秘密外遇 — Gallery 用 'secret' 點線圖示;subType 'love-affair' 是現行名(舊 secret-affair 會 migrate 到此)
+  { subType: 'love-affair', symCode: 'secret', labelKey: 'lineProps.subType.loveAffair' },
+];
+
 // RelationSubType ↔ symbolData code 對照表(命名不一致需要 map)
+// v1.1 重整為 4 群(對齊標準圖):
+//   1. 正向連結 (連結/親密/過度緊密) — 移走靈性
+//   2. 互動程度 (親密-敵意/疏離/敵意/靈性/專注於/負向關注) — 合併原中性+負向+靈性
+//   3. 虐待 (身體/情緒/性)
+//   4. 照顧/截斷 (照顧者/截斷/修復截斷)
 const RELATION_GROUPS: {
   groupKey: string;
   items: { subType: RelationSubType; symCode: string; labelKey: string }[];
@@ -23,21 +48,16 @@ const RELATION_GROUPS: {
       { subType: 'connected', symCode: 'connected', labelKey: 'lineProps.subType.connected' },
       { subType: 'close', symCode: 'close', labelKey: 'lineProps.subType.close' },
       { subType: 'fused', symCode: 'fused', labelKey: 'lineProps.subType.fused' },
-      { subType: 'spiritual', symCode: 'spiritual', labelKey: 'lineProps.subType.spiritual' },
     ],
   },
   {
-    groupKey: 'relation.group.neutral',
+    groupKey: 'relation.group.interaction',
     items: [
-      { subType: 'distant', symCode: 'distant', labelKey: 'lineProps.subType.distant' },
-      { subType: 'focus-on', symCode: 'focus', labelKey: 'lineProps.subType.focusOn' },
-    ],
-  },
-  {
-    groupKey: 'relation.group.negative',
-    items: [
-      { subType: 'hostile', symCode: 'hostile', labelKey: 'lineProps.subType.hostile' },
       { subType: 'close-hostile', symCode: 'close-hostile', labelKey: 'lineProps.subType.closeHostile' },
+      { subType: 'distant', symCode: 'distant', labelKey: 'lineProps.subType.distant' },
+      { subType: 'hostile', symCode: 'hostile', labelKey: 'lineProps.subType.hostile' },
+      { subType: 'spiritual', symCode: 'spiritual', labelKey: 'lineProps.subType.spiritual' },
+      { subType: 'focus-on', symCode: 'focus', labelKey: 'lineProps.subType.focusOn' },
       { subType: 'negative-focus', symCode: 'neg-focus', labelKey: 'lineProps.subType.negativeFocus' },
     ],
   },
@@ -116,13 +136,22 @@ export default function Tab2Network({ person, lineTarget }: Props) {
   );
   const setPendingRelation = useGenogramStore((s) => s.setPendingRelation);
   const pendingRelation = useGenogramStore((s) => s.pendingRelation);
+  const setPendingMember = useGenogramStore((s) => s.setPendingMember);
+  const pendingMember = useGenogramStore((s) => s.pendingMember);
   const updateLine = useGenogramStore((s) => s.updateLine);
   const toggleAllRelationLinesPrivate = useGenogramStore(
     (s) => s.toggleAllRelationLinesPrivate,
   );
   const selectedConnector = useGenogramStore((s) => s.selectedConnector);
   const setConnectorSubType = useGenogramStore((s) => s.setConnectorSubType);
+  const toggleConnectorReversed = useGenogramStore(
+    (s) => s.toggleConnectorReversed,
+  );
   const inspectorTarget = useGenogramStore((s) => s.inspectorTarget);
+  const tab2ShowMarriage = useGenogramStore((s) => s.tab2ShowMarriage);
+  const tab2ShowRelation = useGenogramStore((s) => s.tab2ShowRelation);
+  const setTab2ShowMarriage = useGenogramStore((s) => s.setTab2ShowMarriage);
+  const setTab2ShowRelation = useGenogramStore((s) => s.setTab2ShowRelation);
   // 偵測「目前選的是 member line 嗎?」— 用來擋 pendingRelation 觸發
   // (Inspector 已把 member line 的 lineTarget 過濾成 null,但避免使用者
   //  手動切到 Tab2 後按按鈕,還是會冒出 pending banner)
@@ -157,11 +186,29 @@ export default function Tab2Network({ person, lineTarget }: Props) {
   const onPickRelation = (subType: RelationSubType) => {
     // 優先順序:選中 connector > 選中 relation line > 進 pending mode
     if (connectorTarget) {
-      setConnectorSubType(
-        connectorTarget.unit.id,
-        connectorTarget.conn.id,
-        subType,
-      );
+      // ⚠️ 不要拿掉這 Set — connector(單位↔人物/生態圈)的方向翻轉是必要功能
+      // v1.1: 同 subType 重複點 + 在 ARROW_REVERSIBLE 名單 → 翻轉 connector 方向
+      // 跟人物↔人物的關係線翻轉名單一致,維護時兩處要同步
+      const CONNECTOR_REVERSIBLE = new Set<RelationSubType>([
+        'focus-on',
+        'negative-focus',
+        'physical-abuse',
+        'emotional-abuse',
+        'sexual-abuse',
+        'caregiver',
+      ]);
+      if (
+        connectorTarget.conn.subType === subType &&
+        CONNECTOR_REVERSIBLE.has(subType)
+      ) {
+        toggleConnectorReversed(connectorTarget.unit.id, connectorTarget.conn.id);
+      } else {
+        setConnectorSubType(
+          connectorTarget.unit.id,
+          connectorTarget.conn.id,
+          subType,
+        );
+      }
       if (pendingRelation) setPendingRelation(null);
       return;
     }
@@ -171,12 +218,17 @@ export default function Tab2Network({ person, lineTarget }: Props) {
     if (lineTarget && lineTarget.category === 'relation') {
       // 如果再點一次「同一個有箭頭的關係 subType」→ 反轉箭頭方向
       // (swap from/to,箭頭自然從 to 跳到原本的 from)
+      // ⚠️ 不要拿掉這 Set — 藍色關係線的方向性翻轉是「必要」功能
+      // 點兩次同一個有箭頭的關係 subType → 翻轉 from/to(箭頭方向反過來)
+      // v1.1:caregiver 加入翻轉名單(配合「單向 + 雙倒角」改版)
+      // 教學 step 7「藍線 — 互動關係 & Tab2 翻轉」會教使用者用這功能,刪掉會破壞教學
       const ARROW_REVERSIBLE = new Set<RelationSubType>([
         'focus-on',
         'negative-focus',
         'physical-abuse',
         'emotional-abuse',
         'sexual-abuse',
+        'caregiver',
       ]);
       if (
         lineTarget.subType === subType &&
@@ -204,6 +256,26 @@ export default function Tab2Network({ person, lineTarget }: Props) {
       return;
     }
     setPendingRelation(subType);
+  };
+
+  // v1.1: 點婚姻線按鈕邏輯
+  //  - 選中 member line → 改該線 subType
+  //  - 沒選 → 進 pending mode → 點 2 個人物完成
+  const onPickMember = (subType: MemberSubType) => {
+    // 若選中的是 member line(婚姻),直接改類型
+    if (lineTarget && lineTarget.category === 'member') {
+      updateLine(lineTarget.id, { subType });
+      if (pendingMember) setPendingMember(null);
+      return;
+    }
+    // 若選中的是 relation line,擋住(避免誤把關係線改成婚姻)
+    if (lineTarget && lineTarget.category === 'relation') {
+      return;
+    }
+    // 沒選 → 進 pending mode
+    setPendingMember(subType);
+    // 取消可能殘留的 pendingRelation
+    if (pendingRelation) setPendingRelation(null);
   };
 
   const [adding, setAdding] = useState(false);
@@ -235,31 +307,137 @@ export default function Tab2Network({ person, lineTarget }: Props) {
     <div style={{ padding: 16, overflowY: 'auto', height: '100%' }}>
       {/* 線條屬性已搬到畫布上直接操作:
           - 點兩下線 → 編輯備注
-          - Tab2 關係按鈕 → 切換線條類型
+          - Tab2 線條按鈕 → 切換線條類型
           - 線選中時的 × → 刪除 */}
 
-      {/* 關係線 — 5 小組,15 個 mini 按鈕(用 SymbolGallery 渲染 + 強制套藍)
-          標籤跟按鈕 inline 連續流,空間夠就接續同一行,空間不夠才換 */}
+      {/* v1.1 常用線條 — 標題 + 2 個 section toggle(婚姻線 / 互動關係線)*/}
+      <div
+        style={{
+          fontSize: 13,
+          fontWeight: 600,
+          color: '#1d1d1f',
+          marginBottom: 6,
+          borderBottom: '1px solid #e5e4e7',
+          paddingBottom: 4,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}
+      >
+        <span>{t('tab2.commonLines')}</span>
+        <label
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            fontSize: 11,
+            color: '#86868b',
+            cursor: 'pointer',
+            fontWeight: 400,
+            userSelect: 'none',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={tab2ShowMarriage}
+            onChange={(e) => setTab2ShowMarriage(e.target.checked)}
+            style={{ cursor: 'pointer' }}
+          />
+          {t('tab2.toggleMarriage')}
+        </label>
+        <label
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            fontSize: 11,
+            color: '#86868b',
+            cursor: 'pointer',
+            fontWeight: 400,
+            userSelect: 'none',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={tab2ShowRelation}
+            onChange={(e) => setTab2ShowRelation(e.target.checked)}
+            style={{ cursor: 'pointer' }}
+          />
+          {t('tab2.toggleRelation')}
+        </label>
+      </div>
+
+      {/* 婚姻線 — v1.1 加入 Tab2,點選後可改既有婚姻線類型或進 pending mode */}
+      {tab2ShowMarriage && (
+        <Section title={t('tab2.marriageSectionTitle')}>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            {MARRIAGE_ITEMS.map((item) => {
+              const sym = SYMBOLS.find((s) => s.code === item.symCode);
+              if (!sym) return null;
+              // 高亮:選中 member line → 該線 subType / pending mode → pendingMember
+              const active =
+                lineTarget && lineTarget.category === 'member'
+                  ? lineTarget.subType === item.subType
+                  : pendingMember === item.subType;
+              return (
+                <button
+                  key={item.subType}
+                  onClick={() => onPickMember(item.subType)}
+                  data-tooltip={`#${sym.number} ${t(item.labelKey)}`}
+                  style={{
+                    width: 56,
+                    height: 32,
+                    padding: 2,
+                    background: active ? '#e8f1ff' : '#ffffff',
+                    border: active ? '2px solid #007aff' : '1px solid #d2d2d7',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxSizing: 'border-box',
+                    flexShrink: 0,
+                  }}
+                >
+                  <svg
+                    viewBox="-44 -18 88 36"
+                    width={50}
+                    height={22}
+                    style={{ display: 'block' }}
+                  >
+                    {sym.render()}
+                  </svg>
+                </button>
+              );
+            })}
+          </div>
+        </Section>
+      )}
+
+      {/* 關係線 — 4 小組(v1.1 已從 5 群整併,移除 disabled,全選保密永遠可勾)*/}
+      {tab2ShowRelation && (
       <Section
         title={t('relation.title')}
         rightInline={(() => {
-          const disabled = allCaseRelationLines.length === 0;
+          // v1.1: 移除 disabled — 即使沒線也可以勾(no-op)
           return (
             <label
-              data-tooltip={
-                disabled ? t('privacy.noFields') : t('privacy.sectionTip')
-              }
+              data-tooltip={t('privacy.sectionTip')}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 4,
                 fontSize: 11,
-                color: disabled
-                  ? '#c7c7cc'
-                  : allRelationLinesPrivate
-                    ? '#ff3b30'
-                    : '#86868b',
-                cursor: disabled ? 'not-allowed' : 'pointer',
+                color: allRelationLinesPrivate ? '#ff3b30' : '#86868b',
+                cursor: 'pointer',
                 fontWeight: 400,
                 userSelect: 'none',
               }}
@@ -267,11 +445,10 @@ export default function Tab2Network({ person, lineTarget }: Props) {
               <input
                 type="checkbox"
                 checked={allRelationLinesPrivate}
-                disabled={disabled}
                 onChange={() =>
                   toggleAllRelationLinesPrivate(!allRelationLinesPrivate)
                 }
-                style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
+                style={{ cursor: 'pointer' }}
               />
               🔒 {t('privacy.selectAll')}
             </label>
@@ -355,6 +532,8 @@ export default function Tab2Network({ person, lineTarget }: Props) {
           ))}
         </div>
       </Section>
+      )}
+      {/* /v1.1 tab2ShowRelation 條件結束 */}
 
       {/* 新增單位(置頂)— 漸進式顯露:點 + 才展開 */}
       <Section

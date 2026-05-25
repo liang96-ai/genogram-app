@@ -95,9 +95,10 @@ const dict: Record<Lang, Record<string, string>> = {
     'tab1.personalInfo': '個人資訊',
     'tab1.note': '備註',
     'tab1.shapeInst': '💡 這是網絡單位/機構(非個人)。請到「網絡關係」Tab 編輯連結關係。',
-    'tab1.multiIdentity': '性別亞型',
-    'tab1.medicalBasic': '基本醫療用',
-    'tab1.advanced': '進階',
+    // v1.1 改名:對齊新 4 群結構(常用永遠顯示 + 醫務/擴充選項/遺傳)
+    'tab1.medical': '醫務',
+    'tab1.extended': '擴充選項',
+    'tab1.genetic': '遺傳',
     'tab1.addNewPerson': '新增獨立人物',
     'tab1.name': '姓名',
     'tab1.proband': '案主',
@@ -246,7 +247,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'lineProps.subType.cohabitation': '同居',
     'lineProps.subType.legalCohabitation': '法律同居',
     'lineProps.subType.engagementCohabitation': '訂婚同居',
-    'lineProps.subType.loveAffair': '婚外情',
+    'lineProps.subType.loveAffair': '秘密外遇',
     'lineProps.subType.biological': '親生',
     'lineProps.subType.adopted': '收養',
     'lineProps.subType.fostered': '寄養',
@@ -284,7 +285,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'twin.howMany': '幾胞胎?',
     'twin.maxLimit': '最多 15 胞胎',
     'twin.type': '類型',
-    'twin.fraternal': '分卵',
+    'twin.fraternal': '異卵',
     'twin.identical': '同卵',
 
     // ===== View Toolbar =====
@@ -310,10 +311,17 @@ const dict: Record<Lang, Record<string, string>> = {
     'unit.overlap': '⚠️ 重疊',
 
     // ===== Tab2 Relation Lines(#62-76)=====
+    // v1.1 群組重整:5 → 4 群(對齊標準圖,合併中性+負向+靈性 = 互動程度)
+    // v1.1.1 Tab2 title 改「常用線條」+ 加婚姻線 section toggle
+    'tab2.commonLines': '常用線條',
+    'tab2.toggleMarriage': '婚姻線',
+    'tab2.toggleRelation': '互動關係線',
+    'tab2.marriageSectionTitle': '婚姻線',
+    'tab2.marriageHeaderTip': '點 → 選人物 → 拉到另一人完成婚姻線;或點現有婚姻線改類型',
+    'tab2.marriagePending': '點兩個人物完成「{name}」婚姻線(Esc 取消)',
     'relation.title': '互動關係線',
     'relation.group.positive': '正向',
-    'relation.group.neutral': '中性',
-    'relation.group.negative': '負向',
+    'relation.group.interaction': '互動程度',
     'relation.group.violence': '暴力',
     'relation.group.cutoff': '照顧 / 斷裂',
     'relation.pendingBanner': '點另一人物完成「{name}」互動關係線(Esc 取消)',
@@ -343,6 +351,25 @@ const dict: Record<Lang, Record<string, string>> = {
     'gallery.searchPlaceholder': '搜尋編號/名稱/類別…',
     'gallery.noResults': '沒有符合「{query}」的符號',
     'gallery.footerHint': '💡 每個符號右上角是編號(#1-#{n})。你可以用編號指定「#12 是 Tier 1」來分類。',
+    // v1.1 新增 — Gallery 頁腳「📚 學術依據與引用」link
+    'gallery.references': '📚 學術依據與引用',
+    'gallery.referencesDialogTitle': '📚 符號規範主要參考',
+    'gallery.refMcgoldrick.line1': 'McGoldrick, Gerson & Petry (2020)',
+    'gallery.refMcgoldrick.line2': 'Genograms: Assessment and Treatment (4th ed.) W.W. Norton',
+    'gallery.refMcgoldrick.tag': '主要參考來源 — 社工/家治/心理治療領域國際標準',
+    'gallery.refMcgoldrick.note': '(全球 300+ 研究所課程採用)',
+    'gallery.refNsgc.line1': 'Bennett RL et al. (2008/2022)',
+    'gallery.refNsgc.line2': 'Standardized human pedigree nomenclature, J Genet Counsel',
+    'gallery.refNsgc.tag': '醫療遺傳區補充',
+    'gallery.refNsgc.note': '⚠️ NSGC 2022 修訂建議改用分區填色取代「中央黑點」,本工具沿用 McGoldrick(中央黑點),避免與既有填色系統衝突。',
+    'gallery.refHodge.line1': 'Hodge, D. R. (2001)',
+    'gallery.refHodge.line2': 'Spiritual genograms, Families in Society',
+    'gallery.refHodge.tag': '靈性連結(sin+cos 雙波)',
+    'gallery.refHartman.line1': 'Hartman, A. (1978)',
+    'gallery.refHartman.line2': 'Diagrammatic assessment of family relationships, Social Casework',
+    'gallery.refHartman.tag': '機構/單位、生態圈',
+    'gallery.refDisclaimer': '⚠️ 本工具沿用 McGoldrick 字母標記 S/L/O,符合 4th ed 規範。部分早期版本字母標記(LP/W/E/L)已移除,建議改用生態圈或 ☑ 已往生 取代。',
+    'gallery.refClose': '關閉',
 
     // ===== Symbol Categories(對應 symbolData 內的中文值)=====
     'symCat.基本形狀': '基本形狀',
@@ -359,8 +386,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'symCat.成員線-手足': '成員線 - 手足',
     'symCat.成員線-妊娠': '成員線 - 妊娠',
     'symCat.關係線-正向': '互動關係線 - 正向',
-    'symCat.關係線-中性': '互動關係線 - 中性',
-    'symCat.關係線-負向': '互動關係線 - 負向',
+    'symCat.關係線-互動程度': '互動關係線 - 互動程度',
     'symCat.關係線-暴力': '互動關係線 - 暴力',
     'symCat.關係線-照顧斷裂': '互動關係線 - 照顧斷裂',
     'symCat.特殊視覺': '特殊視覺',
@@ -407,6 +433,13 @@ const dict: Record<Lang, Record<string, string>> = {
     'caseList.share': '分享',
     'caseList.shareTitle': '分享給其他社工/心理師同行',
     'caseList.menuTitle': '主選單',
+    // v1.1 — 首頁 2 個維護按鈕
+    'caseList.checkUpdate': '檢查更新',
+    'caseList.checkUpdateTitle': '檢查是否有新版本,自動刷新看新功能(網頁版常用 — 有些瀏覽器不會自動更新)',
+    'caseList.fullReset': '全部重置',
+    'caseList.fullResetTitle': '⚠️ 清除所有個案資料、設定、瀏覽器快取 — 動作不可復原',
+    'caseList.fullResetConfirm':
+      '⚠️ 全部重置警告\n\n這會永久刪除:\n• 所有個案資料(共 {n} 個個案)\n• 所有設定(語言、提示偏好、資料夾連結等)\n• 瀏覽器快取(下次重開要重新下載程式)\n\n⚠️ 動作不可復原!\n建議先 📤 匯出 備份再執行。\n\n確定要全部重置嗎?',
 
     // ===== Share Dialog =====
     'share.title': '分享家系圖工具',
@@ -470,6 +503,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'export.noGrid': '不畫網點背景',
     'export.hidePrivate': '隱藏關係細節(線變實線、不顯示備注)',
     'export.privacyApplied': '💡 已套用「保密」設定 — 勾保密的欄位不會出現在圖上。',
+    // v1.1: 匯出 json 前的個資警告(B 版 — 短而溫暖)
+    'export.privacyWarning':
+      '⚠️ 這份檔案含完整個資\n\n透過網路傳送有外洩風險,本工具提醒你多加留意。',
     'export.processing': '處理中…',
     'export.download': '下載',
     'import.title': '匯入',
@@ -599,9 +635,10 @@ const dict: Record<Lang, Record<string, string>> = {
     'tab1.personalInfo': 'Personal Info',
     'tab1.note': 'Notes',
     'tab1.shapeInst': '💡 This is a network unit / institution (not a person). Use the Network tab to edit relations.',
-    'tab1.multiIdentity': 'Gender Subtypes',
-    'tab1.medicalBasic': 'Medical Basic',
-    'tab1.advanced': 'Advanced',
+    // v1.1 rename: align with new 4-group structure (basic always shown + medical / extended / genetic)
+    'tab1.medical': 'Medical',
+    'tab1.extended': 'Extended',
+    'tab1.genetic': 'Genetic',
     'tab1.addNewPerson': 'Add new person',
     'tab1.name': 'Name',
     'tab1.proband': 'Proband',
@@ -814,10 +851,17 @@ const dict: Record<Lang, Record<string, string>> = {
     'unit.overlap': '⚠️ Overlap',
 
     // ===== Tab2 Relation Lines(#62-76)=====
+    // v1.1 群組重整:5 → 4 groups(merged neutral+negative+spiritual = Interaction)
+    // v1.1.1 Tab2 title → "Common Lines" + Marriage section toggle
+    'tab2.commonLines': 'Common Lines',
+    'tab2.toggleMarriage': 'Marriage',
+    'tab2.toggleRelation': 'Relation',
+    'tab2.marriageSectionTitle': 'Marriage Lines',
+    'tab2.marriageHeaderTip': 'Tap → select a person → drag to another to draw a marriage line; or tap an existing marriage line to retype',
+    'tab2.marriagePending': 'Click two persons to complete "{name}" marriage line (Esc to cancel)',
     'relation.title': 'Relation Lines',
     'relation.group.positive': 'Positive',
-    'relation.group.neutral': 'Neutral',
-    'relation.group.negative': 'Negative',
+    'relation.group.interaction': 'Interaction',
     'relation.group.violence': 'Violence',
     'relation.group.cutoff': 'Care / Cutoff',
     'relation.pendingBanner': 'Click another person to complete "{name}" relation (Esc to cancel)',
@@ -847,6 +891,25 @@ const dict: Record<Lang, Record<string, string>> = {
     'gallery.searchPlaceholder': 'Search number / name / category…',
     'gallery.noResults': 'No symbols matching "{query}"',
     'gallery.footerHint': '💡 Top-right of each symbol is its number (#1-#{n}). You can refer to "#12 is Tier 1" for grouping.',
+    // v1.1 — Gallery footer "📚 Academic references" link
+    'gallery.references': '📚 Academic references',
+    'gallery.referencesDialogTitle': '📚 Symbol Standards & References',
+    'gallery.refMcgoldrick.line1': 'McGoldrick, Gerson & Petry (2020)',
+    'gallery.refMcgoldrick.line2': 'Genograms: Assessment and Treatment (4th ed.) W.W. Norton',
+    'gallery.refMcgoldrick.tag': 'Primary reference — international standard for social work / family therapy / counseling',
+    'gallery.refMcgoldrick.note': '(adopted in 300+ graduate programs worldwide)',
+    'gallery.refNsgc.line1': 'Bennett RL et al. (2008/2022)',
+    'gallery.refNsgc.line2': 'Standardized human pedigree nomenclature, J Genet Counsel',
+    'gallery.refNsgc.tag': 'Medical-genetics supplement',
+    'gallery.refNsgc.note': '⚠️ NSGC 2022 update recommends divided fill patterns instead of "central dot" for carriers. This tool keeps the McGoldrick central dot to avoid conflict with existing fill patterns.',
+    'gallery.refHodge.line1': 'Hodge, D. R. (2001)',
+    'gallery.refHodge.line2': 'Spiritual genograms, Families in Society',
+    'gallery.refHodge.tag': 'Spiritual relationship (sin+cos interweave)',
+    'gallery.refHartman.line1': 'Hartman, A. (1978)',
+    'gallery.refHartman.line2': 'Diagrammatic assessment of family relationships, Social Casework',
+    'gallery.refHartman.tag': 'Institutions / ecosystem',
+    'gallery.refDisclaimer': '⚠️ S/L/O letter markers in this tool follow McGoldrick 4th ed. Earlier letter markers (LP/W/E/L) have been removed in v1.1; use ecosystems or the ☑ Deceased checkbox instead.',
+    'gallery.refClose': 'Close',
 
     // ===== Symbol Categories(value 是 symbolData 中文,顯示 → 英文)=====
     'symCat.基本形狀': 'Basic Shapes',
@@ -863,8 +926,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'symCat.成員線-手足': 'Member Line — Sibling',
     'symCat.成員線-妊娠': 'Member Line — Pregnancy',
     'symCat.關係線-正向': 'Relation — Positive',
-    'symCat.關係線-中性': 'Relation — Neutral',
-    'symCat.關係線-負向': 'Relation — Negative',
+    'symCat.關係線-互動程度': 'Relation — Interaction',
     'symCat.關係線-暴力': 'Relation — Violence',
     'symCat.關係線-照顧斷裂': 'Relation — Care Cutoff',
     'symCat.特殊視覺': 'Special Visuals',
@@ -911,6 +973,13 @@ const dict: Record<Lang, Record<string, string>> = {
     'caseList.share': 'Share',
     'caseList.shareTitle': 'Share with other social workers / therapists',
     'caseList.menuTitle': 'Main menu',
+    // v1.1 — 2 maintenance buttons on home page
+    'caseList.checkUpdate': 'Check update',
+    'caseList.checkUpdateTitle': 'Check for new version and refresh — useful for browser users (some browsers do not auto-update)',
+    'caseList.fullReset': 'Full reset',
+    'caseList.fullResetTitle': '⚠️ Wipes all cases, settings, and browser cache — irreversible',
+    'caseList.fullResetConfirm':
+      '⚠️ FULL RESET WARNING\n\nThis will permanently delete:\n• All cases ({n} total)\n• All settings (language, preferences, folder link)\n• Browser cache (will need to re-download on next open)\n\n⚠️ THIS IS IRREVERSIBLE!\nExport a backup first via 📤 Share.\n\nProceed with full reset?',
 
     // ===== Share Dialog =====
     'share.title': 'Share Genogram Tool',
@@ -974,6 +1043,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'export.noGrid': 'No dot background',
     'export.hidePrivate': 'Hide relation details (lines solid, no notes)',
     'export.privacyApplied': "💡 Privacy settings applied — fields marked private won't appear.",
+    // v1.1: privacy reminder before exporting JSON (warm, short)
+    'export.privacyWarning':
+      "⚠️ This file contains complete personal data.\n\nSending over the internet carries a leak risk — please handle with care.",
     'export.processing': 'Processing…',
     'export.download': 'Download',
     'import.title': 'Import',

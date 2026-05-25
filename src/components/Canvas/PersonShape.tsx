@@ -526,9 +526,50 @@ export default function PersonShape({
   if (colliding) tipParts.push(t('tooltip.overlap'));
   const tooltip = tipParts.filter(Boolean).join(' · ');
 
-  // 人工流產:特殊渲染 — 只畫小 X,無外框
-  if (isAbortion) {
-    const r = HALF * 0.55;
+  // ==================== 妊娠結果特殊渲染 (v1.1 對齊 NSGC 2008/2022) ====================
+  // 早期 return,跳過 fillPattern + variant overlay(妊娠結果通常不疊醫療符號)
+  //
+  //   #13 stillbirth → 方+X (NSGC ⊠ Stillbirth)
+  //   #14 miscarriage → 小實心圓 (NSGC SAB)
+  //   #15 abortion → 三角+對角線 (NSGC TOP)
+  //
+  // 跟 Gallery #13-15 視覺一致(symbolData.tsx StillbirthSquare/MiscarriageDot/AbortionTriangleSlash)
+  if (isStillbirth || isMiscarriage || isAbortion) {
+    const renderPregnancyOutcome = () => {
+      if (isStillbirth) {
+        // McGoldrick ⊟ — 菱形 + 對角 X (未知性別 stillbirth 標準寫法)
+        // X 用 ±HALF 延伸到菱形外(對齊 #17 過世女的 DeathX 視覺風格,跟「已往生」一致)
+        return (
+          <>
+            <polygon
+              points={`0,${-DIAMOND_HALF} ${DIAMOND_HALF},0 0,${DIAMOND_HALF} ${-DIAMOND_HALF},0`}
+              fill="#ffffff"
+              stroke={stroke}
+              strokeWidth={strokeWidth}
+            />
+            <line x1={-HALF} y1={-HALF} x2={HALF} y2={HALF} stroke={stroke} strokeWidth={strokeWidth * 1.5} />
+            <line x1={-HALF} y1={HALF} x2={HALF} y2={-HALF} stroke={stroke} strokeWidth={strokeWidth * 1.5} />
+          </>
+        );
+      }
+      if (isMiscarriage) {
+        // NSGC SAB — 小實心圓
+        return <circle r={HALF * 0.45} fill={stroke} />;
+      }
+      // isAbortion — NSGC TOP — 三角 + 對角線
+      const h = HALF;
+      return (
+        <>
+          <polygon
+            points={`0,${-h} ${h},${h} ${-h},${h}`}
+            fill="#ffffff"
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+          />
+          <line x1={-h} y1={h} x2={h} y2={-h} stroke={stroke} strokeWidth={strokeWidth * 1.5} />
+        </>
+      );
+    };
     return (
       <g
         transform={`translate(${x}, ${y}) scale(${scale})`}
@@ -538,13 +579,13 @@ export default function PersonShape({
         data-tooltip={tooltip}
       >
         {renderCollisionHalo()}
-        <circle r={r + 4} fill="transparent" />
-        <line x1={-r} y1={-r} x2={r} y2={r} stroke={stroke} strokeWidth={3} strokeLinecap="round" />
-        <line x1={-r} y1={r} x2={r} y2={-r} stroke={stroke} strokeWidth={3} strokeLinecap="round" />
+        {/* 點擊熱區 — 確保整個符號範圍都可以點 */}
+        <circle r={HALF + 4} fill="transparent" />
+        {renderPregnancyOutcome()}
         {name && (
           <text
             x={0}
-            y={r + 18}
+            y={HALF + 18}
             textAnchor="middle"
             fontSize={12}
             fill="#1d1d1f"

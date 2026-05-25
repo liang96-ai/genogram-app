@@ -58,9 +58,11 @@ export default function Inspector() {
 
   const selectedConnector = useGenogramStore((s) => s.selectedConnector);
 
-  // 選中「關係線」時才自動切到網絡關係 Tab(member line 不切 — 黑線沒有 Tab2 屬性可改)
+  // v1.1: 選中任何線(member 或 relation)都自動切到 Tab2
+  //   - relation:可在 Tab2 改關係線類型
+  //   - member:可在 Tab2「常用線條 → 婚姻線」section 改類型
   useEffect(() => {
-    if (line && line.category === 'relation') setActiveTab('network');
+    if (line) setActiveTab('network');
   }, [line?.id, line?.category]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // 選中 connector 時自動切到 Tab2(關係按鈕在這)
@@ -271,10 +273,12 @@ export default function Inspector() {
         {person && activeTab === 'network' && (
           <Tab2Network
             person={person}
-            // 只有 relation line 才能被 Tab2 改 subType。
-            // member line(婚姻/親子)如果被傳進去,Tab2 會把它 updateLine 成 relation,
-            // 造成「黑色婚姻線變成藍色波浪 / 鋸齒」的災難。
-            lineTarget={line?.category === 'relation' ? line : null}
+            // v1.1: 傳所有 line(member + relation),Tab2 內部用 category 分流:
+            //   - relation line + 關係線按鈕 → 改類型/翻轉
+            //   - member line + 婚姻線按鈕 → 改類型
+            //   - member line + 關係線按鈕 → 擋住(在 Tab2 內 onPickRelation 已過濾 memberLineSelected)
+            //   - relation line + 婚姻線按鈕 → 擋住(在 Tab2 內 onPickMember 已過濾)
+            lineTarget={line ?? null}
           />
         )}
         {person && activeTab === 'medical' && <Tab3Medical person={person} />}

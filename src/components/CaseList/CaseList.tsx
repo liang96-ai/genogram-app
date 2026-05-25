@@ -314,6 +314,96 @@ export default function CaseList() {
             >
               📤 {t('caseList.share')}
             </button>
+            {/* v1.1 「檢查更新」— 強制刷新 Service Worker(網頁版常用)
+                邏輯:registration.update() → 若有 waiting sw 觸發 skipWaiting → reload
+                沒 sw 直接 reload(瀏覽器本身會走 HTTP cache 流程) */}
+            <button
+              onClick={async () => {
+                if (!('serviceWorker' in navigator)) {
+                  location.reload();
+                  return;
+                }
+                try {
+                  const reg = await navigator.serviceWorker.getRegistration();
+                  if (!reg) {
+                    location.reload();
+                    return;
+                  }
+                  await reg.update();
+                  // 等 1.5s 給 sw 進入 installing/installed 狀態
+                  await new Promise((r) => setTimeout(r, 1500));
+                  if (reg.waiting) {
+                    // 有新版等待 → 觸發 skipWaiting → 等 controllerchange → reload
+                    navigator.serviceWorker.addEventListener(
+                      'controllerchange',
+                      () => location.reload(),
+                      { once: true },
+                    );
+                    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    // fallback 3s 沒等到 controllerchange 強制 reload
+                    setTimeout(() => location.reload(), 3000);
+                  } else {
+                    location.reload();
+                  }
+                } catch (err) {
+                  console.error('Check update failed:', err);
+                  location.reload();
+                }
+              }}
+              style={{
+                padding: '6px 12px',
+                fontSize: 12,
+                background: 'transparent',
+                border: '1px solid #d2d2d7',
+                borderRadius: 6,
+                cursor: 'pointer',
+                color: '#007aff',
+                fontFamily: 'inherit',
+              }}
+              title={t('caseList.checkUpdateTitle')}
+            >
+              🔄 {t('caseList.checkUpdate')}
+            </button>
+            {/* v1.1 「全部重置」— Nuclear option
+                清除 IndexedDB + localStorage + sessionStorage + cache + sw,使用者要明確確認 */}
+            <button
+              onClick={async () => {
+                const ok = await showConfirm(
+                  t('caseList.fullResetConfirm', { n: caseList.length }),
+                );
+                if (!ok) return;
+                try {
+                  await db.cases.clear();
+                  await db.settings.clear();
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  if ('caches' in window) {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map((k) => caches.delete(k)));
+                  }
+                  if ('serviceWorker' in navigator) {
+                    const regs = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(regs.map((r) => r.unregister()));
+                  }
+                } catch (err) {
+                  console.error('Full reset failed:', err);
+                }
+                location.reload();
+              }}
+              style={{
+                padding: '6px 12px',
+                fontSize: 12,
+                background: 'transparent',
+                border: '1px solid #ffb3b3',
+                borderRadius: 6,
+                cursor: 'pointer',
+                color: '#ff3b30',
+                fontFamily: 'inherit',
+              }}
+              title={t('caseList.fullResetTitle')}
+            >
+              🗑️ {t('caseList.fullReset')}
+            </button>
           </div>
         </div>
 

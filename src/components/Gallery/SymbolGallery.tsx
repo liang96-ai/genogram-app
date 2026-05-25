@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { SYMBOLS, type SymbolCategory, type SymbolEntry } from './symbolData';
 import { useT } from '../../i18n';
 import { useGenogramStore } from '../../store/genogramStore';
+import AcademicReferencesDialog from './AcademicReferencesDialog';
 
 type Props = {
   onClose: () => void;
@@ -21,6 +22,8 @@ export default function SymbolGallery({ onClose }: Props) {
   const t = useT();
   const lang = useGenogramStore((s) => s.language);
   const [query, setQuery] = useState('');
+  // v1.1 學術引用彈窗 — 點頁腳 link 開啟
+  const [showReferences, setShowReferences] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -165,18 +168,36 @@ export default function SymbolGallery({ onClose }: Props) {
           ))}
         </div>
 
-        {/* Footer 提示 */}
+        {/* Footer — 學術引用 link(v1.1 拿掉 dev 註記,改成可點 link 開彈窗)*/}
         <div
           style={{
             padding: '8px 18px',
             borderTop: '1px solid #e5e4e7',
-            fontSize: 11,
+            fontSize: 12,
             color: '#86868b',
+            display: 'flex',
+            justifyContent: 'flex-end',
           }}
         >
-          {t('gallery.footerHint', { n: SYMBOLS.length })}
+          <button
+            onClick={() => setShowReferences(true)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              padding: '2px 4px',
+              color: '#007aff',
+              fontSize: 12,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            {t('gallery.references')} →
+          </button>
         </div>
       </div>
+      {showReferences && (
+        <AcademicReferencesDialog onClose={() => setShowReferences(false)} />
+      )}
     </div>
   );
 }

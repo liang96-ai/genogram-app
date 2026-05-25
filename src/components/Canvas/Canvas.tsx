@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   COLLISION_TOLERANCE,
   GRID_SIZE,
+  MARRIAGE_SUBTYPE_SET,
   SHAPE_HALF,
   clampZoom,
   pointInPolygon,
@@ -60,16 +61,8 @@ type HandleDragState = {
   pointerId: number;
 };
 
-const MARRIAGE_SUBTYPES = new Set([
-  'marriage',
-  'engagement',
-  'partnership',
-  'cohabitation-commit',
-  'secret-affair',
-  'separation',
-  'divorce',
-  'divorce-remarriage',
-]);
+// v1.1 改用 store 的共用常數(包含全 14 種婚姻 subType,新增不會漏)
+const MARRIAGE_SUBTYPES = MARRIAGE_SUBTYPE_SET;
 const BIO_SUBTYPES = new Set([
   'biological',
   'adopted',
@@ -264,6 +257,10 @@ export default function Canvas() {
   const pendingRelation = useGenogramStore((s) => s.pendingRelation);
   const setPendingRelation = useGenogramStore((s) => s.setPendingRelation);
   const createRelationLine = useGenogramStore((s) => s.createRelationLine);
+  // v1.1: Tab2 婚姻線 pending mode
+  const pendingMember = useGenogramStore((s) => s.pendingMember);
+  const setPendingMember = useGenogramStore((s) => s.setPendingMember);
+  const createMarriageLine = useGenogramStore((s) => s.createMarriageLine);
   const createUnknownFamilyLine = useGenogramStore(
     (s) => s.createUnknownFamilyLine,
   );
@@ -319,6 +316,16 @@ export default function Canvas() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [pendingRelation, setPendingRelation]);
+
+  // v1.1: 婚姻線 pending mode — Esc 取消
+  useEffect(() => {
+    if (!pendingMember) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPendingMember(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [pendingMember, setPendingMember]);
 
   // 吸附到人物所在 row/column(跟婚姻線同一軌道)
   const snapMidline = (p: { x: number; y: number }) => ({
@@ -885,6 +892,18 @@ export default function Canvas() {
       }
       return;
     }
+    // v1.1: 婚姻線 pending mode:點到第二個人 → 建立婚姻線
+    if (pendingMember) {
+      e.stopPropagation();
+      const sourceId =
+        inspectorTarget?.type === 'person' ? inspectorTarget.id : null;
+      if (sourceId && sourceId !== personId) {
+        createMarriageLine(sourceId, personId, pendingMember);
+      } else {
+        setPendingMember(null);
+      }
+      return;
+    }
     e.stopPropagation();
     const local = toSvgPoint(e.clientX, e.clientY);
 
@@ -981,8 +1000,9 @@ export default function Canvas() {
   const onBackgroundPointerDown = (e: React.PointerEvent) => {
     // 點背景 → 退出生態圈編輯
     if (editingEcosystemId) setEditingEcosystem(null);
-    // 點背景 → 取消關係線 pending
+    // 點背景 → 取消關係線 / 婚姻線 pending
     if (pendingRelation) setPendingRelation(null);
+    if (pendingMember) setPendingMember(null);
     // 畫筆模式優先
     if (drawMode && e.button === 0) {
       e.preventDefault();
@@ -1858,9 +1878,13 @@ export default function Canvas() {
         const from = currentCase.persons.find((p) => p.id === line.fromPersonId);
         const to = currentCase.persons.find((p) => p.id === line.toPersonId);
         if (!from || !to) return null;
-        // 同對人物之間是否有 member 線 → 關係線弧形繞過
+        // 關係線弧形繞過 — 3 種觸發條件(任一成立)
+        //   1. 兩端點之間有 member 線 (例:夫妻間的婚姻線)
+        //   2. 路徑經過第三人 bbox (例:哥↔嫂線經過弟)
+        //   3. 跨過其他 member 線 (例:哥↔嫂線跨過弟↔嫂的婚姻線)
         let arcDetour: 'up' | 'right' | null = null;
         if (line.category === 'relation') {
+          // 條件 1:同對 member 線
           const memberBetween = currentCase.lines.find(
             (m) =>
               m.id !== line.id &&
@@ -1870,9 +1894,47 @@ export default function Canvas() {
                 (m.fromPersonId === line.toPersonId &&
                   m.toPersonId === line.fromPersonId)),
           );
-          if (memberBetween) {
+          // 條件 2:路徑經過第三人 bbox
+          // 用 distToSegment(既有 helper)算第三人中心到線段的距離 < SHAPE_HALF + padding
+          const PASS_THROUGH_PAD = 6;
+          const passesThroughPerson = !memberBetween && currentCase.persons.some((p) => {
+            if (p.id === line.fromPersonId || p.id === line.toPersonId) return false;
+            const dist = distToSegment(
+              p.position.x,
+              p.position.y,
+              from.position.x,
+              from.position.y,
+              to.position.x,
+              to.position.y,
+            );
+            return dist < SHAPE_HALF + PASS_THROUGH_PAD;
+          });
+          // 條件 3:跨過其他 member 線
+          // 用 segmentsIntersect(既有 helper,{x,y} 物件參數)
+          const crossesMemberLine = !memberBetween && !passesThroughPerson && currentCase.lines.some((m) => {
+            if (m.id === line.id) return false;
+            if (m.category !== 'member') return false;
+            // 跳過共用端點的 member 線(共用端點不算「跨過」)
+            if (
+              m.fromPersonId === line.fromPersonId ||
+              m.fromPersonId === line.toPersonId ||
+              m.toPersonId === line.fromPersonId ||
+              m.toPersonId === line.toPersonId
+            ) return false;
+            const mFrom = currentCase.persons.find((p) => p.id === m.fromPersonId);
+            const mTo = currentCase.persons.find((p) => p.id === m.toPersonId);
+            if (!mFrom || !mTo) return false;
+            return segmentsIntersect(
+              from.position,
+              to.position,
+              mFrom.position,
+              mTo.position,
+            );
+          });
+          if (memberBetween || passesThroughPerson || crossesMemberLine) {
             const dx = Math.abs(to.position.x - from.position.x);
             const dy = Math.abs(to.position.y - from.position.y);
+            // 沿用現行方向選擇:水平線 → 弧形往上;垂直線 → 弧形往右
             arcDetour = dx >= dy ? 'up' : 'right';
           }
         }
@@ -2123,6 +2185,49 @@ export default function Canvas() {
           <span>{t('relation.pendingBanner', { name: t(labelKey) })}</span>
           <button
             onClick={() => setPendingRelation(null)}
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              border: 'none',
+              color: '#fff',
+              padding: '2px 8px',
+              borderRadius: 4,
+              cursor: 'pointer',
+              fontSize: 12,
+            }}
+          >
+            ×
+          </button>
+        </div>
+      );
+    })()}
+    {/* v1.1 婚姻線 pending 提示 banner */}
+    {pendingMember && (() => {
+      const labelKey = `lineProps.subType.${pendingMember.replace(
+        /-([a-z])/g,
+        (_, c) => c.toUpperCase(),
+      )}`;
+      return (
+        <div
+          style={{
+            position: 'fixed',
+            top: 16,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 1000,
+            background: '#1d1d1f',
+            color: '#fff',
+            padding: '8px 16px',
+            borderRadius: 6,
+            fontSize: 13,
+            boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          <span>{t('tab2.marriagePending', { name: t(labelKey) })}</span>
+          <button
+            onClick={() => setPendingMember(null)}
             style={{
               background: 'rgba(255,255,255,0.2)',
               border: 'none',
