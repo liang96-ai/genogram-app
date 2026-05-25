@@ -77,14 +77,21 @@ vite-plugin-pwa · File System Access API · Cloudflare Workers
 
 ---
 
-## 授權 License
+## 授權 License — Dual Licensing 雙重授權
 
-GNU Affero General Public License v3.0 (AGPL-3.0)
+本專案採 **雙重授權**,依使用情境選擇:
+This project uses **dual licensing** — choose based on your use case:
 
-詳見 [LICENSE](./LICENSE)。
+| 使用情境 Use Case | 授權 License | 費用 Cost |
+|---|---|---|
+| 👤 個人實務 / 學術教學 / 非營利機構<br>Personal practice / academia / non-profit | **AGPL-3.0** | 🆓 永遠免費<br>Always free |
+| 🏢 嵌入封閉商業產品 / 營利 SaaS<br>Embed in closed-source product / for-profit SaaS | **Commercial License** | 💼 付費洽詢<br>Paid (contact us) |
+| 🏥 EHR / CRM / 醫療系統廠商整合<br>EHR / CRM / healthcare vendor integration | **Commercial License** | 💼 付費洽詢<br>Paid (contact us) |
 
-**重要：** 若您將本工具整合到商業產品中，AGPL-3.0 要求您必須
-公開您的完整原始碼，或另行洽詢商業授權。
+📖 **詳細授權說明 Full licensing details:** [COMMERCIAL_LICENSE.md](./COMMERCIAL_LICENSE.md)
+📄 **AGPL-3.0 全文 Full AGPL-3.0 text:** [LICENSE](./LICENSE)
+
+商業授權諮詢 / Commercial license inquiry → **genogram.feedback@gmail.com**
 
 ---
 
