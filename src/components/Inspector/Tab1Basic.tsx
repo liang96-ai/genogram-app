@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PlusGlyph, CrossGlyph } from '../PlusGlyph';
 import type {
   ContactInfo,
   Disability,
@@ -383,10 +384,10 @@ export default function Tab1Basic({ person }: Props) {
             onClick={() =>
               addPersonAtCenter(person.position.x + 160, person.position.y)
             }
-            style={{ ...miniBtnStyle, color: '#007aff', fontSize: 18 }}
+            style={addPersonBtnStyle}
             title={t('tab1.addNewPerson')}
           >
-            +
+            <PlusGlyph size={22} stroke={2.8} />
           </button>
 
           {/* 基本形狀 */}
@@ -1044,7 +1045,7 @@ function FamilyRoleList({
               style={removeBtnStyle}
               title={t('common.delete')}
             >
-              ×
+              <CrossGlyph size={13} stroke={1.8} />
             </button>
           )}
         </div>
@@ -1113,7 +1114,7 @@ function DisabilityList({
             style={removeBtnStyle}
             title={t('common.delete')}
           >
-            ×
+            <CrossGlyph size={13} stroke={1.8} />
           </button>
         </div>
       ))}
@@ -1352,7 +1353,7 @@ function MultiStringList({
               style={removeBtnStyle}
               title={t('common.delete')}
             >
-              ×
+              <CrossGlyph size={13} stroke={1.8} />
             </button>
           )}
         </div>
@@ -1433,7 +1434,7 @@ function MultiContactList({
               style={removeBtnStyle}
               title={t('common.delete')}
             >
-              ×
+              <CrossGlyph size={13} stroke={1.8} />
             </button>
           )}
         </div>
@@ -1547,7 +1548,7 @@ function LabelWithAdd({
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <span>{label}</span>
         <button onClick={onAdd} style={inlineAddBtnStyle} title={t('common.addItem')}>
-          +
+          <PlusGlyph size={13} stroke={1.8} />
         </button>
       </div>
       {privacyField && <InlinePrivacyToggle field={privacyField} />}
@@ -1636,6 +1637,26 @@ const miniBtnStyle: React.CSSProperties = {
   boxSizing: 'border-box',
 };
 
+// 新增人物 — 藍實心圓 + 白＋(主要動作,跟符號方框按鈕區隔)
+const addPersonBtnStyle: React.CSSProperties = {
+  width: 40,
+  height: 40,
+  padding: 2,
+  background: '#007aff',
+  border: 'none',
+  borderRadius: '50%',
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+  color: '#ffffff',
+  fontSize: 22,
+  fontWeight: 600,
+  lineHeight: 1,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  boxSizing: 'border-box',
+};
+
 const flowGridStyle: React.CSSProperties = {
   display: 'flex',
   gap: 3,
@@ -1654,24 +1675,39 @@ const tinyBtnStyle: React.CSSProperties = {
   color: '#007aff',
 };
 
-// 刪除 × 用紅色(跟藍色 + 區別)
+// 刪除 × — 紅實心圓 + 白 ×(跟藍 + 圓同一套視覺語言)
 const removeBtnStyle: React.CSSProperties = {
   ...tinyBtnStyle,
-  color: '#ff3b30',
+  width: 14,
+  height: 14,
+  padding: 0,
+  background: '#ff3b30',
+  border: 'none',
+  borderRadius: '50%',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  boxSizing: 'border-box',
 };
 
-// 內嵌 + 按鈕(放 Label 後面,尺寸跟文字同)
+// 內嵌 + 按鈕(放 Label 後面)— 藍實心圓 + 白＋
 const inlineAddBtnStyle: React.CSSProperties = {
-  width: 18,
-  height: 18,
+  width: 14,
+  height: 14,
   padding: 0,
-  background: 'transparent',
+  background: '#007aff',
   border: 'none',
+  borderRadius: '50%',
   cursor: 'pointer',
-  color: '#007aff',
-  fontSize: 16,
+  color: '#ffffff',
+  fontSize: 15,
+  fontWeight: 600,
   lineHeight: 1,
   fontFamily: 'inherit',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  boxSizing: 'border-box',
 };
 
 const dangerBtnStyle: React.CSSProperties = {

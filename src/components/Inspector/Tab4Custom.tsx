@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PlusGlyph } from '../PlusGlyph';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import ScaleSummary from './ScaleSummary';
@@ -83,7 +84,7 @@ export default function Tab4Custom() {
             style={inlineAddBtn}
             title={t('common.addItem')}
           >
-            +
+            <PlusGlyph size={13} stroke={1.8} />
           </button>
         }
       />
@@ -360,7 +361,7 @@ function AttachmentAdder({
         style={inlineAddBtn}
         title={t('common.add')}
       >
-        +
+        <PlusGlyph size={13} stroke={1.8} />
       </button>
       {menuOpen && (
         <div
@@ -594,17 +595,18 @@ function AttachmentRow({
 }
 
 const inlineAddBtn: React.CSSProperties = {
-  width: 22,
-  height: 22,
-  fontSize: 14,
-  lineHeight: '20px',
-  background: '#ffffff',
-  border: '1px solid #d2d2d7',
-  borderRadius: 4,
+  width: 14,
+  height: 14,
+  background: '#007aff',
+  border: 'none',
+  borderRadius: '50%',
   cursor: 'pointer',
   fontFamily: 'inherit',
-  color: '#007aff',
   padding: 0,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  boxSizing: 'border-box',
 };
 
 const primaryBtn: React.CSSProperties = {

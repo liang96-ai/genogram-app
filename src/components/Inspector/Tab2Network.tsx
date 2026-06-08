@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PlusGlyph, CrossGlyph } from '../PlusGlyph';
 import PinyinMatch from 'pinyin-match';
 import type {
   Line,
@@ -545,7 +546,7 @@ export default function Tab2Network({ person, lineTarget }: Props) {
               style={inlineAddBtnStyle}
               title={t('common.addItem')}
             >
-              +
+              <PlusGlyph size={13} stroke={1.8} />
             </button>
           )
         }
@@ -579,7 +580,7 @@ export default function Tab2Network({ person, lineTarget }: Props) {
                 style={removeBtnStyle}
                 title={t('common.cancel')}
               >
-                ×
+                <CrossGlyph size={13} stroke={1.8} />
               </button>
             </div>
 
@@ -760,7 +761,7 @@ function UnitRow({
           {expanded ? '▲' : '▼'}
         </button>
         <button onClick={onRemove} style={removeBtnStyle} title={t('common.delete')}>
-          ×
+          <CrossGlyph size={13} stroke={1.8} />
         </button>
       </div>
 
@@ -858,17 +859,22 @@ const tinyBtnStyle: React.CSSProperties = {
 
 // Section 標頭旁的 + 按鈕(漸進式顯露入口)
 const inlineAddBtnStyle: React.CSSProperties = {
-  width: 20,
-  height: 20,
+  width: 14,
+  height: 14,
   padding: 0,
-  fontSize: 14,
+  fontSize: 15,
+  fontWeight: 600,
   lineHeight: 1,
-  background: '#ffffff',
-  border: '1px solid #d2d2d7',
-  borderRadius: 4,
+  background: '#007aff',
+  border: 'none',
+  borderRadius: '50%',
   cursor: 'pointer',
   fontFamily: 'inherit',
-  color: '#007aff',
+  color: '#ffffff',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  boxSizing: 'border-box',
 };
 
 // 暫存列的 ✓ 儲存按鈕
@@ -885,10 +891,19 @@ const confirmBtnStyle: React.CSSProperties = {
   color: '#34c759',
 };
 
-// 刪除 × 用紅色
+// 刪除 × — 紅實心圓 + 白 ×(跟藍 + 圓同一套視覺語言)
 const removeBtnStyle: React.CSSProperties = {
   ...tinyBtnStyle,
-  color: '#ff3b30',
+  width: 14,
+  height: 14,
+  padding: 0,
+  background: '#ff3b30',
+  border: 'none',
+  borderRadius: '50%',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  boxSizing: 'border-box',
 };
 
 const chipStyle: React.CSSProperties = {

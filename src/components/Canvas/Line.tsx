@@ -43,7 +43,7 @@ const RELATION_GEOMETRY_TYPES = new Set<LineSubType>([
 // ===== Shape edge clipping(讓線停在形狀邊緣,而非穿過中心)=====
 // 跟 PersonShape.tsx 同步
 const SHAPE_HALF = 28;
-const DIAMOND_HALF = 48 / Math.SQRT2; // ≈ 33.94
+const DIAMOND_HALF = 34 / Math.SQRT2; // ≈ 24.04(對齊 PersonShape 縮小後的菱形 34）
 const INST_HALF_W = 90;
 const INST_HALF_H = 19.6;
 const PET_HALF = 16.8;

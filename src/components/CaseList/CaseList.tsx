@@ -20,6 +20,7 @@ import PrivacyWelcomeDialog, {
 import FolderSetupModal from './FolderSetupModal';
 import { hasTutorialBeenSeen } from '../Tutorial/Tutorial';
 import AboutButton from '../About/AboutButton';
+import { SupportButton, SupportAutoPrompt } from '../About/SupportDialog';
 
 export default function CaseList() {
   const t = useT();
@@ -153,6 +154,8 @@ export default function CaseList() {
               >
                 <span>{t('caseList.title')}</span>
                 <AboutButton size="lg" />
+                <SupportButton size="lg" />
+                <SupportAutoPrompt />
               </h1>
               {/* 隱私標語 — 從淡灰 subtitle 升級為 badge 風格,讓所有人一進首頁就看到 */}
               <div

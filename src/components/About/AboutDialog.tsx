@@ -8,7 +8,6 @@ import { useT } from '../../i18n';
  */
 
 const GITHUB_URL = 'https://github.com/liang96-ai/genogram-app';
-const KOFI_URL = 'https://ko-fi.com/liang96';
 const FEEDBACK_EMAIL = 'genogram.feedback@gmail.com';
 
 export default function AboutDialog({ onClose }: { onClose: () => void }) {
@@ -117,29 +116,39 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
           <LinkRow icon="📖" label="GitHub" url={GITHUB_URL} />
         </Section>
 
-        {/* Section: Support */}
+        {/* Section: Support — 個人免費(抖內) + 組織年費 */}
         <Section title={t('about.supportTitle')}>
-          <div
-            style={{
-              fontSize: 12.5,
-              color: '#3a3a3c',
-              lineHeight: 1.55,
-              marginBottom: 8,
-            }}
-          >
-            {t('about.supportBody')}
+          {/* 個人實務 — 免費(抖內按鈕集中在工具列 ☕ 彈窗,About 不重複) */}
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#1d1d1f', marginBottom: 4 }}>
+            💚 {t('about.personalTitle')}
           </div>
-          <LinkRow
-            icon="☕"
-            label={t('about.kofiLabel')}
-            url={KOFI_URL}
-          />
+          <div style={{ fontSize: 12.5, color: '#3a3a3c', lineHeight: 1.55, marginBottom: 16 }}>
+            {t('about.personalNote')}
+          </div>
+
+          {/* 組織使用 — 邀請以年費表達支持 */}
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#1d1d1f', marginBottom: 4 }}>
+            🤝 {t('about.orgTitle')}
+          </div>
+          <div style={{ fontSize: 12.5, color: '#3a3a3c', lineHeight: 1.55, marginBottom: 8 }}>
+            {t('about.orgBody')}
+          </div>
+          <div style={{ fontSize: 12.5, color: '#3a3a3c', lineHeight: 1.85, marginBottom: 8 }}>
+            🌱 {t('about.orgNonprofit')}
+            <br />
+            🏢 {t('about.orgForprofit')}
+            <br />
+            🔧 {t('about.orgIntegration')}
+          </div>
           <LinkRow
             icon="📧"
             label={t('about.emailLabel')}
             url={`mailto:${FEEDBACK_EMAIL}`}
             displayText={FEEDBACK_EMAIL}
           />
+          <div style={{ fontSize: 11.5, color: '#86868b', lineHeight: 1.6, marginTop: 12 }}>
+            {t('about.supportFooter')}
+          </div>
         </Section>
 
         {/* Section: Documents */}

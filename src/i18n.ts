@@ -43,7 +43,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'menu.feedback': '回報意見 / 建議',
     'menu.probandStyle': '案主樣式',
     'menu.probandBorder': '雙紅匡(標準)',
-    'menu.probandTraditional': '黑色填滿(傳統)',
+    'menu.probandTraditional': '黑色填滿(舊版)',
 
     // ===== Feedback Dialog =====
     'feedback.title': '回報意見 / 建議',
@@ -102,9 +102,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'tab1.addNewPerson': '新增獨立人物',
     'tab1.name': '姓名',
     'tab1.proband': '案主',
-    'tab1.probandTraditional': '傳統',
+    'tab1.probandTraditional': '舊版填滿',
     'tab1.probandTraditionalTip':
-      '勾選 → 案主用黑色填滿表示(傳統麥氏家系圖風格);未勾 → 紅色雙框(現代標準)。全 case 一致,不分人物。',
+      '勾選 → 案主用黑色填滿(舊版風格);未勾 → 紅色雙框(NSGC / McGoldrick 4th ed 新版標準)。全 case 一致,不分人物。',
     'tab1.age': '年齡',
     'tab1.ageAuto': '(自動)',
     'tab1.namePlaceholder': '例:王小明',
@@ -536,16 +536,39 @@ const dict: Record<Lang, Record<string, string>> = {
     'about.openSourceTitle': '📖 開源 · 可驗證的隱私',
     'about.openSourceBody':
       '本工具採 AGPL-3.0 授權,程式碼完全公開。你可以親自查看 GitHub 上的程式,驗證確實沒有任何資料被偷偷上傳。',
-    'about.supportTitle': '☕ 支持本專案',
+    'about.supportTitle': '支持本專案',
     'about.supportBody':
       '維護開源工具是長期且無償的工作。如果本工具對你或你的單位有幫助,以下是支持的方式:',
-    'about.kofiLabel': '個人贊助',
+    'about.personalTitle': '個人實務 — 免費',
+    'about.personalBody':
+      '若這工具有幫到您,歡迎請我喝杯飲料(任何金額都很開心)。',
+    'about.personalNote':
+      '個人使用永久免費。想隨喜支持,點工具列的 ☕ 請我喝杯飲料。',
+    'about.orgTitle': '組織使用 — 邀請以年費表達支持',
+    'about.orgBody':
+      '無論您是公益組織或營利機構,都誠摯邀請您支持版權,讓這個工具能持續維護,並對個人保持永久免費。',
+    'about.orgNonprofit': '公益組織:量力而為',
+    'about.orgForprofit':
+      '營利機構:1–10 人 NT$10,000 / 年 · 11–50 人 NT$30,000 / 年 · 51+ 人 來信討論',
+    'about.orgIntegration': '軟體商整合:請洽商業授權合約',
+    'about.supportFooter':
+      '所有支持,全憑您對開源工具與版權勞動的尊重。若您的單位無法支持,工具仍然完全開放給您。',
+    'about.kofiLabel': '請我喝杯咖啡(Ko-fi)',
+    'about.ecpayLabel': '請我喝杯珍奶(ECPay)',
     'about.emailLabel': '機構合作',
     'about.docsTitle': '📄 完整文件',
     'about.docPrivacy': '隱私聲明',
     'about.docTerms': '服務條款',
     'about.docSponsorship': '贊助說明',
     'about.docLicense': '授權',
+    'support.openButton': '支持本專案 ☕',
+    'support.heading': '這工具有讓你工作輕鬆一點嗎?',
+    'support.body': '如果有,歡迎請我喝杯飲料,任何金額都很開心。',
+    'support.footer': '這個工具因每一份心意而能持續存在精進。',
+    'donate.ecpayRegion': 'TW',
+    'donate.ecpaySub': 'ATM / 超商 / 信用卡',
+    'donate.kofiRegion': '海外',
+    'donate.kofiSub': '國際信用卡',
   },
   en: {
     // ===== Common =====
@@ -583,7 +606,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'menu.feedback': 'Send Feedback',
     'menu.probandStyle': 'Proband style',
     'menu.probandBorder': 'Double border (standard)',
-    'menu.probandTraditional': 'Black fill (traditional)',
+    'menu.probandTraditional': 'Black fill (legacy)',
 
     // ===== Feedback Dialog =====
     'feedback.title': 'Send Feedback / Suggestion',
@@ -642,9 +665,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'tab1.addNewPerson': 'Add new person',
     'tab1.name': 'Name',
     'tab1.proband': 'Proband',
-    'tab1.probandTraditional': 'Traditional',
+    'tab1.probandTraditional': 'Legacy fill',
     'tab1.probandTraditionalTip':
-      'Check → proband drawn with black fill (traditional McGoldrick style); uncheck → red double border (modern standard). Case-wide, not per person.',
+      'Check → proband drawn with black fill (legacy style); uncheck → red double border (NSGC / McGoldrick 4th ed modern standard). Case-wide, not per person.',
     'tab1.age': 'Age',
     'tab1.ageAuto': '(auto)',
     'tab1.namePlaceholder': 'e.g. Jane Doe',
@@ -1076,16 +1099,39 @@ const dict: Record<Lang, Record<string, string>> = {
     'about.openSourceTitle': '📖 Open Source · Verifiable Privacy',
     'about.openSourceBody':
       'Licensed under AGPL-3.0, the source code is fully public. You can inspect the code on GitHub yourself to verify that no data is ever secretly uploaded.',
-    'about.supportTitle': '☕ Support This Project',
+    'about.supportTitle': 'Support This Project',
     'about.supportBody':
       'Maintaining open-source software is long-term, unpaid work. Here are ways to support if this tool has been useful:',
-    'about.kofiLabel': 'Individuals',
+    'about.personalTitle': 'Personal use — Free',
+    'about.personalBody':
+      'If this tool helps you, feel free to buy me a coffee (any amount is appreciated).',
+    'about.personalNote':
+      'Free forever for personal use. To chip in, tap ☕ in the toolbar to buy me a drink.',
+    'about.orgTitle': 'Organizations — invited to support via an annual fee',
+    'about.orgBody':
+      'Whether you are a non-profit or a for-profit organization, we sincerely invite you to support the project so it can keep being maintained — and stay free forever for individuals.',
+    'about.orgNonprofit': 'Non-profit: as you are able',
+    'about.orgForprofit':
+      'For-profit: 1–10 staff NT$10,000/yr · 11–50 NT$30,000/yr · 51+ contact us',
+    'about.orgIntegration': 'Software vendor integration: contact for a commercial license',
+    'about.supportFooter':
+      'All support rests on your respect for open-source tools and the labor behind them. If your organization cannot support, the tool stays fully open to you.',
+    'about.kofiLabel': 'Buy me a coffee (Ko-fi)',
+    'about.ecpayLabel': 'Buy me a bubble tea (ECPay)',
     'about.emailLabel': 'Organizations',
     'about.docsTitle': '📄 Full Documents',
     'about.docPrivacy': 'Privacy',
     'about.docTerms': 'Terms',
     'about.docSponsorship': 'Sponsorship',
     'about.docLicense': 'License',
+    'support.openButton': 'Support this project ☕',
+    'support.heading': 'Has this tool made your work a little easier?',
+    'support.body': 'If so, feel free to buy me a coffee — any amount is appreciated.',
+    'support.footer': 'This tool keeps going and improving thanks to every bit of support.',
+    'donate.ecpayRegion': 'TW',
+    'donate.ecpaySub': 'ATM / store / card',
+    'donate.kofiRegion': 'Overseas',
+    'donate.kofiSub': 'international card',
   },
 };
 

@@ -17,6 +17,7 @@ import ScaleDialog from './components/Scales/ScaleDialog';
 import InstallBanner from './components/InstallBanner';
 import FolderSetupModal from './components/CaseList/FolderSetupModal';
 import AboutButton from './components/About/AboutButton';
+import { SupportButton } from './components/About/SupportDialog';
 import { useT } from './i18n';
 import {
   getScale,
@@ -508,6 +509,7 @@ function Toolbar({
           </span>
         )}
         <AboutButton />
+        <SupportButton />
       </div>
 
       {open && (

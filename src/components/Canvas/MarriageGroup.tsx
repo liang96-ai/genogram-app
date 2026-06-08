@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { BasicShape, Line, Person } from '../../types/genogram';
 import {
   GRID_SIZE,
@@ -5,6 +6,7 @@ import {
   SUBTYPE_SPEC,
   getLineStyleKey,
   getDasharray,
+  useGenogramStore,
 } from '../../store/genogramStore';
 import type { MidSymbolKey } from '../../store/genogramStore';
 import { useT } from '../../i18n';
@@ -36,8 +38,8 @@ type Props = {
   onDeleteLine?: (lineId: string) => void;
 };
 
-// 菱形邊長 48
-const DIAMOND_SIDE = 48;
+// 菱形邊長 34 — 對齊 PersonShape 縮小後的菱形(婚姻/親子線接點才不會接歪)
+const DIAMOND_SIDE = 34;
 const DIAMOND_HALF = DIAMOND_SIDE / Math.SQRT2;
 
 function topEdgeY(shape: BasicShape): number {
@@ -171,6 +173,22 @@ export default function MarriageGroup({
   onDeleteLine,
 }: Props) {
   const t = useT();
+  const updateLine = useGenogramStore((s) => s.updateLine);
+  const [editingNote, setEditingNote] = useState(false);
+  const [noteDraft, setNoteDraft] = useState('');
+  const enterEditNote = () => {
+    setNoteDraft(m.note ?? '');
+    setEditingNote(true);
+  };
+  const commitNote = () => {
+    const trimmed = noteDraft.trim();
+    updateLine(m.id, { note: trimmed || undefined });
+    setEditingNote(false);
+  };
+  const cancelNote = () => {
+    setEditingNote(false);
+    setNoteDraft(m.note ?? '');
+  };
   const marriageDragEntry = handleDrag?.drags.find((d) => d.lineId === m.id);
   // 全部黑色 member line 統一:深灰 (#404040) + 粗度 2.25(跟 Line.tsx 一致)
   // 粗+黑各 -25% 比純黑 3px 舒服
@@ -304,7 +322,10 @@ export default function MarriageGroup({
         stroke="transparent"
         strokeWidth={18}
         onPointerDown={(e) => onLinePointerDown(e, m.id)}
-        onDoubleClick={(e) => onLineDoubleClick(e, m.id)}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          enterEditNote();
+        }}
         style={{ cursor: marriageDragging ? 'grabbing' : 'grab' }}
       />
 
@@ -318,8 +339,38 @@ export default function MarriageGroup({
         </g>
       )}
 
+      {/* 婚姻線備注編輯框(雙擊婚姻線進入)— 換型態請去 Tab2 點按鈕 */}
+      {editingNote && !marriageDragging && (
+        <foreignObject x={midX - 80} y={midY - 26} width={160} height={26}>
+          <input
+            type="text"
+            value={noteDraft}
+            autoFocus
+            onChange={(e) => setNoteDraft(e.target.value)}
+            onBlur={commitNote}
+            onKeyDown={(e) => {
+              if (e.nativeEvent.isComposing) return;
+              if (e.key === 'Enter') commitNote();
+              if (e.key === 'Escape') cancelNote();
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            placeholder={t('lineProps.notePlaceholder')}
+            style={{
+              width: '100%',
+              padding: '2px 6px',
+              fontSize: 12,
+              border: '1px solid #007aff',
+              borderRadius: 4,
+              fontFamily: 'inherit',
+              textAlign: 'center',
+              boxSizing: 'border-box',
+            }}
+          />
+        </foreignObject>
+      )}
+
       {/* 備註文字(婚姻線上方) */}
-      {m.note && !marriageDragging && (() => {
+      {m.note && !marriageDragging && !editingNote && (() => {
         const lines = m.note.split('\n').slice(0, 10).map((l) =>
           l.length > 20 ? l.slice(0, 19) + '…' : l,
         );

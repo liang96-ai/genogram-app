@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { PlusGlyph, CrossGlyph } from '../PlusGlyph';
 import PinyinMatch from 'pinyin-match';
 import type {
   MedicalCondition,
@@ -1562,7 +1563,7 @@ export default function Tab3Medical({ person }: Props) {
                 style={removeBtnStyle}
                 title={trans('common.delete')}
               >
-                ×
+                <CrossGlyph size={13} stroke={1.8} />
               </button>
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
@@ -1706,7 +1707,7 @@ export default function Tab3Medical({ person }: Props) {
                 style={removeBtnStyle}
                 title={trans('common.delete')}
               >
-                ×
+                <CrossGlyph size={13} stroke={1.8} />
               </button>
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
@@ -1879,7 +1880,7 @@ function TypeaheadDraft({
           ✓
         </button>
         <button onClick={onCancel} style={removeBtnStyle} title={trans('common.cancel')}>
-          ×
+          <CrossGlyph size={13} stroke={1.8} />
         </button>
       </div>
       {open &&
@@ -2091,7 +2092,7 @@ function Section({
         <span>{title}</span>
         {onAdd && (
           <button onClick={onAdd} style={inlineAddBtnStyle} title={trans('common.addItem')}>
-            +
+            <PlusGlyph size={13} stroke={1.8} />
           </button>
         )}
       </div>
@@ -2134,10 +2135,19 @@ const tinyBtnStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
-// 刪除 × 用紅色
+// 刪除 × — 紅實心圓 + 白 ×(跟藍 + 圓同一套視覺語言)
 const removeBtnStyle: React.CSSProperties = {
   ...tinyBtnStyle,
-  color: '#ff3b30',
+  width: 14,
+  height: 14,
+  padding: 0,
+  background: '#ff3b30',
+  border: 'none',
+  borderRadius: '50%',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  boxSizing: 'border-box',
 };
 
 // 確認打勾(儲存暫存列)- 綠色
@@ -2146,18 +2156,24 @@ const confirmBtnStyle: React.CSSProperties = {
   color: '#34c759',
 };
 
-// 內嵌 + 按鈕(放 Section 標題後面)
+// 內嵌 + 按鈕(放 Section 標題後面)— 藍實心圓 + 白＋
 const inlineAddBtnStyle: React.CSSProperties = {
-  width: 18,
-  height: 18,
+  width: 14,
+  height: 14,
   padding: 0,
-  background: 'transparent',
+  background: '#007aff',
   border: 'none',
+  borderRadius: '50%',
   cursor: 'pointer',
-  color: '#007aff',
-  fontSize: 16,
+  color: '#ffffff',
+  fontSize: 15,
+  fontWeight: 600,
   lineHeight: 1,
   fontFamily: 'inherit',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  boxSizing: 'border-box',
 };
 
 const libCheckLabel: React.CSSProperties = {

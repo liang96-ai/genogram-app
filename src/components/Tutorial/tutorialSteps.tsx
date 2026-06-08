@@ -204,14 +204,14 @@ function MarriageCycleMockup({ lang }: { lang: Lang }) {
           marriage: 'Married',
           separation: 'Separated',
           divorce: 'Divorced',
-          hint: 'Double-click → cycle',
+          hint: 'Switch type in Tab2',
         }
       : {
           ariaLabel: '婚姻線雙擊循環示意',
           marriage: '結婚',
           separation: '分居',
           divorce: '離婚',
-          hint: '雙擊 → 循環',
+          hint: '型態在 Tab2 切換',
         };
   // 通用一對夫妻 + 不同婚姻線中段標記
   const renderCouple = (
@@ -1350,15 +1350,15 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
   },
   {
     icon: '',
-    title: '黑線 — 婚姻 / 親子(雙擊循環)',
+    title: '黑線 — 婚姻 / 親子',
     content: (
       <>
         <p style={{ margin: '6px 0', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          <Strong>婚姻線</Strong>:<Strong>雙擊</Strong>可在常用型態間循環:
+          <Strong>婚姻線</Strong>:<Strong>雙擊線</Strong>可編輯備注(例如標註日期)。
         </p>
         <MarriageCycleMockup lang="zh" />
         <p style={{ margin: '6px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
-          想用更多婚姻型態(訂婚 / 同居 / 喪偶 / 秘密外遇 等)→ 右側 <Strong>Tab2「常用線條 → 婚姻線」</Strong> 點按鈕。
+          要<Strong>切換型態</Strong>(結婚 / 分居 / 離婚 / 訂婚 / 同居 / 喪偶 / 秘密外遇 等)→ 先<Strong>點選線</Strong>,再到右側 <Strong>Tab2「常用線條 → 婚姻線」</Strong> 點按鈕。
         </p>
         <p style={{ margin: '14px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
           <Strong>親子線</Strong>:分實 / 虛兩類,<Strong>雙擊</Strong>切換:
@@ -1441,7 +1441,8 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
       <>
         <P>
           除了人物與線,還可以用 <Strong>多邊形</Strong> 框起一群人,
-          表達<Strong>子系統</Strong>(原生家庭、學校、職場、親屬圈等)。
+          表達<Strong>子系統</Strong>(原生家庭、學校、職場、親屬圈等),
+          也可圈出<Strong>同住家戶</Strong>(目前住在一起的人)。
         </P>
         <EcosystemMockup lang="zh" />
         <P>
@@ -1621,15 +1622,15 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
   },
   {
     icon: '',
-    title: 'Black Lines — Marriage / Parent-child (Double-click Cycle)',
+    title: 'Black Lines — Marriage / Parent-child',
     content: (
       <>
         <p style={{ margin: '6px 0', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          <Strong>Marriage line</Strong>: <Strong>Double-click</Strong> to cycle the common states:
+          <Strong>Marriage line</Strong>: <Strong>Double-click</Strong> the line to edit a note (e.g. a date).
         </p>
         <MarriageCycleMockup lang="en" />
         <p style={{ margin: '6px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
-          For more marriage types (engagement / cohabitation / widowed / secret affair…) → use right-side <Strong>Tab2 "Common Lines → Marriage"</Strong> buttons.
+          To <Strong>switch the type</Strong> (married / separated / divorced / engagement / cohabitation / widowed / secret affair…) → <Strong>select the line</Strong>, then use right-side <Strong>Tab2 "Common Lines → Marriage"</Strong> buttons.
         </p>
         <p style={{ margin: '14px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
           <Strong>Parent-child line</Strong>: solid or dashed, <Strong>double-click</Strong> to toggle:

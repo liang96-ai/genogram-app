@@ -51,8 +51,8 @@ type Props = {
 
 const SIZE = 56;
 const HALF = SIZE / 2;
-// 菱形邊長 48 (原 44 再大 10%)
-const DIAMOND_SIDE = 48;
+// 菱形邊長 34 — 縮到對齊 Gallery 比例(菱形對角線 ≈ 方形 86%);原 48 太肥(對角線比方形大 21%)
+const DIAMOND_SIDE = 34;
 const DIAMOND_HALF = DIAMOND_SIDE / Math.SQRT2;
 const PROBAND_COLOR = '#ff3b30';
 // 病症填實色(McGoldrick 用填實表嚴重度,用深灰 #666 讓中央字可辨)
