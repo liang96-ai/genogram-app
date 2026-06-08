@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# 內部工作檔 — 不公開到 GitHub(含化名/策略,務必保持忽略)
+SESSION_PLAN.md
+*.xlsx
+.claude/
