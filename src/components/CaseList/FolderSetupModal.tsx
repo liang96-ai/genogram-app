@@ -15,6 +15,8 @@ export default function FolderSetupModal({
   return (
     <div
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
       style={{
         position: 'fixed',
         inset: 0,

@@ -137,7 +137,7 @@ export default function ScaleDialog({ scale, onClose }: Props) {
   } as const;
 
   return (
-    <div style={overlay} onClick={onClose}>
+    <div style={overlay} onClick={onClose} role="dialog" aria-modal="true">
       <div style={sheet} onClick={(e) => e.stopPropagation()}>
         <div style={header}>
           <div>

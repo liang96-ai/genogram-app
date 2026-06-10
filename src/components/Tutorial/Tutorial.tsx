@@ -2,24 +2,9 @@ import { useEffect, useState } from 'react';
 import { getBasicSteps } from './tutorialSteps';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
-
-const BASIC_SEEN_KEY = 'genogram_tutorial_basic_seen';
-
-export function markTutorialSeen() {
-  try {
-    localStorage.setItem(BASIC_SEEN_KEY, '1');
-  } catch {
-    // ignore localStorage failures (e.g., private mode)
-  }
-}
-
-export function hasTutorialBeenSeen(): boolean {
-  try {
-    return localStorage.getItem(BASIC_SEEN_KEY) === '1';
-  } catch {
-    return true; // 抓不到 storage 就當已看過,免重複跳
-  }
-}
+// 「看過了」紀錄抽到 tutorialSeen.ts(#127):本檔只剩元件 export,
+// 才能 lazy 拆包(把 ~74KB 的教學內容移出主 bundle),dev fast refresh 也才生效
+import { markTutorialSeen } from './tutorialSeen';
 
 export default function Tutorial({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(0);
@@ -67,6 +52,8 @@ export default function Tutorial({ onClose }: { onClose: () => void }) {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       style={{
         position: 'fixed',
         inset: 0,

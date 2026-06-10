@@ -12,7 +12,12 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icon.svg', 'icon-maskable.svg'],
+      includeAssets: [
+        'favicon.svg',
+        'icon.svg',
+        'icon-maskable.svg',
+        'apple-touch-icon.png',
+      ],
       manifest: {
         name: 'genogram-tool 家系圖工具',
         short_name: '家系圖工具',

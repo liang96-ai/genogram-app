@@ -67,8 +67,9 @@ const INST_HALF_H = INST_HEIGHT / 2;
 // CJK 與全形標點 → 全寬(≈fontSize);ASCII 半形 → 半寬(≈fontSize*0.55)
 // 依字型估寬比純字元數準很多 — 例如「手機: 0912-345678」實寬約只有
 // CJK 估寬 + 半形 × 0.55 = 2*11 + 12*6 = 94px,而非 14*11 = 154px
-// 　-鿿: CJK 標點 + 統一漢字;＀-￯: 全形 ASCII + 半形片假名
-const CJK_REGEX = /[　-鿿＀-￯]/;
+// U+3000-U+9FFF: CJK 標點 + 統一漢字;U+FF00-U+FFEF: 全形 ASCII + 半形片假名
+// (用 unicode escape 寫 — 範圍起點是全形空白 U+3000,字面寫法會觸發 no-irregular-whitespace)
+const CJK_REGEX = /[\u3000-\u9FFF\uFF00-\uFFEF]/;
 function estimateTextWidth(s: string, fontSize: number): number {
   let w = 0;
   for (const c of s) {

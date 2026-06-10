@@ -57,8 +57,8 @@ ${deviceInfo}`;
     const mailto = `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(
       subject,
     )}&body=${encodeURIComponent(body)}`;
-    // 開 email 客戶端
-    window.location.href = mailto;
+    // 開 email 客戶端(assign() 同 href 賦值,但不觸發 immutability lint)
+    window.location.assign(mailto);
     // 關閉 dialog(使用者已經到他的 email 程式去了)
     window.setTimeout(() => onClose(), 100);
   };
@@ -68,6 +68,8 @@ ${deviceInfo}`;
   return (
     <div
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
       style={{
         position: 'fixed',
         inset: 0,
@@ -105,6 +107,7 @@ ${deviceInfo}`;
           </div>
           <button
             onClick={onClose}
+            aria-label={t('common.close')}
             style={{
               padding: '4px 10px',
               fontSize: 12,

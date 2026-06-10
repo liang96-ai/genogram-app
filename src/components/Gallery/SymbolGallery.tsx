@@ -44,6 +44,8 @@ export default function SymbolGallery({ onClose }: Props) {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       style={{
         position: 'fixed',
         inset: 0,

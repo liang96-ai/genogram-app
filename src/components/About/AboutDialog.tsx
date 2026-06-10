@@ -24,6 +24,8 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
   return (
     <div
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
       style={{
         position: 'fixed',
         inset: 0,
@@ -68,6 +70,7 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
           </div>
           <button
             onClick={onClose}
+            aria-label={t('common.close')}
             style={{
               padding: '4px 10px',
               fontSize: 12,

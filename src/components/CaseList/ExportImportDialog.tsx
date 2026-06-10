@@ -21,6 +21,8 @@ import {
   type ImageFormat,
   type ImageRange,
 } from '../../services/imageExport';
+// 匯出成功=抖內提示的「價值時刻」通知(#129,純本機計數)
+import { notifyExportSuccess } from '../About/supportPromptLogic';
 import {
   writeBackupToFolder,
   getRootFolderName,
@@ -140,6 +142,7 @@ export function ExportDialog({
             alert(
               `✓ 備份已存到「${folderName}/_backups/${filename}」\n\n下次要復原:首頁 → 匯入 → 選那個 .json`,
             );
+            notifyExportSuccess();
             onClose();
             return;
           }
@@ -172,6 +175,7 @@ export function ExportDialog({
       }
       setImgBusy(false);
     }
+    notifyExportSuccess(); // 所有成功匯出(JSON/圖片)的共同出口
     onClose();
   };
 
@@ -656,6 +660,11 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
               <li>{t('import.added', { n: step.result.added })}</li>
               <li>{t('import.overwritten', { n: step.result.overwritten })}</li>
               <li>{t('import.skipped', { n: step.result.skipped })}</li>
+              {step.result.invalid > 0 && (
+                <li style={{ color: '#cf1322' }}>
+                  {t('import.invalid', { n: step.result.invalid })}
+                </li>
+              )}
             </ul>
           </div>
           <div style={{ marginTop: 18 }}>
@@ -689,6 +698,8 @@ function DialogShell({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       style={{
         position: 'fixed',
         inset: 0,

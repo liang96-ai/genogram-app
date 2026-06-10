@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import type { Genogram } from '../../types/genogram';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
@@ -12,15 +12,17 @@ import {
   writeCaseJson,
 } from '../../services/fileSystem';
 import { db } from '../../services/database';
-import SymbolGallery from '../Gallery/SymbolGallery';
 import FeedbackDialog from './FeedbackDialog';
 import PrivacyWelcomeDialog, {
   hasAcknowledgedPrivacy,
 } from './PrivacyWelcomeDialog';
 import FolderSetupModal from './FolderSetupModal';
-import { hasTutorialBeenSeen } from '../Tutorial/Tutorial';
+import { hasTutorialBeenSeen } from '../Tutorial/tutorialSeen';
 import AboutButton from '../About/AboutButton';
-import { SupportButton, SupportAutoPrompt } from '../About/SupportDialog';
+import { SupportButton } from '../About/SupportDialog';
+
+// 符號圖例 lazy 拆包(#127)— 開圖例時才載入(symbolData 本身被 Tab1/Tab2 引用,仍在主包)
+const SymbolGallery = lazy(() => import('../Gallery/SymbolGallery'));
 
 export default function CaseList() {
   const t = useT();
@@ -43,6 +45,8 @@ export default function CaseList() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  // 個案已刪除、但資料夾備份檔因權限休眠刪不掉 → 提示手動清(#125)
+  const [folderDeleteWarn, setFolderDeleteWarn] = useState(false);
   // 第一次開啟才彈隱私說明(localStorage flag 控制只彈一次)
   const [privacyWelcomeOpen, setPrivacyWelcomeOpen] = useState(
     () => !hasAcknowledgedPrivacy(),
@@ -155,7 +159,7 @@ export default function CaseList() {
                 <span>{t('caseList.title')}</span>
                 <AboutButton size="lg" />
                 <SupportButton size="lg" />
-                <SupportAutoPrompt />
+                {/* SupportAutoPrompt 移到 App 層(#129)— 編輯模式匯出也要接得到 */}
               </h1>
               {/* 隱私標語 — 從淡灰 subtitle 升級為 badge 風格,讓所有人一進首頁就看到 */}
               <div
@@ -462,6 +466,43 @@ export default function CaseList() {
           </div>
         )}
 
+        {/* 刪除個案但資料夾備份檔未能一併移除(權限休眠)的提示(#125) */}
+        {folderDeleteWarn && (
+          <div
+            role="alert"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 14px',
+              background: '#fff5e6',
+              border: '1px solid #ffd9a3',
+              borderRadius: 8,
+              marginBottom: 16,
+              fontSize: 13,
+            }}
+          >
+            <span style={{ fontSize: 16 }}>⚠️</span>
+            <span style={{ flex: 1, color: '#8a6d3b' }}>
+              {t('caseList.folderDeleteFailed')}
+            </span>
+            <button
+              onClick={() => setFolderDeleteWarn(false)}
+              aria-label={t('common.close')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#8a6d3b',
+                cursor: 'pointer',
+                fontSize: 14,
+                padding: '2px 6px',
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* New Case + Import Buttons */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 28 }}>
           <button
@@ -629,7 +670,10 @@ export default function CaseList() {
                                   name: c.caseName,
                                 }),
                               );
-                              if (ok) await deleteCase(c.id);
+                              if (!ok) return;
+                              // false = 資料夾備份檔刪不掉(權限休眠)→ 提示手動清(#125)
+                              const folderOk = await deleteCase(c.id);
+                              if (!folderOk) setFolderDeleteWarn(true);
                             }}
                             onExport={() => setExportTarget(c.id)}
                           />
@@ -670,7 +714,11 @@ export default function CaseList() {
         />
       )}
       {showShare && <ShareDialog onClose={() => setShowShare(false)} />}
-      {galleryOpen && <SymbolGallery onClose={() => setGalleryOpen(false)} />}
+      {galleryOpen && (
+        <Suspense fallback={null}>
+          <SymbolGallery onClose={() => setGalleryOpen(false)} />
+        </Suspense>
+      )}
       {feedbackOpen && (
         <FeedbackDialog onClose={() => setFeedbackOpen(false)} />
       )}

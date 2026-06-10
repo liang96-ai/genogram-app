@@ -12,7 +12,7 @@ import type {
   Person,
   RelationSubType,
 } from '../types/genogram';
-import { db } from '../services/database';
+import { addDeletedCaseId, db } from '../services/database';
 import { deleteCaseFolder, writeCaseJson } from '../services/fileSystem';
 
 const MAX_INSTITUTION_HISTORY = 30;
@@ -527,7 +527,8 @@ type GenogramStore = {
   openCase: (id: string) => Promise<void>;
   createCase: (name: string) => Promise<void>;
   renameCase: (id: string, name: string) => Promise<void>;
-  deleteCase: (id: string) => Promise<void>;
+  /** 回傳 false = 資料夾備份檔未能一併刪除(權限休眠)— UI 應提示(#125) */
+  deleteCase: (id: string) => Promise<boolean>;
   goToList: () => Promise<void>;
 
   currentCase: Genogram | null;
@@ -622,6 +623,8 @@ type GenogramStore = {
   addInstitution: (anchorPersonId: string, name: string) => void;
   updatePerson: (id: string, patch: Partial<Person>) => void;
   movePerson: (id: string, x: number, y: number) => void;
+  /** 拖曳結束時補記一格復原(#123)— 傳入「拖曳開始前」的快照 */
+  commitMoveHistory: (before: Genogram) => void;
   removePersons: (ids: string[]) => void;
   cycleShape: (id: string) => void;
 
@@ -964,11 +967,21 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   },
   deleteCase: async (id) => {
     try {
+      // 墓碑先立(#125):資料夾備份檔若刪不掉(權限休眠),啟動掃描也不准把它救回來
+      await addDeletedCaseId(id);
       await db.cases.delete(id);
       // 同時刪除使用者資料夾裡對應的 case_<id>/(best effort)
-      deleteCaseFolder(id).catch((err) =>
-        console.error('deleteCaseFolder failed:', err),
-      );
+      // 只有「設定過資料夾」時,刪不掉才算失敗(要提示使用者手動清)
+      let folderOk = true;
+      const folderConfigured = !!(await db.settings
+        .get('rootDirHandle')
+        .catch(() => null));
+      if (folderConfigured) {
+        folderOk = await deleteCaseFolder(id).catch((err) => {
+          console.error('deleteCaseFolder failed:', err);
+          return false;
+        });
+      }
       const cur = get().currentCase;
       if (cur && cur.id === id) {
         // 目前正在編這筆 → 切回列表
@@ -985,8 +998,10 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
         });
       }
       await get().loadCaseList();
+      return folderOk;
     } catch (err) {
       console.error('deleteCase failed:', err);
+      return false;
     }
   },
   goToList: async () => {
@@ -1385,16 +1400,54 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     });
   },
 
+  // 拖曳手勢結束:把「拖曳前快照」推進 history(#123)
+  // → 一個手勢 = 一格復原;Cmd+Z 不再連帶吃掉上一個結構編輯
+  commitMoveHistory: (before) => {
+    const { currentCase: c, history } = get();
+    if (!c || !before || before === c) return;
+    if (before.id !== c.id) return; // 換個案間隙的殘留快照 → 丟棄
+    set({
+      history: {
+        past: [...history.past, before].slice(-MAX_HISTORY),
+        future: [],
+      },
+    });
+  },
+
   removePersons: (ids) => {
     const { currentCase: c, history, inspectorTarget } = get();
     if (!c) return;
     const set2 = new Set(ids);
+    // 連帶清掉所有指向被刪人物的參照(#126):單位 connector、舊版 linkedPersonIds、
+    // 同住戶 memberIds(清到空的 household 一併移除)。
+    // 量表結果(scaleResults)刻意保留 — 施測紀錄是臨床資料,不隨人物自動刪。
+    const newUnits = (c.networkUnits ?? []).map((u) => {
+      const conns = (u.connectors ?? []).filter(
+        (cn) => !(cn.target.type === 'person' && set2.has(cn.target.id)),
+      );
+      const linked = u.linkedPersonIds?.filter((pid) => !set2.has(pid));
+      if (
+        conns.length === (u.connectors ?? []).length &&
+        (linked?.length ?? 0) === (u.linkedPersonIds?.length ?? 0)
+      ) {
+        return u;
+      }
+      return { ...u, connectors: conns, linkedPersonIds: linked };
+    });
+    const newHouseholds = (c.households ?? [])
+      .map((h) => ({
+        ...h,
+        memberIds: h.memberIds.filter((m) => !set2.has(m)),
+      }))
+      .filter((h) => h.memberIds.length > 0);
     const newCase = touch({
       ...c,
       persons: c.persons.filter((p) => !set2.has(p.id)),
       lines: c.lines.filter(
         (l) => !set2.has(l.fromPersonId) && !set2.has(l.toPersonId),
       ),
+      networkUnits: c.networkUnits ? newUnits : c.networkUnits,
+      households: c.households ? newHouseholds : c.households,
     });
     // 如果刪掉的是目前 Inspector 顯示的人 → fallback 到剩餘第一個
     const nextInspector =
@@ -2492,8 +2545,13 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     set({
       currentCase: previous,
       history: { past: newPast, future: newFuture },
+      // 清掉「所有」選取(#126)— 殘留的 unit/生態圈選取按 Delete 會吃掉復原額度
       selectedPersonIds: [],
       selectedLineIds: [],
+      selectedUnitIds: [],
+      selectedEcosystemId: null,
+      editingEcosystemId: null,
+      selectedConnector: null,
     });
   },
 
@@ -2510,6 +2568,10 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       history: { past: newPast, future: newFuture },
       selectedPersonIds: [],
       selectedLineIds: [],
+      selectedUnitIds: [],
+      selectedEcosystemId: null,
+      editingEcosystemId: null,
+      selectedConnector: null,
     });
   },
 
@@ -2773,7 +2835,8 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const idealY = snapToGrid(anchor ? anchor.position.y + GRID_SIZE * 2 : 420);
     // 簡易碰撞避開:跟現有單位位置比,撞就往下挪
     const existing = c.networkUnits ?? [];
-    let { x, y } = { x: idealX, y: idealY };
+    const x = idealX;
+    let y = idealY;
     let safety = 10;
     while (
       safety-- > 0 &&
@@ -2814,6 +2877,8 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const { currentCase: c, history } = get();
     if (!c) return;
     const units = c.networkUnits ?? [];
+    // 不存在(如 undo 後殘留的選取)→ 不動作,避免推一格空 history(#126)
+    if (!units.some((u) => u.id === id)) return;
     const newUnits = units.filter((u) => u.id !== id);
     const newCase = touch({ ...c, networkUnits: newUnits });
     set({ ...pushHistory(c, history, newCase) });

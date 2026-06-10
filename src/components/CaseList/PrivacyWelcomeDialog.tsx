@@ -40,6 +40,8 @@ export default function PrivacyWelcomeDialog({ onClose }: Props) {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       // 不能點 backdrop 關閉 — 強制看完按按鈕
       style={{
         position: 'fixed',

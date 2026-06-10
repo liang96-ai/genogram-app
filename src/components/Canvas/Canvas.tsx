@@ -11,6 +11,7 @@ import {
 } from '../../store/genogramStore';
 import type {
   ConnectorTarget,
+  Genogram,
   Line as LineType,
   NetworkUnit,
   Person,
@@ -177,6 +178,7 @@ export default function Canvas() {
   const cycleLineSubType = useGenogramStore((s) => s.cycleLineSubType);
   const clearSelection = useGenogramStore((s) => s.clearSelection);
   const movePerson = useGenogramStore((s) => s.movePerson);
+  const commitMoveHistory = useGenogramStore((s) => s.commitMoveHistory);
   const cycleShape = useGenogramStore((s) => s.cycleShape);
   const removePersons = useGenogramStore((s) => s.removePersons);
   const removeLine = useGenogramStore((s) => s.removeLine);
@@ -248,6 +250,10 @@ export default function Canvas() {
     { x: number; y: number; w: number; h: number } | null
   >(null);
   const [handleDrag, setHandleDrag] = useState<HandleDragState | null>(null);
+  // 拖曳開始時的個案快照 — pointerup 補記一格復原(#123)
+  const dragStartCaseRef = useRef<Genogram | null>(null);
+  // pan 進行中(游標樣式用 — render 不能讀 dragRef,改用 state)
+  const [panningUI, setPanningUI] = useState(false);
 
   // 畫筆繪製中的 path(即時預覽用)
   const [drawPath, setDrawPath] = useState<{ x: number; y: number }[]>([]);
@@ -933,6 +939,8 @@ export default function Canvas() {
       .filter((u): u is NetworkUnit => !!u)
       .map((u) => ({ id: u.id, x: u.position.x, y: u.position.y }));
 
+    // 快照拖曳前狀態 — pointerup 時補記復原(#123)
+    dragStartCaseRef.current = useGenogramStore.getState().currentCase;
     dragRef.current = {
       mode: 'person',
       personIds: origPositions.map((o) => o.id),
@@ -1023,6 +1031,7 @@ export default function Canvas() {
     e.stopPropagation();
 
     if (isPan) {
+      setPanningUI(true);
       dragRef.current = {
         mode: 'pan',
         startClientX: e.clientX,
@@ -1213,7 +1222,28 @@ export default function Canvas() {
             });
           }
         }
+        // 一個拖曳手勢 = 一格復原(#123):用「按下時快照」補記 history。
+        // 位置最終沒變(被碰撞整組退回)就不記,避免占用復原格。
+        const before = dragStartCaseRef.current;
+        const after = useGenogramStore.getState().currentCase;
+        if (before && after && before !== after) {
+          const posChanged =
+            d.origPositions.some((op) => {
+              const a = before.persons.find((p) => p.id === op.id)?.position;
+              const b = after.persons.find((p) => p.id === op.id)?.position;
+              return !!a && !!b && (a.x !== b.x || a.y !== b.y);
+            }) ||
+            d.origUnitPositions.some((op) => {
+              const a = before.networkUnits?.find((u) => u.id === op.id)
+                ?.position;
+              const b = after.networkUnits?.find((u) => u.id === op.id)
+                ?.position;
+              return !!a && !!b && (a.x !== b.x || a.y !== b.y);
+            });
+          if (posChanged) commitMoveHistory(before);
+        }
       }
+      dragStartCaseRef.current = null;
     } else if (d.mode === 'marquee') {
       const rect = {
         x1: Math.min(d.startX, d.currentX),
@@ -1293,12 +1323,14 @@ export default function Canvas() {
         setSelectedConnector(null);
       }
       setMarquee(null);
+    } else if (d.mode === 'pan') {
+      setPanningUI(false);
     }
     dragRef.current = null;
   };
 
   // 游標樣式:畫筆模式 → crosshair / 按住 Space → grab / 拖 pan 中 → grabbing
-  const panning = dragRef.current?.mode === 'pan';
+  const panning = panningUI;
   const cursor = drawMode
     ? 'crosshair'
     : panning

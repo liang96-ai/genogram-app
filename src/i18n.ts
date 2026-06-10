@@ -28,7 +28,15 @@ const dict: Record<Lang, Record<string, string>> = {
     'common.empty': '尚無紀錄',
 
     // ===== Confirm Dialog =====
-    'confirm.shortcut': '按 Enter 確認 · Esc 取消 · 下次想跳過此視窗:{mod} + Delete',
+    'confirm.shortcut': '按 Esc 取消 · 下次想跳過此視窗:{mod} + Delete',
+
+    // ===== 健檢警示 / 匯入驗證(2026-06-10)=====
+    'alert.saveDbFailed': '自動儲存失敗 — 變更可能沒有保存!請立即從選單「輸出檔案」備份',
+    'alert.saveFolderFailed': '資料夾備份未生效(權限已休眠)— 資料仍在瀏覽器內;回首頁重新選一次資料夾即可恢復',
+    'alert.multiTab': '此個案已在另一個視窗開啟 — 請關閉其中一個;同時編輯會互相覆蓋',
+    'alert.dismiss': '知道了',
+    'caseList.folderDeleteFailed': '個案已刪除;但資料夾中的備份檔因權限休眠無法一併移除 — 重新授權後請手動刪除該 case_ 資料夾',
+    'import.invalid': '略過 {n} 筆損壞資料(格式不完整)',
 
     // ===== 主選單 =====
     'menu.undo': '復原',
@@ -553,8 +561,6 @@ const dict: Record<Lang, Record<string, string>> = {
     'about.orgIntegration': '軟體商整合:請洽商業授權合約',
     'about.supportFooter':
       '所有支持,全憑您對開源工具與版權勞動的尊重。若您的單位無法支持,工具仍然完全開放給您。',
-    'about.kofiLabel': '請我喝杯咖啡(Ko-fi)',
-    'about.ecpayLabel': '請我喝杯珍奶(ECPay)',
     'about.emailLabel': '機構合作',
     'about.docsTitle': '📄 完整文件',
     'about.docPrivacy': '隱私聲明',
@@ -565,10 +571,15 @@ const dict: Record<Lang, Record<string, string>> = {
     'support.heading': '這工具有讓你工作輕鬆一點嗎?',
     'support.body': '如果有,歡迎請我喝杯飲料,任何金額都很開心。',
     'support.footer': '這個工具因每一份心意而能持續存在精進。',
-    'donate.ecpayRegion': 'TW',
     'donate.ecpaySub': 'ATM / 超商 / 信用卡',
-    'donate.kofiRegion': '海外',
     'donate.kofiSub': '國際信用卡',
+    // v2 版型(#129):時區分台灣/海外,主鈕+微文案(錨點混合版,永不顯示次數)
+    'donate.goTw': '🧋 前往贊助 — 台灣',
+    'donate.goTwSub': '開啟綠界安全付款頁 · 金額自填(NT$60 ≈ 一杯珍奶,多少都歡迎)',
+    'donate.goIntl': '☕ 前往贊助 — Ko-fi',
+    'donate.goIntlSub': '開啟 Ko-fi 安全付款頁 · 金額自填(US$2 ≈ 一杯咖啡,多少都歡迎)',
+    'donate.altTw': '🧋 台灣 Taiwan — ECPay',
+    'donate.altIntl': '☕ 海外 Overseas — Ko-fi',
   },
   en: {
     // ===== Common =====
@@ -591,7 +602,15 @@ const dict: Record<Lang, Record<string, string>> = {
     'common.empty': 'No records yet',
 
     // ===== Confirm Dialog =====
-    'confirm.shortcut': 'Enter to confirm, Esc to cancel. Skip next time: {mod} + Delete',
+    'confirm.shortcut': 'Esc to cancel. Skip next time: {mod} + Delete',
+
+    // ===== Health-check alerts / import validation (2026-06-10) =====
+    'alert.saveDbFailed': 'Auto-save failed — changes may NOT be saved! Export a backup from the menu now.',
+    'alert.saveFolderFailed': 'Folder backup inactive (permission dormant) — data is still in this browser; re-select the folder on the home page to restore.',
+    'alert.multiTab': 'This case is open in another window — close one of them; editing in both will overwrite each other.',
+    'alert.dismiss': 'Got it',
+    'caseList.folderDeleteFailed': 'Case deleted, but its backup file in the folder could not be removed (permission dormant) — after re-granting access, delete that case_ folder manually.',
+    'import.invalid': 'Skipped {n} corrupted item(s) (incomplete format)',
 
     // ===== Main menu =====
     'menu.undo': 'Undo',
@@ -1116,8 +1135,6 @@ const dict: Record<Lang, Record<string, string>> = {
     'about.orgIntegration': 'Software vendor integration: contact for a commercial license',
     'about.supportFooter':
       'All support rests on your respect for open-source tools and the labor behind them. If your organization cannot support, the tool stays fully open to you.',
-    'about.kofiLabel': 'Buy me a coffee (Ko-fi)',
-    'about.ecpayLabel': 'Buy me a bubble tea (ECPay)',
     'about.emailLabel': 'Organizations',
     'about.docsTitle': '📄 Full Documents',
     'about.docPrivacy': 'Privacy',
@@ -1128,10 +1145,14 @@ const dict: Record<Lang, Record<string, string>> = {
     'support.heading': 'Has this tool made your work a little easier?',
     'support.body': 'If so, feel free to buy me a coffee — any amount is appreciated.',
     'support.footer': 'This tool keeps going and improving thanks to every bit of support.',
-    'donate.ecpayRegion': 'TW',
     'donate.ecpaySub': 'ATM / store / card',
-    'donate.kofiRegion': 'Overseas',
-    'donate.kofiSub': 'international card',
+    'donate.kofiSub': 'International credit card',
+    'donate.goTw': '🧋 Donate — Taiwan (ECPay)',
+    'donate.goTwSub': 'Opens ECPay secure page · enter any amount (NT$60 ≈ a bubble tea, more is welcome)',
+    'donate.goIntl': '☕ Support on Ko-fi',
+    'donate.goIntlSub': 'Opens Ko-fi secure checkout · any amount (US$2 ≈ a coffee, more is welcome)',
+    'donate.altTw': '🧋 台灣 Taiwan — ECPay',
+    'donate.altIntl': '☕ Overseas — Ko-fi',
   },
 };
 

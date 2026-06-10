@@ -527,7 +527,8 @@ function AttachmentRow({
         setTimeout(() => URL.revokeObjectURL(u), 60_000);
       }
     } else if (url) {
-      window.open(url, '_blank');
+      // noopener:使用者自填的外部網址,不給對方 window.opener(防反向綁架)
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
   const sizeKb = size ? Math.round(size / 1024) : null;

@@ -9,10 +9,8 @@ export default function ConfirmDialog() {
   useEffect(() => {
     if (!confirmState) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        confirmState.onYes();
-      } else if (e.key === 'Escape') {
+      // Enter 不再=直接確認(#128 防誤按刪除);取消鈕 autoFocus,Enter 觸發的是焦點按鈕
+      if (e.key === 'Escape') {
         e.preventDefault();
         confirmState.onNo();
       }
@@ -31,6 +29,8 @@ export default function ConfirmDialog() {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       style={{
         position: 'fixed',
         inset: 0,
@@ -73,6 +73,7 @@ export default function ConfirmDialog() {
         >
           <button
             onClick={onNo}
+            autoFocus
             style={{
               padding: '8px 20px',
               fontSize: 13,

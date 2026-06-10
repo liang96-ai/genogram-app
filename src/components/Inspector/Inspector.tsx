@@ -127,7 +127,9 @@ export default function Inspector() {
     e.stopPropagation();
     try {
       (e.currentTarget as Element).setPointerCapture(e.pointerId);
-    } catch {}
+    } catch {
+      // setPointerCapture 偶發失敗(元素已卸載等)可忽略
+    }
     setPressing(true);
     pressTimer.current = window.setTimeout(() => {
       dragReadyRef.current = true;

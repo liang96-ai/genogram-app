@@ -1,5 +1,5 @@
-import { db } from './database';
-import type { Genogram } from '../types/genogram';
+import { db, removeDeletedCaseIds } from './database';
+import type { Genogram, Line, Person } from '../types/genogram';
 
 export type ExportType = 'single' | 'multi' | 'backup';
 
@@ -120,6 +120,34 @@ export function parseImport(text: string): ExportBundle {
   return bundle as ExportBundle;
 }
 
+/**
+ * 個案資料最小形狀驗證(#119)— 匯入 / 資料夾救援寫進 DB 前必過。
+ * 只驗「渲染會直接炸掉」的欄位:缺 persons 陣列會讓首頁每次開啟都白屏。
+ */
+export function isValidGenogram(g: unknown): g is Genogram {
+  if (!g || typeof g !== 'object') return false;
+  const c = g as Partial<Genogram>;
+  return (
+    typeof c.id === 'string' &&
+    c.id.length > 0 &&
+    typeof c.caseName === 'string' &&
+    Array.isArray(c.persons) &&
+    c.persons.every(
+      (p) =>
+        !!p &&
+        typeof p === 'object' &&
+        typeof (p as Person).id === 'string' &&
+        !!(p as Person).position &&
+        typeof (p as Person).position.x === 'number' &&
+        typeof (p as Person).position.y === 'number',
+    ) &&
+    Array.isArray(c.lines) &&
+    c.lines.every(
+      (l) => !!l && typeof l === 'object' && typeof (l as Line).id === 'string',
+    )
+  );
+}
+
 export type ConflictAction = 'overwrite' | 'duplicate' | 'skip';
 
 export interface CaseConflict {
@@ -134,6 +162,8 @@ export interface ImportResult {
   added: number;
   overwritten: number;
   skipped: number;
+  /** 結構損壞、被略過的筆數(#119)*/
+  invalid: number;
 }
 
 const uid = (prefix: string) =>
@@ -149,8 +179,16 @@ export async function applyImport(
   let added = 0;
   let overwritten = 0;
   let skipped = 0;
+  let invalid = 0;
+  const importedIds: string[] = [];
   const now = new Date().toISOString();
   for (const c of bundle.cases) {
+    // 壞資料直接寫進 DB 會讓首頁渲染炸掉(#119)→ 跳過並計數
+    if (!isValidGenogram(c)) {
+      invalid++;
+      continue;
+    }
+    importedIds.push(c.id);
     const existing = await db.cases.get(c.id);
     if (!existing) {
       // 沒衝突 → 直接加
@@ -199,7 +237,9 @@ export async function applyImport(
       merge('medicationHistory', bundle.settings.medicationHistory),
     ]);
   }
-  return { added, overwritten, skipped };
+  // 使用者明確匯入 = 解除墓碑(#125),之後資料夾救援不再跳過這些 id
+  await removeDeletedCaseIds(importedIds);
+  return { added, overwritten, skipped, invalid };
 }
 
 export async function detectConflicts(

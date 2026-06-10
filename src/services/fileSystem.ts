@@ -89,10 +89,10 @@ export async function loadRootDirHandle(): Promise<
 export async function ensureRootPermission(): Promise<boolean> {
   if (!rootDirHandle) return false;
   try {
-    // @ts-expect-error
+    // @ts-expect-error queryPermission 不在 lib.dom 標準 type
     const perm = await rootDirHandle.queryPermission({ mode: 'readwrite' });
     if (perm === 'granted') return true;
-    // @ts-expect-error
+    // @ts-expect-error requestPermission 不在 lib.dom 標準 type
     const newPerm = await rootDirHandle.requestPermission({
       mode: 'readwrite',
     });

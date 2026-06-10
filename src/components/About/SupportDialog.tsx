@@ -3,48 +3,125 @@ import { createPortal } from 'react-dom';
 import { useT } from '../../i18n';
 
 /**
- * 抖內 / 支持 小視窗(個人隨喜)+ 兩個入口:
- *   - SupportButton:工具列常駐 ☕ 鈕(D)
- *   - SupportAutoPrompt:第 N 次開啟 App 時溫和提示「一次」(C)
+ * 抖內 / 支持 小視窗(個人隨喜)v2(#129)+ 兩個入口:
+ *   - SupportButton:工具列常駐 ☕ 鈕
+ *   - SupportAutoPrompt:訂閱 supportPromptLogic 的「價值時刻」觸發
+ *     (首彈=第 3 次匯出;保險絲=第 10 次開啟;之後每滿 100 次開啟等下次匯出)
  *
- * 隱私:只在 localStorage 記「開啟次數 / 是否提示過」,純本機、不外傳,
- *       與「不追蹤」承諾一致(等同語言偏好、教學看過沒)。
+ * 版型:依「裝置時區」分台灣版(ECPay 主鈕)/ 海外版(Ko-fi 主鈕)—
+ *       純本機讀取、離線可用、不碰 IP,與「不追蹤」承諾相容。
+ * 隱私:計數只存 localStorage(等同語言偏好),不上傳;文案永不顯示次數。
  */
+
+import { countLaunch, onSupportPrompt } from './supportPromptLogic';
 
 const KOFI_URL = 'https://ko-fi.com/liang96';
 const ECPAY_URL = 'https://p.ecpay.com.tw/39E7770';
 
-// localStorage keys(純本機)
-const LAUNCH_KEY = 'genogram_launch_count';
-const SEEN_KEY = 'genogram_support_prompt_seen';
-// 第幾次開啟 App 時溫和提示一次(可調)。文案不提「用了多久」,避免被計時感。
-const TRIGGER_AT = 5;
+// 人在台灣 → ECPay 主(ATM/超商要人在台);其他時區 → Ko-fi 主。
+// 未來多國:這裡擴成「時區 → 管道」對照表(配合 #95 國際化)。
+function isTaiwanTimezone(): boolean {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone === 'Asia/Taipei';
+  } catch {
+    return true; // 偵測失敗 → 預設台灣版(主要受眾)
+  }
+}
+const IS_TW = isTaiwanTimezone();
 
-function Pill({ icon, label, url }: { icon: string; label: string; url: string }) {
+// 主行動鈕(實心藍 + 外連箭頭)+ 說明微文案 — 解決「看起來不能按/按了會怎樣」
+function PrimaryAction({
+  label,
+  sub,
+  url,
+}: {
+  label: string;
+  sub: string;
+  url: string;
+}) {
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
       style={{
-        display: 'inline-flex',
+        display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        gap: 7,
-        padding: '9px 16px',
-        background: '#e8f2ff',
-        color: '#007aff',
-        borderRadius: 999,
-        textDecoration: 'none',
-        fontSize: 13,
-        fontWeight: 600,
-        transition: 'background 0.15s',
+        gap: 5,
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = '#d2e6ff')}
-      onMouseLeave={(e) => (e.currentTarget.style.background = '#e8f2ff')}
     >
-      <span style={{ fontSize: 15 }}>{icon}</span>
-      <span>{label}</span>
-    </a>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '11px 22px',
+          background: '#007aff',
+          color: '#ffffff',
+          borderRadius: 10,
+          textDecoration: 'none',
+          fontSize: 14,
+          fontWeight: 600,
+          transition: 'background 0.15s',
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = '#0068d9')}
+        onMouseLeave={(e) => (e.currentTarget.style.background = '#007aff')}
+      >
+        <span>{label}</span>
+        <span style={{ fontSize: 12, opacity: 0.85 }}>↗</span>
+      </a>
+      <div style={{ fontSize: 11, color: '#86868b', lineHeight: 1.5 }}>
+        {sub}
+      </div>
+    </div>
+  );
+}
+
+// 次要管道(外框膠囊,維持分流但不搶主鈕)
+function SecondaryAction({
+  label,
+  sub,
+  url,
+}: {
+  label: string;
+  sub: string;
+  url: string;
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 3,
+      }}
+    >
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '7px 16px',
+          background: 'transparent',
+          color: '#007aff',
+          border: '1px solid #b3d7ff',
+          borderRadius: 999,
+          textDecoration: 'none',
+          fontSize: 12.5,
+          fontWeight: 600,
+          transition: 'background 0.15s',
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f7ff')}
+        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+      >
+        <span>{label}</span>
+      </a>
+      <div style={{ fontSize: 11, color: '#86868b' }}>{sub}</div>
+    </div>
   );
 }
 
@@ -63,6 +140,8 @@ export function SupportDialog({ onClose }: { onClose: () => void }) {
   return (
     <div
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
       style={{
         position: 'fixed',
         inset: 0,
@@ -112,19 +191,38 @@ export function SupportDialog({ onClose }: { onClose: () => void }) {
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 12,
+            gap: 14,
             alignItems: 'center',
             marginBottom: 14,
           }}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-            <Pill icon="🧋" label={t('about.ecpayLabel')} url={ECPAY_URL} />
-            <div style={{ fontSize: 11, color: '#86868b' }}><span style={{ color: '#1d1d1f', fontWeight: 600 }}>{t('donate.ecpayRegion')}</span>{' · '}{t('donate.ecpaySub')}</div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-            <Pill icon="☕" label={t('about.kofiLabel')} url={KOFI_URL} />
-            <div style={{ fontSize: 11, color: '#86868b' }}><span style={{ color: '#1d1d1f', fontWeight: 600 }}>{t('donate.kofiRegion')}</span>{' · '}{t('donate.kofiSub')}</div>
-          </div>
+          {IS_TW ? (
+            <>
+              <PrimaryAction
+                label={t('donate.goTw')}
+                sub={t('donate.goTwSub')}
+                url={ECPAY_URL}
+              />
+              <SecondaryAction
+                label={t('donate.altIntl')}
+                sub={t('donate.kofiSub')}
+                url={KOFI_URL}
+              />
+            </>
+          ) : (
+            <>
+              <PrimaryAction
+                label={t('donate.goIntl')}
+                sub={t('donate.goIntlSub')}
+                url={KOFI_URL}
+              />
+              <SecondaryAction
+                label={t('donate.altTw')}
+                sub={t('donate.ecpaySub')}
+                url={ECPAY_URL}
+              />
+            </>
+          )}
         </div>
         <div
           style={{
@@ -198,22 +296,15 @@ export function SupportButton({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
   );
 }
 
-// C:中性觸發 — 第 N 次開啟 App 時溫和提示「一次」(純本機計數)
+// 自動提示 v2(#129):訂閱觸發事件 + 啟動計數(規則見 supportPromptLogic.ts)
+// 掛在 App 層(清單與編輯模式皆有效);匯出成功的通知由 ExportDialog 發出。
 export function SupportAutoPrompt() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    try {
-      if (localStorage.getItem(SEEN_KEY)) return;
-      const n = Number(localStorage.getItem(LAUNCH_KEY) || '0') + 1;
-      localStorage.setItem(LAUNCH_KEY, String(n));
-      if (n >= TRIGGER_AT) {
-        localStorage.setItem(SEEN_KEY, '1');
-        setOpen(true);
-      }
-    } catch {
-      // localStorage 不可用就略過,不影響功能
-    }
+    const off = onSupportPrompt(() => setOpen(true));
+    countLaunch(); // 每次 App 啟動計一次(module 旗標防重掛重複計數)
+    return off;
   }, []);
 
   if (!open) return null;

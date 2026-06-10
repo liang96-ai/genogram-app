@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useT } from '../i18n';
 import { usePwaInstall } from '../services/pwaInstall';
 
@@ -7,13 +7,14 @@ const STORAGE_KEY = 'genogram_install_banner_dismissed';
 export default function InstallBanner() {
   const t = useT();
   const { canInstall, isIOS, isStandalone, triggerInstall } = usePwaInstall();
-  const [dismissed, setDismissed] = useState(true); // 預設不顯示,等檢查
-
-  useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      setDismissed(false);
+  // lazy 初始化一次算好(#122):storage 不可用(隱私模式等)→ 當作已關閉,避免每次都跳
+  const [dismissed, setDismissed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY) === '1';
+    } catch {
+      return true;
     }
-  }, []);
+  });
 
   // 已經是 standalone(已安裝)或使用者按過「不再顯示」→ 不顯示
   if (isStandalone || dismissed) return null;
@@ -21,7 +22,11 @@ export default function InstallBanner() {
   if (!canInstall && !isIOS) return null;
 
   const dismiss = () => {
-    localStorage.setItem(STORAGE_KEY, '1');
+    try {
+      localStorage.setItem(STORAGE_KEY, '1');
+    } catch {
+      // storage 不可用 → 本 session 內 state 仍會隱藏
+    }
     setDismissed(true);
   };
 

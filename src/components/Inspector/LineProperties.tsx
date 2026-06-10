@@ -1,3 +1,12 @@
+// 🗃 DEAD CODE — 線條屬性面板(v1.1 Tab2 重構後改為內嵌按鈕,已無任何 import)2026-06-10
+//
+// 此元件在 Tab2 重構後不再使用(Tab2Network.tsx 不再嵌入本面板),
+// tree-shaking 已使其不進 bundle。保留供:
+//   1. 未來若要恢復「獨立線條屬性面板」可直接復用
+//   2. 架構演進歷史
+//
+// 若確定不再需要,可於 v2.0 時刪除。
+
 import type { Line, LineSubType } from '../../types/genogram';
 import { useGenogramStore, SUBTYPE_SPEC } from '../../store/genogramStore';
 import { useT } from '../../i18n';

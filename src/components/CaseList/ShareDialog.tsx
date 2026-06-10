@@ -64,6 +64,8 @@ export default function ShareDialog({ onClose }: { onClose: () => void }) {
   return (
     <div
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
       style={{
         position: 'fixed',
         inset: 0,

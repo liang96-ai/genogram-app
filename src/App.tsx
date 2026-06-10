@@ -1,29 +1,31 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import Canvas from './components/Canvas/Canvas';
 import ViewToolbar from './components/Canvas/ViewToolbar';
 import Inspector from './components/Inspector/Inspector';
 import ConfirmDialog from './components/ConfirmDialog';
 import HoverTooltip from './components/HoverTooltip';
-import SymbolGallery from './components/Gallery/SymbolGallery';
 import CaseList from './components/CaseList/CaseList';
 import {
   ExportDialog,
   ImportDialog,
 } from './components/CaseList/ExportImportDialog';
-import Tutorial from './components/Tutorial/Tutorial';
-// hasTutorialBeenSeen 暫不使用(教學手冊改為選單觸發)— 留 import 註解供未來恢復
-// import { hasTutorialBeenSeen } from './components/Tutorial/Tutorial';
+// hasTutorialBeenSeen 暫不使用(教學手冊改為選單觸發)— 需要時從 './components/Tutorial/tutorialSeen' 匯入
 import ScaleDialog from './components/Scales/ScaleDialog';
 import InstallBanner from './components/InstallBanner';
 import FolderSetupModal from './components/CaseList/FolderSetupModal';
 import AboutButton from './components/About/AboutButton';
-import { SupportButton } from './components/About/SupportDialog';
+import {
+  SupportAutoPrompt,
+  SupportButton,
+} from './components/About/SupportDialog';
 import { useT } from './i18n';
 import {
   getScale,
   getScalesByCategory,
 } from './components/Scales/registry';
-import { db } from './services/database';
+import { db, getDeletedCaseIds } from './services/database';
+import { isValidGenogram } from './services/exportImport';
+import type { Genogram } from './types/genogram';
 import {
   loadRootDirHandle,
   writeCaseJson,
@@ -31,6 +33,10 @@ import {
 } from './services/fileSystem';
 import { setupPwaInstallListener } from './services/pwaInstall';
 import { useGenogramStore } from './store/genogramStore';
+
+// 大塊且非常用的畫面 lazy 拆包(#127):教學手冊 / 符號圖例 開啟時才載入
+const Tutorial = lazy(() => import('./components/Tutorial/Tutorial'));
+const SymbolGallery = lazy(() => import('./components/Gallery/SymbolGallery'));
 
 // 啟動時就註冊 beforeinstallprompt 監聽(全域,只執行一次)
 setupPwaInstallListener();
@@ -66,9 +72,47 @@ export default function App() {
   const loadLanguage = useGenogramStore((s) => s.loadLanguage);
   const loadProbandStyle = useGenogramStore((s) => s.loadProbandStyle);
 
+  const t = useT();
   const [loaded, setLoaded] = useState(false);
   const [showFolderSetup, setShowFolderSetup] = useState(false);
+  // 儲存異常警示(#120):db = IndexedDB 失敗(紅)/ folder = 資料夾備份失效(黃)
+  const [saveIssue, setSaveIssue] = useState<null | 'db' | 'folder'>(null);
+  // 同個案開兩個視窗警告(#124)
+  const [multiTabWarn, setMultiTabWarn] = useState(false);
   const saveTimer = useRef<number | null>(null);
+  // 排隊等待寫入的個案快照 — flushPendingSave() 立即寫出(#117)
+  const pendingSave = useRef<Genogram | null>(null);
+  // 使用者是否設定過備份資料夾(settings 有紀錄;權限休眠時 rootDirHandle 是 null)
+  const folderConfiguredRef = useRef(false);
+
+  // 立即寫出排隊中的儲存 — timer 到期 / 關閉分頁 / 切換個案 共用(#117)
+  const flushPendingSave = useCallback(() => {
+    if (saveTimer.current !== null) {
+      window.clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    const g = pendingSave.current;
+    if (!g) return;
+    pendingSave.current = null;
+    db.cases.put(g).then(
+      () => setSaveIssue((prev) => (prev === 'db' ? null : prev)),
+      (err) => {
+        console.error('Auto save (IndexedDB) failed:', err);
+        setSaveIssue('db'); // 主儲存失敗 → 紅色警示(#120)
+      },
+    );
+    // 同時寫一份到資料夾:沒設定過 → 靜默;設定過但失敗 → 黃色警示(#120)
+    writeCaseJson(g).then(
+      (ok) => {
+        if (!ok && folderConfiguredRef.current) {
+          setSaveIssue((prev) => (prev === 'db' ? prev : 'folder'));
+        } else if (ok) {
+          setSaveIssue((prev) => (prev === 'folder' ? null : prev));
+        }
+      },
+      (err) => console.error('Auto save (folder) failed:', err),
+    );
+  }, []);
 
   // 初始化:
   //   1. 載歷史 + 個案清單(IndexedDB)
@@ -88,19 +132,45 @@ export default function App() {
           loadProbandStyle(),
         ]);
 
+        // 是否設定過備份資料夾(權限休眠時 loadRootDirHandle 回 null,但 settings 紀錄還在)
+        try {
+          folderConfiguredRef.current = !!(await db.settings.get(
+            'rootDirHandle',
+          ));
+        } catch {
+          folderConfiguredRef.current = false;
+        }
+
         // 嘗試還原資料夾權限(若使用者已選過且權限還在)
         const dirHandle = await loadRootDirHandle();
 
         if (dirHandle) {
           // 掃資料夾 → 找 IndexedDB 沒有的個案補進去(救回瀏覽器清掉的資料)
           try {
-            const cases = await loadAllCasesFromFolder();
+            const [tombstones, cases] = await Promise.all([
+              getDeletedCaseIds(),
+              loadAllCasesFromFolder(),
+            ]);
+            const skip = new Set(tombstones);
+            let restored = 0;
             for (const g of cases) {
+              // 壞檔(#119)與已刪除個案的殘留備份(#125)都不救
+              if (!isValidGenogram(g)) {
+                console.warn(
+                  'skip invalid case.json in folder:',
+                  (g as { id?: unknown })?.id,
+                );
+                continue;
+              }
+              if (skip.has(g.id)) continue;
               const exists = await db.cases.get(g.id);
-              if (!exists) await db.cases.put(g);
+              if (!exists) {
+                await db.cases.put(g);
+                restored++;
+              }
             }
-            if (cases.length > 0) {
-              // 重新載個案清單(可能有新還原進來的)
+            if (restored > 0) {
+              // 重新載個案清單(有新還原進來的)
               await loadCaseList();
             }
           } catch (err) {
@@ -139,22 +209,79 @@ export default function App() {
   // 自動儲存(write-through):
   //   1. 寫 IndexedDB(快,必有)
   //   2. 寫 case.json 到使用者資料夾(若有設過,best effort,失敗不影響)
+  //   編輯後 0.8 秒寫入;關閉分頁 / 切換個案 由 flushPendingSave 立即補寫(#117)
   useEffect(() => {
-    if (!loaded || !currentCase) return;
+    if (!loaded) return;
+    if (pendingSave.current) {
+      if (!currentCase) {
+        // currentCase → null 只發生在「刪除目前個案」(goToList 不清空 currentCase)
+        // → 丟棄排隊中的儲存,不可把剛刪除的個案寫回 DB
+        pendingSave.current = null;
+        if (saveTimer.current !== null) {
+          window.clearTimeout(saveTimer.current);
+          saveTimer.current = null;
+        }
+      } else if (pendingSave.current.id !== currentCase.id) {
+        // 換個案:先把上一個個案還沒寫出的編輯立即存掉
+        flushPendingSave();
+      }
+    }
+    if (!currentCase) return;
+    pendingSave.current = currentCase;
     if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
-      db.cases
-        .put(currentCase)
-        .catch((err) => console.error('Auto save (IndexedDB) failed:', err));
-      // 同時寫一份到資料夾(best effort,沒設或失敗都不影響主流程)
-      writeCaseJson(currentCase).catch((err) =>
-        console.error('Auto save (folder) failed:', err),
-      );
+      saveTimer.current = null;
+      flushPendingSave();
     }, 800);
     return () => {
       if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
     };
-  }, [currentCase, loaded]);
+  }, [currentCase, loaded, flushPendingSave]);
+
+  // 關閉分頁 / 切到背景 → 立即把排隊中的儲存寫出(#117)
+  useEffect(() => {
+    const onPageHide = () => flushPendingSave();
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flushPendingSave();
+    };
+    window.addEventListener('pagehide', onPageHide);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('pagehide', onPageHide);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [flushPendingSave]);
+
+  // 同個案開兩視窗偵測(#124)— BroadcastChannel 只通同一瀏覽器的分頁/PWA 視窗
+  const bcRef = useRef<BroadcastChannel | null>(null);
+  const caseIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (typeof BroadcastChannel === 'undefined') return;
+    const ch = new BroadcastChannel('genogram-case-open');
+    ch.onmessage = (ev: MessageEvent) => {
+      const m = ev.data as { t?: string; id?: string } | null;
+      if (!m?.id || m.id !== caseIdRef.current) return;
+      if (m.t === 'open') {
+        setMultiTabWarn(true);
+        ch.postMessage({ t: 'busy', id: m.id }); // 回報對方:這裡也開著同個案
+      } else if (m.t === 'busy') {
+        setMultiTabWarn(true);
+      }
+    };
+    bcRef.current = ch;
+    return () => {
+      ch.close();
+      bcRef.current = null;
+    };
+  }, []);
+  const currentCaseId = currentCase?.id ?? null;
+  useEffect(() => {
+    caseIdRef.current = currentCaseId;
+    setMultiTabWarn(false);
+    if (currentCaseId) {
+      bcRef.current?.postMessage({ t: 'open', id: currentCaseId });
+    }
+  }, [currentCaseId]);
 
   // 全域鍵盤:Delete / Backspace / Cmd+Z / Cmd+Shift+Z
   useEffect(() => {
@@ -273,6 +400,79 @@ export default function App() {
     redo,
   ]);
 
+  // 系統警示橫幅(#120 / #124)— 清單與編輯模式都掛最上層
+  const banners =
+    saveIssue || multiTabWarn ? (
+      <div
+        style={{
+          position: 'fixed',
+          top: 8,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 3000,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          maxWidth: 'min(720px, calc(100vw - 32px))',
+        }}
+      >
+        {saveIssue && (
+          <div
+            role="alert"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '8px 14px',
+              borderRadius: 8,
+              fontSize: 13,
+              boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
+              background: saveIssue === 'db' ? '#fff1f0' : '#fff5e6',
+              border:
+                saveIssue === 'db' ? '1px solid #ffccc7' : '1px solid #ffd9a3',
+              color: saveIssue === 'db' ? '#cf1322' : '#8a6d3b',
+            }}
+          >
+            <span>{saveIssue === 'db' ? '🛑' : '⚠️'}</span>
+            <span style={{ flex: 1 }}>
+              {saveIssue === 'db'
+                ? t('alert.saveDbFailed')
+                : t('alert.saveFolderFailed')}
+            </span>
+            <button onClick={() => setSaveIssue(null)} style={alertBtnStyle}>
+              {t('alert.dismiss')}
+            </button>
+          </div>
+        )}
+        {multiTabWarn && (
+          <div
+            role="alert"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '8px 14px',
+              borderRadius: 8,
+              fontSize: 13,
+              boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
+              background: '#fff5e6',
+              border: '1px solid #ffd9a3',
+              color: '#8a6d3b',
+            }}
+          >
+            <span>⚠️</span>
+            <span style={{ flex: 1 }}>{t('alert.multiTab')}</span>
+            <button
+              onClick={() => setMultiTabWarn(false)}
+              style={alertBtnStyle}
+            >
+              {t('alert.dismiss')}
+            </button>
+          </div>
+        )}
+      </div>
+    ) : null;
+
   if (!loaded) {
     return (
       <div
@@ -296,6 +496,7 @@ export default function App() {
     return (
       <>
         <CaseList />
+        {banners}
         <ConfirmDialog />
         {showFolderSetup && (
           <FolderSetupModal
@@ -314,9 +515,13 @@ export default function App() {
           />
         )}
         {showTutorial && (
-          <Tutorial onClose={() => setShowTutorial(false)} />
+          <Suspense fallback={null}>
+            <Tutorial onClose={() => setShowTutorial(false)} />
+          </Suspense>
         )}
         <InstallBanner />
+        {/* 抖內自動提示掛 App 層:清單/編輯模式的匯出都接得到(#129) */}
+        <SupportAutoPrompt />
       </>
     );
   }
@@ -339,6 +544,7 @@ export default function App() {
         </div>
         <Inspector />
       </div>
+      {banners}
       <ConfirmDialog />
       <HoverTooltip />
       {showFolderSetup && (
@@ -357,8 +563,11 @@ export default function App() {
         />
       )}
       {showTutorial && (
-        <Tutorial onClose={() => setShowTutorial(false)} />
+        <Suspense fallback={null}>
+          <Tutorial onClose={() => setShowTutorial(false)} />
+        </Suspense>
       )}
+      <SupportAutoPrompt />
     </>
   );
 }
@@ -368,8 +577,6 @@ function Toolbar({
   onRename,
 }: {
   onBack: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // (translation hook used inside body)
   onRename: (id: string, name: string) => Promise<void>;
 }) {
   const currentCase = useGenogramStore((s) => s.currentCase);
@@ -630,7 +837,11 @@ function Toolbar({
           <MenuInfo>最後修改:{lastModified}</MenuInfo>
         </div>
       )}
-      {galleryOpen && <SymbolGallery onClose={() => setGalleryOpen(false)} />}
+      {galleryOpen && (
+        <Suspense fallback={null}>
+          <SymbolGallery onClose={() => setGalleryOpen(false)} />
+        </Suspense>
+      )}
       {exportOpen && (
         <ExportDialog
           defaultTab="image"
@@ -870,6 +1081,18 @@ function MenuLabel({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+const alertBtnStyle: React.CSSProperties = {
+  padding: '4px 10px',
+  fontSize: 12,
+  background: 'rgba(255,255,255,0.7)',
+  border: '1px solid rgba(0,0,0,0.12)',
+  borderRadius: 6,
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+  color: 'inherit',
+  flexShrink: 0,
+};
 
 const hamburgerBtnStyle: React.CSSProperties = {
   width: 28,

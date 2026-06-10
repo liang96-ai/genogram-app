@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PlusGlyph, CrossGlyph } from '../PlusGlyph';
-import PinyinMatch from 'pinyin-match';
+// 繁體字典版(#121)— 預設入口是簡體字典,「憂鬱症」等繁體詞拼音查不到
+import PinyinMatch from 'pinyin-match/es/traditional';
 import type {
   MedicalCondition,
   Medication,
