@@ -68,7 +68,7 @@ export default function Tutorial({ onClose }: { onClose: () => void }) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: 480,
+          width: 528,
           maxWidth: 'calc(100vw - 40px)',
           // 固定高 640px(寬鬆值,長步驟不需內部滾動;短步驟有少許留白)
           // 小視窗(< 680 vh)就用 viewport 上限保護
@@ -109,7 +109,7 @@ export default function Tutorial({ onClose }: { onClose: () => void }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '16px 20px 8px',
+            padding: '16px 40px 8px',
             flexShrink: 0,
           }}
         >
@@ -157,7 +157,7 @@ export default function Tutorial({ onClose }: { onClose: () => void }) {
         {/* Title — v1.1 純文字 minimal,icon 留欄位但只在非空時渲染 */}
         <div
           style={{
-            padding: '0 20px 4px',
+            padding: '0 40px 4px',
             display: 'flex',
             alignItems: 'center',
             gap: 8,
@@ -179,7 +179,7 @@ export default function Tutorial({ onClose }: { onClose: () => void }) {
         {/* Body */}
         <div
           style={{
-            padding: '8px 20px 20px',
+            padding: '8px 40px 20px',
             overflowY: 'auto',
             flex: 1,
             minHeight: 160,
@@ -194,7 +194,7 @@ export default function Tutorial({ onClose }: { onClose: () => void }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '12px 20px',
+            padding: '12px 40px',
             borderTop: '1px solid #f0f0f5',
             flexShrink: 0,
           }}

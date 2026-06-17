@@ -13,7 +13,8 @@ import {
 import ScaleDialog from './components/Scales/ScaleDialog';
 import InstallBanner from './components/InstallBanner';
 import FolderSetupModal from './components/CaseList/FolderSetupModal';
-import AboutButton from './components/About/AboutButton';
+import AboutDialog from './components/About/AboutDialog';
+import EyeComfortButton from './components/EyeComfort/EyeComfortButton';
 import {
   SupportAutoPrompt,
   SupportButton,
@@ -32,6 +33,12 @@ import {
   loadAllCasesFromFolder,
 } from './services/fileSystem';
 import { setupPwaInstallListener } from './services/pwaInstall';
+import {
+  applyUpdate,
+  getNeedRefresh,
+  onNeedRefreshChange,
+} from './services/pwaUpdate';
+import { ensurePersistentStorage } from './services/storagePersist';
 import { useGenogramStore } from './store/genogramStore';
 
 // 大塊且非常用的畫面 lazy 拆包(#127):教學手冊 / 符號圖例 開啟時才載入
@@ -79,6 +86,8 @@ export default function App() {
   const [saveIssue, setSaveIssue] = useState<null | 'db' | 'folder'>(null);
   // 同個案開兩個視窗警告(#124)
   const [multiTabWarn, setMultiTabWarn] = useState(false);
+  // 有新版就緒(A 系列 #131)— prompt 模式,使用者按「立即更新」才套用
+  const [updateReady, setUpdateReady] = useState(getNeedRefresh());
   const saveTimer = useRef<number | null>(null);
   // 排隊等待寫入的個案快照 — flushPendingSave() 立即寫出(#117)
   const pendingSave = useRef<Genogram | null>(null);
@@ -86,15 +95,16 @@ export default function App() {
   const folderConfiguredRef = useRef(false);
 
   // 立即寫出排隊中的儲存 — timer 到期 / 關閉分頁 / 切換個案 共用(#117)
-  const flushPendingSave = useCallback(() => {
+  const flushPendingSave = useCallback((): Promise<void> => {
     if (saveTimer.current !== null) {
       window.clearTimeout(saveTimer.current);
       saveTimer.current = null;
     }
     const g = pendingSave.current;
-    if (!g) return;
+    if (!g) return Promise.resolve();
     pendingSave.current = null;
-    db.cases.put(g).then(
+    // 主儲存(IndexedDB):回傳此 promise,讓「立即更新」能等寫完再重載(防掉資料)
+    const dbWrite = db.cases.put(g).then(
       () => setSaveIssue((prev) => (prev === 'db' ? null : prev)),
       (err) => {
         console.error('Auto save (IndexedDB) failed:', err);
@@ -112,6 +122,7 @@ export default function App() {
       },
       (err) => console.error('Auto save (folder) failed:', err),
     );
+    return dbWrite;
   }, []);
 
   // 初始化:
@@ -131,6 +142,9 @@ export default function App() {
           loadLanguage(),
           loadProbandStyle(),
         ]);
+
+        // 請求持久化儲存(#133)— 降低 IndexedDB 被瀏覽器驅逐的機率;失敗不影響
+        void ensurePersistentStorage();
 
         // 是否設定過備份資料夾(權限休眠時 loadRootDirHandle 回 null,但 settings 紀錄還在)
         try {
@@ -237,6 +251,11 @@ export default function App() {
       if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
     };
   }, [currentCase, loaded, flushPendingSave]);
+
+  // 有新版就緒 → 顯示更新橫幅(A 系列 #131)
+  useEffect(() => {
+    return onNeedRefreshChange(() => setUpdateReady(true));
+  }, []);
 
   // 關閉分頁 / 切到背景 → 立即把排隊中的儲存寫出(#117)
   useEffect(() => {
@@ -400,13 +419,14 @@ export default function App() {
     redo,
   ]);
 
-  // 系統警示橫幅(#120 / #124)— 清單與編輯模式都掛最上層
+  // 系統警示橫幅(#120 / #124 / #131)— 清單與編輯模式都掛最上層
   const banners =
-    saveIssue || multiTabWarn ? (
+    saveIssue || multiTabWarn || updateReady ? (
       <div
         style={{
           position: 'fixed',
-          top: 8,
+          // C 系列:避開 iOS 瀏海/狀態列(viewport-fit=cover 下需手動讓開)
+          top: 'calc(env(safe-area-inset-top, 0px) + 8px)',
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 3000,
@@ -467,6 +487,45 @@ export default function App() {
               style={alertBtnStyle}
             >
               {t('alert.dismiss')}
+            </button>
+          </div>
+        )}
+        {updateReady && (
+          <div
+            role="alert"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '8px 14px',
+              borderRadius: 8,
+              fontSize: 13,
+              boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
+              background: '#e6f1fb',
+              border: '1px solid #b5d4f4',
+              color: '#0c447c',
+            }}
+          >
+            <span>✨</span>
+            <span style={{ flex: 1 }}>{t('alert.updateReady')}</span>
+            <button
+              onClick={async () => {
+                // 先把進行中的編輯寫進 IndexedDB,再讓 SW 重載 → 不會掉最後幾秒
+                await flushPendingSave();
+                applyUpdate();
+              }}
+              style={{
+                ...alertBtnStyle,
+                background: '#007aff',
+                color: '#fff',
+                border: 'none',
+                fontWeight: 600,
+              }}
+            >
+              {t('alert.updateNow')}
+            </button>
+            <button onClick={() => setUpdateReady(false)} style={alertBtnStyle}>
+              {t('alert.later')}
             </button>
           </div>
         )}
@@ -595,6 +654,7 @@ function Toolbar({
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [activeScaleId, setActiveScaleId] = useState<string | null>(null);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -625,8 +685,8 @@ function Toolbar({
       data-toolbar-menu
       style={{
         position: 'absolute',
-        top: 12,
-        left: 12,
+        top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+        left: 'calc(env(safe-area-inset-left, 0px) + 12px)',
       }}
     >
       <div
@@ -634,6 +694,7 @@ function Toolbar({
           display: 'flex',
           alignItems: 'center',
           gap: 6,
+          maxWidth: 'calc(100vw - 24px)',
           padding: '4px 10px 4px 6px',
           background: 'rgba(255,255,255,0.92)',
           backdropFilter: 'blur(10px)',
@@ -671,6 +732,9 @@ function Toolbar({
             <line x1="0" y1="13" x2="18" y2="13" stroke="#1d1d1f" strokeWidth="2" strokeLinecap="round" />
           </svg>
         </button>
+        {/* 護眼 + 支持:緊鄰漢堡,與首頁頂列一致 */}
+        <EyeComfortButton />
+        <SupportButton />
         {renaming ? (
           <input
             type="text"
@@ -710,13 +774,17 @@ function Toolbar({
               setRenaming(true);
             }}
             title="雙擊改名"
-            style={{ cursor: 'text' }}
+            style={{
+              cursor: 'text',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              minWidth: 0,
+            }}
           >
             {currentCase?.caseName ?? '家系圖'} · {currentCase?.persons.length ?? 0} 人
           </span>
         )}
-        <AboutButton />
-        <SupportButton />
       </div>
 
       {open && (
@@ -820,6 +888,15 @@ function Toolbar({
               setLanguage(language === 'zh' ? 'en' : 'zh');
             }}
           />
+          {/* 關於:原本是工具列上的 ℹ️ 鈕,改收進選單(眼睛鈕取代其位置) */}
+          <MenuItem
+            icon="ℹ️"
+            label={t('about.title')}
+            onClick={() => {
+              setAboutOpen(true);
+              setOpen(false);
+            }}
+          />
           <MenuDivider />
           <div
             style={{
@@ -842,6 +919,7 @@ function Toolbar({
           <SymbolGallery onClose={() => setGalleryOpen(false)} />
         </Suspense>
       )}
+      {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
       {exportOpen && (
         <ExportDialog
           defaultTab="image"

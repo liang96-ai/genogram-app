@@ -43,12 +43,15 @@ export function canInstall(): boolean {
   return storedPrompt !== null;
 }
 
-/** 是否為 iOS Safari */
+/** 是否為 iOS / iPadOS(含偽裝成 Mac 的 iPad)
+ *  iPadOS 13+ 的 Safari userAgent 自稱 "Macintosh",純比對 /iPad/ 會漏掉 →
+ *  補「Mac 字樣 + 觸控點 > 1」判斷(桌機 Mac 沒有觸控點)。
+ *  修正前:iPad 使用者(主要受眾)看不到安裝引導 + 資料蒸發警語。 */
 export function isIOS(): boolean {
-  return (
-    typeof navigator !== 'undefined' &&
-    /iPad|iPhone|iPod/.test(navigator.userAgent)
-  );
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent;
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  return /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
 }
 
 /** 是否已經是 standalone(PWA 安裝後開啟) */

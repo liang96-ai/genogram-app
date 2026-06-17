@@ -5,6 +5,7 @@ import { useT } from '../../i18n';
 import { ExportDialog, ImportDialog } from './ExportImportDialog';
 import ShareDialog from './ShareDialog';
 import { usePwaInstall } from '../../services/pwaInstall';
+import { checkForUpdate } from '../../services/pwaUpdate';
 import {
   selectRootFolder,
   getRootFolderName,
@@ -18,8 +19,9 @@ import PrivacyWelcomeDialog, {
 } from './PrivacyWelcomeDialog';
 import FolderSetupModal from './FolderSetupModal';
 import { hasTutorialBeenSeen } from '../Tutorial/tutorialSeen';
-import AboutButton from '../About/AboutButton';
+import AboutDialog from '../About/AboutDialog';
 import { SupportButton } from '../About/SupportDialog';
+import EyeComfortButton from '../EyeComfort/EyeComfortButton';
 
 // 符號圖例 lazy 拆包(#127)— 開圖例時才載入(symbolData 本身被 Tab1/Tab2 引用,仍在主包)
 const SymbolGallery = lazy(() => import('../Gallery/SymbolGallery'));
@@ -47,6 +49,10 @@ export default function CaseList() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   // 個案已刪除、但資料夾備份檔因權限休眠刪不掉 → 提示手動清(#125)
   const [folderDeleteWarn, setFolderDeleteWarn] = useState(false);
+  // 檢查更新按鈕狀態(A3 #132)— 取代舊的「賭 1.5 秒」邏輯
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateMsg, setUpdateMsg] = useState<string | null>(null);
+  const [aboutOpen, setAboutOpen] = useState(false);
   // 第一次開啟才彈隱私說明(localStorage flag 控制只彈一次)
   const [privacyWelcomeOpen, setPrivacyWelcomeOpen] = useState(
     () => !hasAcknowledgedPrivacy(),
@@ -97,117 +103,64 @@ export default function CaseList() {
           maxWidth: 960,
           margin: '0 auto',
           padding: '40px 20px 80px',
+          paddingLeft: 'calc(env(safe-area-inset-left, 0px) + 20px)',
+          paddingRight: 'calc(env(safe-area-inset-right, 0px) + 20px)',
         }}
       >
-        {/* Header */}
+        {/* ── C 蘋果首頁:頂列(☰ 漢堡 + 👁 護眼 + 🧋 支持 一組靠左,隱私徽章靠右)+ Hero ── */}
         <div
           style={{
             display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'space-between',
-            marginBottom: 28,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 8,
+            marginBottom: 20,
           }}
         >
-          <div
-            data-home-menu
-            ref={menuRef}
-            style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 12,
-              position: 'relative',
-            }}
-          >
+          <div data-home-menu ref={menuRef} style={{ position: 'relative' }}>
             <button
               onClick={() => setMenuOpen((v) => !v)}
               title={t('caseList.menuTitle')}
+              aria-label={t('caseList.menuTitle')}
               style={{
-                marginTop: 6,
-                width: 36,
+                width: 40,
                 height: 36,
                 padding: 0,
                 background: '#ffffff',
-                border: '1px solid #d2d2d7',
-                borderRadius: 8,
+                border: '0.5px solid #d2d2d7',
+                borderRadius: 9,
                 cursor: 'pointer',
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontFamily: 'inherit',
+                fontSize: 20,
+                lineHeight: 1,
+                color: '#1d1d1f',
               }}
             >
+              {/* 三橫線漢堡 — 與編輯器選單鈕(App.tsx)同一組,保持一致 */}
               <svg width="18" height="14" viewBox="0 0 18 14">
                 <line x1="0" y1="1" x2="18" y2="1" stroke="#1d1d1f" strokeWidth="2" strokeLinecap="round" />
                 <line x1="0" y1="7" x2="18" y2="7" stroke="#1d1d1f" strokeWidth="2" strokeLinecap="round" />
                 <line x1="0" y1="13" x2="18" y2="13" stroke="#1d1d1f" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </button>
-            <div>
-              <h1
-                style={{
-                  fontSize: 28,
-                  fontWeight: 600,
-                  color: '#1d1d1f',
-                  margin: 0,
-                  marginBottom: 6,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  flexWrap: 'wrap',
-                }}
-              >
-                <span>{t('caseList.title')}</span>
-                <AboutButton size="lg" />
-                <SupportButton size="lg" />
-                {/* SupportAutoPrompt 移到 App 層(#129)— 編輯模式匯出也要接得到 */}
-              </h1>
-              {/* 隱私標語 — 從淡灰 subtitle 升級為 badge 風格,讓所有人一進首頁就看到 */}
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  fontSize: 12,
-                  color: '#1a7a3f',
-                  background: '#e8f5ec',
-                  border: '1px solid #c5e8d2',
-                  padding: '4px 10px',
-                  borderRadius: 12,
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                }}
-                onClick={() => setPrivacyWelcomeOpen(true)}
-                title={t('privacy.welcomeTitle')}
-              >
-                <span>🔒</span>
-                <span>{t('caseList.subtitle')}</span>
-              </div>
-            </div>
-
-            {/* 主選單 dropdown */}
             {menuOpen && (
               <div
                 style={{
                   position: 'absolute',
-                  top: 50,
-                  left: 0,
+                  top: 44,
+                  right: 0,
                   minWidth: 240,
                   padding: 4,
                   background: '#ffffff',
                   border: '1px solid #e5e4e7',
-                  borderRadius: 8,
+                  borderRadius: 10,
                   boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                   zIndex: 100,
                 }}
               >
-                <HomeMenuItem
-                  icon="🌐"
-                  label={`${t('menu.language')}: ${language === 'zh' ? '中文' : 'English'}`}
-                  onClick={() => {
-                    setLanguage(language === 'zh' ? 'en' : 'zh');
-                  }}
-                />
-                {/* 「案主樣式」已從首頁主選單移到 Tab1(案主旁邊 ☐ 傳統)— 那邊是 per-person UI 的自然位置 */}
                 <HomeMenuItem
                   icon="📖"
                   label={t('menu.symbolGallery')}
@@ -224,6 +177,67 @@ export default function CaseList() {
                     setMenuOpen(false);
                   }}
                 />
+                <HomeMenuItem
+                  icon="📤"
+                  label={t('caseList.share')}
+                  onClick={() => {
+                    setShowShare(true);
+                    setMenuOpen(false);
+                  }}
+                />
+                {/* 檢查更新 — 不關選單,就地顯示結果 */}
+                <button
+                  onClick={async () => {
+                    setUpdateMsg(null);
+                    setCheckingUpdate(true);
+                    try {
+                      const r = await checkForUpdate();
+                      if (r === 'update-found')
+                        setUpdateMsg(t('caseList.updateFound'));
+                      else if (r === 'latest')
+                        setUpdateMsg(t('caseList.updateLatest'));
+                      else {
+                        location.reload();
+                        return;
+                      }
+                    } catch (err) {
+                      console.error('Check update failed:', err);
+                      location.reload();
+                      return;
+                    } finally {
+                      setCheckingUpdate(false);
+                    }
+                  }}
+                  disabled={checkingUpdate}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: '100%',
+                    padding: '8px 10px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: 4,
+                    cursor: checkingUpdate ? 'default' : 'pointer',
+                    color: '#1d1d1f',
+                    fontSize: 13,
+                    fontFamily: 'inherit',
+                    textAlign: 'left',
+                    gap: 8,
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = '#f0f0f5')
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = 'transparent')
+                  }
+                >
+                  <span style={{ width: 18, textAlign: 'center' }}>🔄</span>
+                  <span style={{ flex: 1 }}>
+                    {checkingUpdate
+                      ? t('caseList.updateChecking')
+                      : (updateMsg ?? t('caseList.checkUpdate'))}
+                  </span>
+                </button>
                 {fsaSupported && (
                   <HomeMenuItem
                     icon="📁"
@@ -247,8 +261,20 @@ export default function CaseList() {
                     }}
                   />
                 )}
-                <div
-                  style={{ height: 1, background: '#e5e4e7', margin: '4px 4px' }}
+                <HomeMenuItem
+                  icon="🌐"
+                  label={`${t('menu.language')}: ${language === 'zh' ? '中文' : 'English'}`}
+                  onClick={() => {
+                    setLanguage(language === 'zh' ? 'en' : 'zh');
+                  }}
+                />
+                <HomeMenuItem
+                  icon="ℹ️"
+                  label={t('about.title')}
+                  onClick={() => {
+                    setAboutOpen(true);
+                    setMenuOpen(false);
+                  }}
                 />
                 <HomeMenuItem
                   icon="✉️"
@@ -258,6 +284,82 @@ export default function CaseList() {
                     setMenuOpen(false);
                   }}
                 />
+                {/* 安裝 App — 一律顯示(除非已安裝)。
+                    非原生可裝的瀏覽器(桌機/未觸發 beforeinstallprompt)給手動指引,
+                    避免入口在某些環境「消失」。 */}
+                {!isStandalone && (
+                  <HomeMenuItem
+                    icon="📲"
+                    label={t('caseList.install')}
+                    onClick={async () => {
+                      setMenuOpen(false);
+                      if (canInstall) {
+                        const r = await triggerInstall();
+                        if (r !== 'unavailable') return;
+                      }
+                      alert(
+                        isIOS
+                          ? '📱 iPhone / iPad 安裝步驟:\n\n1. 按 Safari 下方分享 ↑\n2. 選「加入主畫面」\n3. 之後從主畫面點 icon 開啟,離線可用'
+                          : '📲 安裝成 App:\n\n• 電腦 Chrome / Edge:點網址列右邊的「安裝」圖示 ⊕\n• Android Chrome:右上選單 ⋮ → 安裝應用程式\n• Safari(電腦):檔案 → 加入 Dock\n\n安裝後可離線使用、開啟更快。',
+                      );
+                    }}
+                  />
+                )}
+                <div
+                  style={{ height: 1, background: '#e5e4e7', margin: '4px 4px' }}
+                />
+                {/* 全部重置 — 危險動作,紅字、收在最底 */}
+                <button
+                  onClick={async () => {
+                    const ok = await showConfirm(
+                      t('caseList.fullResetConfirm', { n: caseList.length }),
+                    );
+                    if (!ok) return;
+                    try {
+                      await db.cases.clear();
+                      await db.settings.clear();
+                      localStorage.clear();
+                      sessionStorage.clear();
+                      if ('caches' in window) {
+                        const keys = await caches.keys();
+                        await Promise.all(keys.map((k) => caches.delete(k)));
+                      }
+                      if ('serviceWorker' in navigator) {
+                        const regs =
+                          await navigator.serviceWorker.getRegistrations();
+                        await Promise.all(regs.map((r) => r.unregister()));
+                      }
+                    } catch (err) {
+                      console.error('Full reset failed:', err);
+                    }
+                    location.reload();
+                  }}
+                  title={t('caseList.fullResetTitle')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: '100%',
+                    padding: '8px 10px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    color: '#ff3b30',
+                    fontSize: 13,
+                    fontFamily: 'inherit',
+                    textAlign: 'left',
+                    gap: 8,
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = '#fff1f0')
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = 'transparent')
+                  }
+                >
+                  <span style={{ width: 18, textAlign: 'center' }}>🗑️</span>
+                  <span style={{ flex: 1 }}>{t('caseList.fullReset')}</span>
+                </button>
                 <div
                   style={{ height: 1, background: '#e5e4e7', margin: '4px 4px' }}
                 />
@@ -276,141 +378,134 @@ export default function CaseList() {
               </div>
             )}
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {/* 安裝按鈕:依平台/狀態自動切換 */}
-            {!isStandalone && (canInstall || isIOS) && (
+          {/* 隱私徽章 — 推到頂列最右(order:2 + marginLeft:auto);只有藥丸本體可點 */}
+          <div
+            style={{
+              order: 2,
+              marginLeft: 'auto',
+            }}
+          >
+            <span
+              onClick={() => setPrivacyWelcomeOpen(true)}
+              title={t('privacy.welcomeTitle')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setPrivacyWelcomeOpen(true);
+                }
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12.5,
+                color: '#1a7a3f',
+                background: '#e8f5ec',
+                border: '1px solid #c5e8d2',
+                padding: '5px 12px',
+                borderRadius: 999,
+                fontWeight: 500,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              🔒 {t('caseList.subtitle')}
+            </span>
+          </div>
+          {/* 護眼 + 支持:緊鄰漢堡(order:1),與編輯器頂列一致 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, order: 1 }}>
+            <EyeComfortButton size="lg" />
+            <SupportButton size="lg" />
+          </div>
+        </div>
+
+        {/* Hero — 置中:🌳 與標題同排 + 建立新個案 + 匯入/備份 */}
+        <div style={{ textAlign: 'center', padding: '8px 0 34px' }}>
+          <h1
+            style={{
+              fontSize: 32,
+              fontWeight: 600,
+              letterSpacing: '-0.5px',
+              color: '#1d1d1f',
+              margin: '0 0 4px',
+            }}
+          >
+            {t('caseList.title')}
+          </h1>
+          <div style={{ marginTop: 26 }}>
+            <button
+              onClick={() => {
+                if (fsaSupported && !folderName) {
+                  setFolderPromptForNew(true);
+                } else {
+                  setShowNew(true);
+                }
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 9,
+                padding: '14px 34px',
+                fontSize: 15.5,
+                fontWeight: 500,
+                background: '#007aff',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 999,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                boxShadow: '0 1px 6px rgba(0,122,255,0.32)',
+              }}
+            >
+              <span style={{ fontSize: 18 }}>＋</span>
+              <span>{t('caseList.addCase')}</span>
+            </button>
+          </div>
+          <div
+            style={{
+              marginTop: 16,
+              display: 'flex',
+              gap: 22,
+              justifyContent: 'center',
+            }}
+          >
+            <button
+              onClick={() => setShowImport(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                background: 'transparent',
+                border: 'none',
+                color: '#007aff',
+                fontSize: 13,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              📥 {t('caseList.import')}
+            </button>
+            {caseList.length > 0 && (
               <button
-                onClick={async () => {
-                  if (canInstall) {
-                    await triggerInstall();
-                  } else if (isIOS) {
-                    alert(
-                      '📱 iPhone/iPad 安裝步驟:\n\n1. 按 Safari 下方分享 ↑\n2. 選「加入主畫面」\n3. 之後從主畫面點 icon 開啟,離線可用',
-                    );
-                  }
-                }}
+                onClick={() => setExportTarget('__backup__')}
+                title={t('caseList.backupTitle')}
                 style={{
-                  padding: '6px 12px',
-                  fontSize: 12,
-                  background: '#007aff',
-                  border: '1px solid #007aff',
-                  borderRadius: 6,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#007aff',
+                  fontSize: 13,
                   cursor: 'pointer',
-                  color: '#ffffff',
                   fontFamily: 'inherit',
-                  fontWeight: 500,
                 }}
-                title={t('caseList.installTitle')}
               >
-                📲 {t('caseList.install')}
+                📦 {t('caseList.backup')}
               </button>
             )}
-            <button
-              onClick={() => setShowShare(true)}
-              style={{
-                padding: '6px 12px',
-                fontSize: 12,
-                background: 'transparent',
-                border: '1px solid #d2d2d7',
-                borderRadius: 6,
-                cursor: 'pointer',
-                color: '#1d1d1f',
-                fontFamily: 'inherit',
-              }}
-              title={t('caseList.shareTitle')}
-            >
-              📤 {t('caseList.share')}
-            </button>
-            {/* v1.1 「檢查更新」— 強制刷新 Service Worker(網頁版常用)
-                邏輯:registration.update() → 若有 waiting sw 觸發 skipWaiting → reload
-                沒 sw 直接 reload(瀏覽器本身會走 HTTP cache 流程) */}
-            <button
-              onClick={async () => {
-                if (!('serviceWorker' in navigator)) {
-                  location.reload();
-                  return;
-                }
-                try {
-                  const reg = await navigator.serviceWorker.getRegistration();
-                  if (!reg) {
-                    location.reload();
-                    return;
-                  }
-                  await reg.update();
-                  // 等 1.5s 給 sw 進入 installing/installed 狀態
-                  await new Promise((r) => setTimeout(r, 1500));
-                  if (reg.waiting) {
-                    // 有新版等待 → 觸發 skipWaiting → 等 controllerchange → reload
-                    navigator.serviceWorker.addEventListener(
-                      'controllerchange',
-                      () => location.reload(),
-                      { once: true },
-                    );
-                    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-                    // fallback 3s 沒等到 controllerchange 強制 reload
-                    setTimeout(() => location.reload(), 3000);
-                  } else {
-                    location.reload();
-                  }
-                } catch (err) {
-                  console.error('Check update failed:', err);
-                  location.reload();
-                }
-              }}
-              style={{
-                padding: '6px 12px',
-                fontSize: 12,
-                background: 'transparent',
-                border: '1px solid #d2d2d7',
-                borderRadius: 6,
-                cursor: 'pointer',
-                color: '#007aff',
-                fontFamily: 'inherit',
-              }}
-              title={t('caseList.checkUpdateTitle')}
-            >
-              🔄 {t('caseList.checkUpdate')}
-            </button>
-            {/* v1.1 「全部重置」— Nuclear option
-                清除 IndexedDB + localStorage + sessionStorage + cache + sw,使用者要明確確認 */}
-            <button
-              onClick={async () => {
-                const ok = await showConfirm(
-                  t('caseList.fullResetConfirm', { n: caseList.length }),
-                );
-                if (!ok) return;
-                try {
-                  await db.cases.clear();
-                  await db.settings.clear();
-                  localStorage.clear();
-                  sessionStorage.clear();
-                  if ('caches' in window) {
-                    const keys = await caches.keys();
-                    await Promise.all(keys.map((k) => caches.delete(k)));
-                  }
-                  if ('serviceWorker' in navigator) {
-                    const regs = await navigator.serviceWorker.getRegistrations();
-                    await Promise.all(regs.map((r) => r.unregister()));
-                  }
-                } catch (err) {
-                  console.error('Full reset failed:', err);
-                }
-                location.reload();
-              }}
-              style={{
-                padding: '6px 12px',
-                fontSize: 12,
-                background: 'transparent',
-                border: '1px solid #ffb3b3',
-                borderRadius: 6,
-                cursor: 'pointer',
-                color: '#ff3b30',
-                fontFamily: 'inherit',
-              }}
-              title={t('caseList.fullResetTitle')}
-            >
-              🗑️ {t('caseList.fullReset')}
-            </button>
           </div>
         </div>
 
@@ -502,86 +597,6 @@ export default function CaseList() {
             </button>
           </div>
         )}
-
-        {/* New Case + Import Buttons */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 28 }}>
-          <button
-            onClick={() => {
-              // 還沒設資料夾 + FSA 支援 → 先彈資料夾提醒,關閉後再開新個案 dialog
-              // 已設 / 不支援 → 直接開新個案 dialog
-              if (fsaSupported && !folderName) {
-                setFolderPromptForNew(true);
-              } else {
-                setShowNew(true);
-              }
-            }}
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              padding: '16px 20px',
-              fontSize: 15,
-              fontWeight: 500,
-              background: '#007aff',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: 10,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              boxShadow: '0 1px 4px rgba(0,122,255,0.3)',
-            }}
-          >
-            <span style={{ fontSize: 18 }}>＋</span>
-            <span>{t('caseList.addCase')}</span>
-          </button>
-          <button
-            onClick={() => setShowImport(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              padding: '16px 20px',
-              fontSize: 14,
-              fontWeight: 500,
-              background: '#ffffff',
-              color: '#007aff',
-              border: '1px solid #c7d9ff',
-              borderRadius: 10,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            <span>📥</span>
-            <span>{t('caseList.import')}</span>
-          </button>
-          {caseList.length > 0 && (
-            <button
-              onClick={() => setExportTarget('__backup__')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                padding: '16px 20px',
-                fontSize: 14,
-                fontWeight: 500,
-                background: '#ffffff',
-                color: '#007aff',
-                border: '1px solid #c7d9ff',
-                borderRadius: 10,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-              title={t('caseList.backupTitle')}
-            >
-              <span>📦</span>
-              <span>{t('caseList.backup')}</span>
-            </button>
-          )}
-        </div>
 
         {/* Case List — 依最近使用分三階(1週內 / 1月內 / 更早) */}
         {caseList.length === 0 ? (
@@ -718,6 +733,9 @@ export default function CaseList() {
         <Suspense fallback={null}>
           <SymbolGallery onClose={() => setGalleryOpen(false)} />
         </Suspense>
+      )}
+      {aboutOpen && (
+        <AboutDialog onClose={() => setAboutOpen(false)} />
       )}
       {feedbackOpen && (
         <FeedbackDialog onClose={() => setFeedbackOpen(false)} />

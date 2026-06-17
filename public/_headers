@@ -1,0 +1,6 @@
+# Cloudflare 靜態資源快取規則(C 系列)
+# 雜湊檔名的 assets 內容改變時檔名也變 → 可永久強快取(immutable),加速首載與重訪。
+# sw.js / index.html / manifest 不在此 glob,維持預設 must-revalidate(更新傳播才正常)。
+# 註:Workers 靜態資源對 _headers 的支援需部署後實測確認;不支援則此檔被忽略,無害。
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

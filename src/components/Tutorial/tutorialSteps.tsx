@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { usePwaInstall } from '../../services/pwaInstall';
+import { SupportButton } from '../About/SupportDialog';
 
 export interface TutorialStep {
   icon: string;
@@ -204,14 +205,14 @@ function MarriageCycleMockup({ lang }: { lang: Lang }) {
           marriage: 'Married',
           separation: 'Separated',
           divorce: 'Divorced',
-          hint: 'Switch type in Tab2',
+          hint: 'Switch type in the Network tab',
         }
       : {
           ariaLabel: '婚姻線雙擊循環示意',
           marriage: '結婚',
           separation: '分居',
           divorce: '離婚',
-          hint: '型態在 Tab2 切換',
+          hint: '型態在網絡關係分頁切換',
         };
   // 通用一對夫妻 + 不同婚姻線中段標記
   const renderCouple = (
@@ -456,16 +457,16 @@ function BlueLineFlipMockup({ lang }: { lang: Lang }) {
   const t =
     lang === 'en'
       ? {
-          ariaLabel: 'Click same Tab2 button to flip blue arrow direction',
+          ariaLabel: 'Click the same Network-tab button to flip blue arrow direction',
           before: 'Before',
           after: 'After',
-          hint: 'Select line → tap same Tab2 button → arrow flips',
+          hint: 'Select line → tap same Network-tab button → arrow flips',
         }
       : {
-          ariaLabel: '點同一個 Tab2 按鈕讓藍色箭頭翻轉方向',
+          ariaLabel: '點同一個網絡關係分頁按鈕讓藍色箭頭翻轉方向',
           before: '之前',
           after: '之後',
-          hint: '選中藍線 → 在 Tab2 點同一按鈕 → 箭頭翻轉',
+          hint: '選中藍線 → 在網絡關係分頁點同一按鈕 → 箭頭翻轉',
         };
   // 通用一對人物 + 一條 focus-on 藍線(從 from → to)
   const renderPair = (
@@ -1236,7 +1237,7 @@ function InspectorMockup({ lang }: { lang: Lang }) {
 
 
 // ============================================================
-// 🌱 基礎教學 — 中文 (8 步) — 首次自動跳
+// 🌱 基礎教學 — 中文 (11 步) — 首次自動跳
 // ============================================================
 export const BASIC_STEPS_ZH: TutorialStep[] = [
   {
@@ -1265,15 +1266,83 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         <P>
           • <Code>□</Code> ↔ <Code>○</Code> 男女互切(最常用)
           <br />
-          • <Code>△</Code> 懷孕 → 死產 → 流產 → 人工流產 4 段循環(對齊 McGoldrick / NSGC 標準)
+          • <Code>△</Code> 雙擊會循環:懷孕 → 死產 → 流產 → 人工流產
           <br />
           • <Code>◇</Code> 未知性別 / <Code>機構</Code> / <Code>寵物</Code> 不循環
         </P>
         <PregnancyCycleMockup lang="zh" />
         <P>
           想用更多形狀(<Strong>跨性別 / 同性戀 / 障別 / 疾病</Strong>等)
-          → 走右側屬性面板基本分頁的展開區塊(下一步圖解)。
+          → 走右側<Strong>「基本資料」分頁</Strong>的展開區塊(下一步圖解)。
         </P>
+      </>
+    ),
+  },
+  {
+    icon: '',
+    title: '右側面板 — 4 個分頁',
+    content: (
+      <>
+        <P>右側屬性面板共 <Strong>4 個分頁</Strong>:</P>
+        <P>
+          • <Strong>基本資料</Strong>:姓名、年齡、形狀、案主、性別亞型、聯絡
+          <br />
+          • <Strong>網絡關係</Strong>:互動關係線(15 種)+ 機構單位
+          <br />
+          • <Strong>醫療</Strong>:疾病、用藥、量表評估
+          <br />
+          • <Strong>附件存放</Strong>:個案備注 / 附件
+        </P>
+        <InspectorMockup lang="zh" />
+        <P>
+          重點:
+          <br />
+          • 勾「<Strong>傳統</Strong>」→ 案主黑色填滿(取代雙紅匡)
+          <br />
+          • 想用<Strong>跨性別 / 障別 / 疾病</Strong>等更多形狀 → 點 ▶ 展開區塊
+        </P>
+        <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
+          每個分頁的深入欄位,點 ▶ 展開查看。
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '',
+    title: '線條總覽 — 黑線 vs 藍線',
+    content: (
+      <>
+        <P style={{ textAlign: 'left' }}>同一對人物可以同時有兩種線:</P>
+        <BlackBlueLineMockup lang="zh" />
+        <p style={{ margin: '10px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          ⚫ <Strong>黑線</Strong> = 成員關係(誰是誰的家人)
+        </p>
+        <p style={{ margin: '6px 0 10px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          🔵 <Strong>藍線</Strong> = 互動關係(誰跟誰互動程度)
+        </p>
+        <P style={{ textAlign: 'left' }}>
+          先教<Strong>黑線</Strong>(婚姻 / 親子)→ 接著兩步;
+          <Strong>藍線</Strong>互動關係見後續,共 15 種(連結 / 親密 / 敵意 / 截斷…)。
+        </P>
+      </>
+    ),
+  },
+  {
+    icon: '',
+    title: '黑線 — 婚姻 / 親子',
+    content: (
+      <>
+        <p style={{ margin: '6px 0', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          <Strong>婚姻線</Strong>:<Strong>雙擊線</Strong>可編輯備注(例如標註日期)。要切型態(結婚 / 分居 / 離婚 / 訂婚 / 同居 / 喪偶 / 秘密外遇 等)→ <Strong>點選線</Strong>後到右側<Strong>「網絡關係」分頁 →「常用線條 → 婚姻線」</Strong>切換。
+        </p>
+        <MarriageCycleMockup lang="zh" />
+        <p style={{ margin: '14px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
+          <Strong>親子線</Strong>:<Strong>雙擊</Strong>切換實 / 虛 —— <Strong>│ 實線</Strong> 親生 / 收養、<Strong>┊ 虛線</Strong> 寄養 / 出養 / 精子捐贈。
+        </p>
+        <FamilyLineMockup lang="zh" />
+        <p style={{ fontSize: 12, color: '#86868b', lineHeight: 1.6, marginTop: 6, textAlign: 'left' }}>
+          夫妻雙方的親子線會一起變;單擊任何線可在右側面板看完整屬性。
+        </p>
       </>
     ),
   },
@@ -1293,85 +1362,8 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
           • 系統<Strong>不會自動分開</Strong>,保留你的版面決定權
           <br />
           • 安全距離預設 1 格(約 80px)
-        </p>
-      </>
-    ),
-  },
-  {
-    icon: '',
-    title: '右側面板 — 基本 / 網絡 / 醫療 / 自訂',
-    content: (
-      <>
-        <P>右側屬性面板共 <Strong>4 個分頁</Strong>:</P>
-        <P>
-          • <Strong>基本</Strong>:姓名、年齡、形狀、案主、性別亞型、聯絡
           <br />
-          • <Strong>網絡</Strong>:互動關係線(15 種) + 機構單位
-          <br />
-          • <Strong>醫療</Strong>:疾病、用藥、量表評估
-          <br />
-          • <Strong>自訂</Strong>:個案備注 / 附件
-        </P>
-        <InspectorMockup lang="zh" />
-        <P>
-          重點:
-          <br />
-          • 勾「<Strong>傳統</Strong>」→ 案主黑色填滿(取代雙紅匡)
-          <br />
-          • 雙擊畫布的人物 → 切形狀(就不用回面板選)
-          <br />
-          • 想用<Strong>跨性別 / 障別 / 疾病</Strong>等更多形狀 → 點 ▶ 展開
-        </P>
-        <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6 }}>
-          每個分頁的深入欄位,點 ▶ 展開區塊查看。
-        </p>
-      </>
-    ),
-  },
-  {
-    icon: '',
-    title: '線條總覽 — 黑線 vs 藍線',
-    content: (
-      <>
-        <P style={{ textAlign: 'left' }}>同一對人物可以同時有兩種線:</P>
-        <BlackBlueLineMockup lang="zh" />
-        <p style={{ margin: '10px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          ⚫ <Strong>黑線</Strong> = 成員關係(誰是誰的家人 - Membership)
-        </p>
-        <p style={{ margin: '6px 0 10px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          🔵 <Strong>藍線</Strong> = 互動關係(誰跟誰互動程度 - Relationship)
-        </p>
-        <P style={{ textAlign: 'left' }}>
-          先教<Strong>黑線</Strong>(婚姻 / 親子)→ 下一步;
-          <Strong>藍線</Strong>互動關係見後續步驟,共 15 種(連結 / 親密 / 敵意 / 截斷…)。
-        </P>
-      </>
-    ),
-  },
-  {
-    icon: '',
-    title: '黑線 — 婚姻 / 親子',
-    content: (
-      <>
-        <p style={{ margin: '6px 0', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          <Strong>婚姻線</Strong>:<Strong>雙擊線</Strong>可編輯備注(例如標註日期)。
-        </p>
-        <MarriageCycleMockup lang="zh" />
-        <p style={{ margin: '6px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
-          要<Strong>切換型態</Strong>(結婚 / 分居 / 離婚 / 訂婚 / 同居 / 喪偶 / 秘密外遇 等)→ 先<Strong>點選線</Strong>,再到右側 <Strong>Tab2「常用線條 → 婚姻線」</Strong> 點按鈕。
-        </p>
-        <p style={{ margin: '14px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          <Strong>親子線</Strong>:分實 / 虛兩類,<Strong>雙擊</Strong>切換:
-        </p>
-        <FamilyLineMockup lang="zh" />
-        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          <Strong>│ 實線</Strong> — 親生 / 收養
-        </p>
-        <p style={{ margin: '4px 0 8px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          <Strong>┊ 虛線</Strong> — 寄養 / 出養 / 精子捐贈
-        </p>
-        <p style={{ fontSize: 12, color: '#86868b', lineHeight: 1.6, textAlign: 'left' }}>
-          夫妻雙方的親子線會一起變;單擊任何線可在右側面板看完整屬性。
+          • 拉<Strong>網絡關係線</Strong>時,若線跟線重疊太多也可能拉不過去 → 先把<Strong>兩邊人物的位子</Strong>調開再拉
         </p>
       </>
     ),
@@ -1389,47 +1381,39 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
           自動改連對象(預覽會顯示橘色虛線)。
         </p>
         <p style={{ margin: '12px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f', textAlign: 'left' }}>
-          B. 拖親子線到別對夫妻 → 加為出養父母(已出養為例)
+          B. 拖親子線到別對夫妻 → 設為出養父母
         </p>
         <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 4px', textAlign: 'left' }}>
-          場景:已知 C 是 AB 的小孩,後來發現其實 C 是 DE 出養給 AB 的:
+          例:C 原是 AB 的小孩,後來發現是 DE 出養給 AB —— 把 C 的親子線拖到 DE 婚姻線即可。
         </p>
         <DragToMarriageMockup lang="zh" />
         <p style={{ fontSize: 12, color: '#86868b', marginTop: 8, lineHeight: 1.6, textAlign: 'left' }}>
-          兩種拖曳,拖到空白處 / 自己 = 取消。
+          拖到空白處 / 自己 = 取消。
         </p>
       </>
     ),
   },
   {
     icon: '',
-    title: '藍線 — 互動關係 & Tab2 翻轉',
+    title: '藍線 — 互動關係 & 翻轉',
     content: (
       <>
         <P style={{ textAlign: 'left' }}>
           <Strong>藍線 = 互動關係</Strong>(誰跟誰互動程度),共 15 種,在右側
-          <Strong> Tab2「常用線條 → 互動關係線」</Strong> 加。
+          <Strong>「網絡關係」分頁 →「常用線條 → 互動關係線」</Strong>加。
         </P>
         <p style={{ margin: '6px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
-          分 4 群:
-          <br />
-          • <Strong>正向</Strong>:連結 / 親密 / 過度緊密
-          <br />
-          • <Strong>互動程度</Strong>:疏離 / 敵意 / 親密-敵意 / 靈性 / 專注於 / 負向關注
-          <br />
-          • <Strong>暴力</Strong>:身體 / 情緒 / 性虐待
-          <br />
-          • <Strong>照顧 / 斷裂</Strong>:照顧者 / 截斷 / 修復截斷
+          分 4 群:<Strong>正向</Strong>(連結 / 親密…)、<Strong>互動程度</Strong>(疏離 / 敵意 / 靈性…)、<Strong>暴力</Strong>(身體 / 情緒 / 性虐待)、<Strong>照顧 / 斷裂</Strong>(照顧者 / 截斷 / 修復截斷)。完整 15 種都在分頁裡。
         </p>
         <p style={{ margin: '14px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
           有箭頭的 6 種(專注於 / 負向關注 / 三種虐待 / 照顧者)可<Strong>翻轉方向</Strong>:
         </p>
         <BlueLineFlipMockup lang="zh" />
         <p style={{ margin: '6px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
-          操作:畫布上<Strong>選中藍線</Strong> → 在 Tab2 點<Strong>同一個按鈕</Strong> → 箭頭起終點對調。
+          操作:畫布上<Strong>選中藍線</Strong> → 點<Strong>同一個按鈕</Strong> → 箭頭起終點對調。
         </p>
         <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6, textAlign: 'left' }}>
-          沒選任何線時點按鈕 → 進入 pending mode → 再點兩個人物完成連線。
+          沒先選線就點按鈕 → 接著點兩個人物,即可完成連線。
         </p>
       </>
     ),
@@ -1467,12 +1451,12 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         <P>家系圖常含敏感資訊,本工具有兩層保密設計:</P>
         <PrivacyToggleMockup lang="zh" />
         <p style={{ margin: '6px 0 4px', fontSize: 13.5, color: '#1d1d1f', lineHeight: 1.7 }}>
-          <Strong>① 總開關</Strong>(Tab1 / Tab3 都看得到)
+          <Strong>① 總開關</Strong>(基本資料 / 醫療分頁都看得到)
           <br />
-          勾起來 → 各 Tab 出現<Strong>「區塊全選保密」</Strong>+ <Strong>欄位個別 🔒</Strong>
+          勾起來 → 各分頁出現<Strong>「區塊全選保密」</Strong>+ <Strong>欄位個別 🔒</Strong>
         </p>
         <p style={{ margin: '6px 0 4px', fontSize: 13.5, color: '#1d1d1f', lineHeight: 1.7 }}>
-          <Strong>② Tab2 互動關係線「全選保密」</Strong>
+          <Strong>② 網絡關係「全選保密」</Strong>
           <br />
           不受總開關控制,隨時可勾,瞬間把所有互動關係線藏起來。
         </p>
@@ -1487,16 +1471,28 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
     title: '完成 — 裝成 App 用更順',
     content: (
       <>
+        <div style={{ textAlign: 'center', margin: '2px 0 12px' }}>
+          <img src="/brand-mark.png" alt="家系圖工具" style={{ height: 58, width: 'auto' }} />
+        </div>
         <P>
           基礎教學結束 🎉 強烈建議把它<Strong>安裝為 App</Strong>:像桌面應用一樣點 icon 就開,
           且可<Strong>完全離線使用</Strong>。
         </P>
         <InstallButtonZH />
+        <p style={{ margin: '10px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
+          💡 長時間使用眼睛酸?點頂列 <Code>👁</Code> 開<Strong>護眼暖色</Strong>,畫面變暖不刺眼 —— 匯出仍是純白,不影響資料。
+        </p>
         <P>
-          有任何問題,點右上 <Code>ℹ️</Code> 可看「關於 / 支持本專案」,
-          或在主選單 <Code>☰</Code> → 「回報問題」直接寫信給開發者。
+          有任何問題,點主選單 <Code>☰</Code> →「關於 / 支持本專案」,
+          或 <Code>☰</Code> →「回報意見 / 建議」直接寫信給開發者。
         </P>
-        <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: '#86868b', lineHeight: 1.6 }}>
+        <div style={{ margin: '14px 0 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <p style={{ margin: 0, fontSize: 13, color: '#1d1d1f', lineHeight: 1.7, textAlign: 'center' }}>
+            這個工具免費、開源、不放廣告。若它幫到你,歡迎請我喝杯飲料 ☕
+          </p>
+          <SupportButton size="lg" />
+        </div>
+        <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: '#86868b', lineHeight: 1.6, textAlign: 'center' }}>
           祝你使用順利 🌳
         </p>
         <p style={{ marginTop: 12, marginBottom: 0, fontSize: 11, color: '#a1a1a6', lineHeight: 1.6, textAlign: 'right' }}>
@@ -1508,7 +1504,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
 ];
 
 // ============================================================
-// 🌱 Basic Tutorial — EN (5 steps)
+// 🌱 Basic Tutorial — EN (11 steps)
 // ============================================================
 export const BASIC_STEPS_EN: TutorialStep[] = [
   {
@@ -1537,41 +1533,21 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
         <P>
           • <Code>□</Code> ↔ <Code>○</Code> Male / Female (most common)
           <br />
-          • <Code>△</Code> Pregnancy → Stillbirth → Miscarriage → Abortion (4-cycle, McGoldrick / NSGC aligned)
+          • <Code>△</Code> double-click cycles: Pregnancy → Stillbirth → Miscarriage → Abortion
           <br />
           • <Code>◇</Code> Unknown / <Code>Institution</Code> / <Code>Pet</Code> do not cycle
         </P>
         <PregnancyCycleMockup lang="en" />
         <P>
           For more shapes (<Strong>transgender / gay / disability / disease</Strong>)
-          → use the expandable sections in the inspector's Basic tab (next step illustrates).
+          → use the expandable sections in the <Strong>Basic</Strong> tab (next step illustrates).
         </P>
       </>
     ),
   },
   {
     icon: '',
-    title: 'Overlap Warning — Orange Dashed Ring',
-    content: (
-      <>
-        <P style={{ textAlign: 'left' }}>
-          When two shapes get too close and start to overlap, the canvas adds an
-          <Strong> orange dashed ring</Strong> as a reminder:
-        </P>
-        <OverlapWarningMockup lang="en" />
-        <p style={{ margin: '8px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
-          • <Strong>Just drag them apart</Strong> — data is not affected, only a layout reminder
-          <br />
-          • The app <Strong>does not auto-separate</Strong> — your layout decisions stay yours
-          <br />
-          • Safe distance is ~1 grid (80px)
-        </p>
-      </>
-    ),
-  },
-  {
-    icon: '',
-    title: 'Right Panel — Basic / Network / Medical / Custom',
+    title: 'Right Panel — 4 Tabs',
     content: (
       <>
         <P>The right Inspector has <Strong>4 tabs</Strong>:</P>
@@ -1582,15 +1558,13 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           <br />
           • <Strong>Medical</Strong>: Diseases, medications, scale assessments
           <br />
-          • <Strong>Custom</Strong>: Case notes / attachments
+          • <Strong>Attachments</Strong>: Case notes / attachments
         </P>
         <InspectorMockup lang="en" />
         <P>
           Key points:
           <br />
           • Check "<Strong>Traditional</Strong>" → proband filled black (instead of red double border)
-          <br />
-          • Double-click person on canvas → cycle shape (no need to come back to panel)
           <br />
           • For more shapes (<Strong>transgender / disability / disease</Strong>) → click ▶ to expand
         </P>
@@ -1614,8 +1588,8 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           🔵 <Strong>Blue</Strong> = Relationship (how close they relate)
         </p>
         <P style={{ textAlign: 'left' }}>
-          We teach <Strong>Black</Strong> (marriage / parent-child) next; <Strong>Blue</Strong> relation
-          lines are covered in later steps — 15 types (Connected / Close / Hostile / Cutoff…).
+          We teach <Strong>Black</Strong> (marriage / parent-child) in the next two steps; <Strong>Blue</Strong> relation
+          lines come later — 15 types (Connected / Close / Hostile / Cutoff…).
         </P>
       </>
     ),
@@ -1626,24 +1600,37 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
     content: (
       <>
         <p style={{ margin: '6px 0', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          <Strong>Marriage line</Strong>: <Strong>Double-click</Strong> the line to edit a note (e.g. a date).
+          <Strong>Marriage line</Strong>: <Strong>double-click</Strong> to edit a note (e.g. a date). To switch type (married / separated / divorced / engagement / cohabitation / widowed / secret affair…) → <Strong>select the line</Strong>, then use the <Strong>Network tab → "Common Lines → Marriage"</Strong> buttons.
         </p>
         <MarriageCycleMockup lang="en" />
-        <p style={{ margin: '6px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
-          To <Strong>switch the type</Strong> (married / separated / divorced / engagement / cohabitation / widowed / secret affair…) → <Strong>select the line</Strong>, then use right-side <Strong>Tab2 "Common Lines → Marriage"</Strong> buttons.
-        </p>
         <p style={{ margin: '14px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          <Strong>Parent-child line</Strong>: solid or dashed, <Strong>double-click</Strong> to toggle:
+          <Strong>Parent-child line</Strong>: <Strong>double-click</Strong> to toggle —— <Strong>│ Solid</Strong> biological / adopted, <Strong>┊ Dashed</Strong> fostered / placed-out / sperm donor.
         </p>
         <FamilyLineMockup lang="en" />
-        <p style={{ margin: '8px 0 4px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          <Strong>│ Solid</Strong> — biological / adopted
-        </p>
-        <p style={{ margin: '4px 0 8px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          <Strong>┊ Dashed</Strong> — fostered / placed-out / sperm donor
-        </p>
-        <p style={{ fontSize: 12, color: '#86868b', lineHeight: 1.6, textAlign: 'left' }}>
+        <p style={{ fontSize: 12, color: '#86868b', lineHeight: 1.6, marginTop: 6, textAlign: 'left' }}>
           Both spouses' parent-child lines flip together. Single-click any line for full properties on the right.
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '',
+    title: 'Overlap Warning — Orange Dashed Ring',
+    content: (
+      <>
+        <P style={{ textAlign: 'left' }}>
+          When two shapes get too close and start to overlap, the canvas adds an
+          <Strong> orange dashed ring</Strong> as a reminder:
+        </P>
+        <OverlapWarningMockup lang="en" />
+        <p style={{ margin: '8px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
+          • <Strong>Just drag them apart</Strong> — data is not affected, only a layout reminder
+          <br />
+          • The app <Strong>does not auto-separate</Strong> — your layout decisions stay yours
+          <br />
+          • Safe distance is ~1 grid (80px)
+          <br />
+          • When drawing a <Strong>relation line</Strong>, if lines overlap too much you may not be able to drag it across → <Strong>move the two people apart</Strong> first
         </p>
       </>
     ),
@@ -1657,53 +1644,42 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           A. Drag an existing endpoint → change target
         </p>
         <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 12px', textAlign: 'left' }}>
-          Marriage / parent-child / relation lines: <Strong>press and
-          hold the line's endpoint → drag onto another person →
-          release</Strong>. An orange dashed preview shows where it'll
-          land.
+          Marriage / parent-child / relation lines: <Strong>press and hold the endpoint → drag onto another person → release</Strong>. An orange dashed preview shows where it'll land.
         </p>
         <p style={{ margin: '12px 0 2px', fontSize: 14, fontWeight: 600, color: '#1d1d1f', textAlign: 'left' }}>
-          B. Drag a parent-child line to another couple → add as bio (placed-out example)
+          B. Drag a parent-child line to another couple → set placed-out parents
         </p>
         <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, margin: '2px 0 4px', textAlign: 'left' }}>
-          Scenario: C looked like AB's child; you later learn DE are the bio parents who placed C out to AB:
+          E.g. C looked like AB's child; you learn DE placed C out to AB — drag C's parent-child line onto DE's marriage line.
         </p>
         <DragToMarriageMockup lang="en" />
         <p style={{ fontSize: 12, color: '#86868b', marginTop: 8, lineHeight: 1.6, textAlign: 'left' }}>
-          Both gestures: release on empty space / self = cancel.
+          Release on empty space / self = cancel.
         </p>
       </>
     ),
   },
   {
     icon: '',
-    title: 'Blue Lines — Relations & Tab2 Flip',
+    title: 'Blue Lines — Relations & Flip',
     content: (
       <>
         <P style={{ textAlign: 'left' }}>
           <Strong>Blue = Relationship</Strong> (interaction quality), 15 types,
-          added on the right via <Strong>Tab2 "Common Lines → Relation"</Strong>.
+          added on the right via the <Strong>Network tab → "Common Lines → Relation"</Strong>.
         </P>
         <p style={{ margin: '6px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
-          Grouped into 4:
-          <br />
-          • <Strong>Positive</Strong>: connected / close / fused
-          <br />
-          • <Strong>Interaction</Strong>: distant / hostile / close-hostile / spiritual / focus-on / negative-focus
-          <br />
-          • <Strong>Violence</Strong>: physical / emotional / sexual abuse
-          <br />
-          • <Strong>Care / Cutoff</Strong>: caregiver / cutoff / cutoff repaired
+          4 groups: <Strong>Positive</Strong> (connected / close…), <Strong>Interaction</Strong> (distant / hostile / spiritual…), <Strong>Violence</Strong> (physical / emotional / sexual abuse), <Strong>Care / Cutoff</Strong> (caregiver / cutoff / cutoff repaired). All 15 live in that tab.
         </p>
         <p style={{ margin: '14px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
           The 6 types with arrows (focus-on / negative-focus / 3 abuses / caregiver) can be <Strong>flipped</Strong>:
         </p>
         <BlueLineFlipMockup lang="en" />
         <p style={{ margin: '6px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
-          How: <Strong>select the blue line</Strong> on canvas → tap the <Strong>same button</Strong> in Tab2 → start/end swap.
+          How: <Strong>select the blue line</Strong> on canvas → tap the <Strong>same button</Strong> → start/end swap.
         </p>
         <p style={{ fontSize: 12, color: '#86868b', marginTop: 4, lineHeight: 1.6, textAlign: 'left' }}>
-          Tap a button without selecting anything → pending mode → tap 2 persons to draw a new relation line.
+          Tap a button without selecting first → then tap 2 persons to draw a new relation line.
         </p>
       </>
     ),
@@ -1743,12 +1719,12 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
         <P>Genograms often contain sensitive info. Two-layer privacy design:</P>
         <PrivacyToggleMockup lang="en" />
         <p style={{ margin: '6px 0 4px', fontSize: 13.5, color: '#1d1d1f', lineHeight: 1.7 }}>
-          <Strong>① Master switch</Strong> (visible in Tab1 / Tab3)
+          <Strong>① Master switch</Strong> (visible in Basic / Medical tabs)
           <br />
           Tick it → each tab gets <Strong>"Select-all-private per section"</Strong> + <Strong>per-field 🔒</Strong>.
         </p>
         <p style={{ margin: '6px 0 4px', fontSize: 13.5, color: '#1d1d1f', lineHeight: 1.7 }}>
-          <Strong>② Tab2: "All relation lines private"</Strong>
+          <Strong>② Network tab: "All relation lines private"</Strong>
           <br />
           Independent of the master switch — instantly hide every blue line.
         </p>
@@ -1763,17 +1739,28 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
     title: 'Done — Install as App for Smoother Use',
     content: (
       <>
+        <div style={{ textAlign: 'center', margin: '2px 0 12px' }}>
+          <img src="/brand-mark.png" alt="家系圖工具" style={{ height: 58, width: 'auto' }} />
+        </div>
         <P>
           Basic tutorial complete 🎉 We strongly recommend
           <Strong>installing this as an App</Strong> — click an icon to open, works <Strong>fully offline</Strong>.
         </P>
         <InstallButtonEN />
+        <p style={{ margin: '10px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
+          💡 Eyes tired after long sessions? Tap <Code>👁</Code> in the top bar for <Strong>eye-comfort warmth</Strong> — the screen warms up; exports stay pure white.
+        </p>
         <P>
-          For questions, tap <Code>ℹ️</Code> (top-right) to see About and
-          support options, or open the main menu <Code>☰</Code> → "Report"
-          to email the developer directly.
+          For questions, open the main menu <Code>☰</Code> → "About / Support",
+          or <Code>☰</Code> → "Feedback" to email the developer directly.
         </P>
-        <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: '#86868b', lineHeight: 1.6 }}>
+        <div style={{ margin: '14px 0 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <p style={{ margin: 0, fontSize: 13, color: '#1d1d1f', lineHeight: 1.7, textAlign: 'center' }}>
+            This tool is free, open-source, and ad-free. If it helps you, feel free to buy me a drink ☕
+          </p>
+          <SupportButton size="lg" />
+        </div>
+        <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: '#86868b', lineHeight: 1.6, textAlign: 'center' }}>
           Happy charting 🌳
         </p>
         <p style={{ marginTop: 12, marginBottom: 0, fontSize: 11, color: '#a1a1a6', lineHeight: 1.6, textAlign: 'right' }}>
