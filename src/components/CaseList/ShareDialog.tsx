@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import QRCode from 'qrcode';
 import { useT } from '../../i18n';
 
 /**
  * 分享 Dialog —
- *   - QR Code(走 qrserver.com API,需網路時生成,但反正分享情境都要網路)
+ *   - QR Code(本機用 qrcode 套件產生,零外連;失敗則隱藏 QR 區塊)
  *   - 網址 + 複製按鈕
  *   - 分享文案(可編輯)+ 複製按鈕
  *   - 若瀏覽器支援 navigator.share → 多顯示「系統分享」按鈕
@@ -13,14 +14,29 @@ export default function ShareDialog({ onClose }: { onClose: () => void }) {
   const url =
     typeof window !== 'undefined'
       ? window.location.origin + '/'
-      : 'https://genogram-app-wine.vercel.app/';
+      : 'https://genogram.liang96.workers.dev/';
   const message = t('share.template', { url });
-  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(
-    url,
-  )}&margin=2`;
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [urlCopied, setUrlCopied] = useState(false);
   const [msgCopied, setMsgCopied] = useState(false);
   const msgRef = useRef<HTMLTextAreaElement>(null);
+
+  // QR 本機生成(零外連);失敗 → 隱藏 QR 區塊,其餘照常
+  useEffect(() => {
+    let cancelled = false;
+    QRCode.toDataURL(url, { width: 400, margin: 2 }).then(
+      (dataUrl) => {
+        if (!cancelled) setQrDataUrl(dataUrl);
+      },
+      (err) => {
+        console.error('QR 生成失敗:', err);
+        if (!cancelled) setQrDataUrl(null);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
 
   // Esc 關閉
   useEffect(() => {
@@ -118,42 +134,44 @@ export default function ShareDialog({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {/* QR Code */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '4px 20px 12px',
-          }}
-        >
+        {/* QR Code(本機生成;失敗則不顯示) */}
+        {qrDataUrl && (
           <div
             style={{
-              padding: 12,
-              background: '#ffffff',
-              border: '1px solid #e5e4e7',
-              borderRadius: 12,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: '4px 20px 12px',
             }}
           >
-            <img
-              src={qrSrc}
-              alt="QR Code"
-              width={220}
-              height={220}
-              style={{ display: 'block' }}
-            />
+            <div
+              style={{
+                padding: 12,
+                background: '#ffffff',
+                border: '1px solid #e5e4e7',
+                borderRadius: 12,
+              }}
+            >
+              <img
+                src={qrDataUrl}
+                alt="QR Code"
+                width={220}
+                height={220}
+                style={{ display: 'block' }}
+              />
+            </div>
+            <div
+              style={{
+                fontSize: 11,
+                color: '#86868b',
+                marginTop: 8,
+                textAlign: 'center',
+              }}
+            >
+              {t('share.qrHint')}
+            </div>
           </div>
-          <div
-            style={{
-              fontSize: 11,
-              color: '#86868b',
-              marginTop: 8,
-              textAlign: 'center',
-            }}
-          >
-            {t('share.qrHint')}
-          </div>
-        </div>
+        )}
 
         {/* URL section */}
         <div style={{ padding: '0 20px 12px' }}>

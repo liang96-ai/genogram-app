@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import type { BasicShape, Line, Person } from '../../types/genogram';
+import type { Line, Person } from '../../types/genogram';
 import {
-  GRID_SIZE,
-  SHAPE_HALF,
   SUBTYPE_SPEC,
   getLineStyleKey,
   getDasharray,
@@ -10,12 +8,12 @@ import {
 } from '../../store/genogramStore';
 import type { MidSymbolKey } from '../../store/genogramStore';
 import { useT } from '../../i18n';
-
-export type ChildBundle = {
-  child: Person;
-  bioFromA?: Line;
-  bioFromB?: Line;
-};
+import {
+  type ChildBundle,
+  topEdgeY,
+  edgeHalfXAtY,
+  computeForkGeometry,
+} from './forkGeometry';
 
 type HandleDragState = {
   drags: Array<{ lineId: string; end: 'from' | 'to' }>;
@@ -36,51 +34,11 @@ type Props = {
   onMarriageDownArrow: () => void;
   onMarriageDownArrowLongPress?: () => void;
   onDeleteLine?: (lineId: string) => void;
+  /** 此婚姻的 fork 與另一段婚姻的 fork 重疊、且已錯無可錯 → 上色警示(健檢 Fix6) */
+  colliding?: boolean;
+  /** 自動錯層(Fix6):Canvas 算出的橫桿高度覆寫 — 同側多段婚姻各自成層 */
+  trunkYOverride?: number;
 };
-
-// 菱形邊長 34 — 對齊 PersonShape 縮小後的菱形(婚姻/親子線接點才不會接歪)
-const DIAMOND_SIDE = 34;
-const DIAMOND_HALF = DIAMOND_SIDE / Math.SQRT2;
-
-function topEdgeY(shape: BasicShape): number {
-  const H = SHAPE_HALF;
-  switch (shape) {
-    case 'square':
-    case 'circle':
-    case 'triangle':
-      return -H;
-    case 'diamond':
-      return -DIAMOND_HALF;
-    case 'institution':
-      return -H * 0.7;
-    case 'pet':
-      return -H * 0.6;
-  }
-}
-
-function edgeHalfXAtY(shape: BasicShape, yOffset: number): number {
-  const H = SHAPE_HALF;
-  const y = Math.abs(yOffset);
-  switch (shape) {
-    case 'square':
-      return y > H ? 0 : H;
-    case 'circle':
-      return y > H ? 0 : Math.sqrt(H * H - y * y);
-    case 'triangle':
-      return y > H ? 0 : Math.max(0, (yOffset + H) / 2);
-    case 'diamond':
-      return y > DIAMOND_HALF ? 0 : DIAMOND_HALF - y;
-    case 'institution': {
-      // 機構長條固定 3 格寬(180),半寬 90
-      const halfH = H * 0.7;
-      return y > halfH ? 0 : 90;
-    }
-    case 'pet': {
-      const h = H * 0.6;
-      return y > h ? 0 : h - y;
-    }
-  }
-}
 
 // 線中點符號:每條 stroke 都先畫白底較粗版本,再畫彩色細版本(產生白邊)
 function HaloLine({
@@ -171,6 +129,8 @@ export default function MarriageGroup({
   onMarriageDownArrow,
   onMarriageDownArrowLongPress,
   onDeleteLine,
+  colliding,
+  trunkYOverride,
 }: Props) {
   const t = useT();
   const updateLine = useGenogramStore((s) => s.updateLine);
@@ -233,8 +193,21 @@ export default function MarriageGroup({
     x: marriageDragging ? renderRightX : right.position.x - rightEdge,
     y: marriageDragging ? renderRightY : right.position.y,
   };
-  const midX = (left.position.x + right.position.x) / 2;
-  const midY = (left.position.y + right.position.y) / 2;
+  const {
+    midX,
+    midY,
+    hasChildren,
+    trunkY: baseTrunkY,
+    hbarMinX,
+    hbarMaxX,
+    needHbar,
+    sortedChildren,
+    childAnchorX,
+  } = computeForkGeometry(a, b, childBundles);
+  // 自動錯層(Fix6):Canvas 傳入覆寫高度時,整個 fork(主幹/橫桿/子女線)跟著移
+  const trunkY = trunkYOverride ?? baseTrunkY;
+  // fork 與另一段婚姻重疊且錯無可錯 → 警示紅;個別線的選取/拖曳顏色仍優先
+  const forkColor = colliding ? '#ff3b30' : baseStroke;
 
   const marriageSelected = selectedLineIds.includes(m.id);
   const mColor = marriageDragging
@@ -246,53 +219,8 @@ export default function MarriageGroup({
   const mDash = getDasharray(getLineStyleKey(m));
   const mMidSymbol = SUBTYPE_SPEC[m.subType]?.midSymbol;
 
-  const hasChildren = childBundles.length > 0;
-  const minChildTop = hasChildren
-    ? Math.min(
-        ...childBundles.map(
-          (c) => c.child.position.y + topEdgeY(c.child.shape),
-        ),
-      )
-    : 0;
-  // Fork(crossbar)固定在子女頂邊上方 1 格 → 子女拉遠時只有「父母→fork」這條變長
-  // 子女靠近父母時自動上移避免擠到子女(下限為父母線下方半格)
-  const trunkY = hasChildren
-    ? Math.max(midY + GRID_SIZE / 2, minChildTop - GRID_SIZE)
-    : 0;
-  const sortedChildren = [...childBundles].sort(
-    (x, y) => x.child.position.x - y.child.position.x,
-  );
-  // 雙胞胎共享 fork:同 twinGroupId 的小孩用「群組中點」當 anchor
-  const childAnchorX = new Map<string, number>();
-  {
-    const used = new Set<string>();
-    for (const c of sortedChildren) {
-      if (used.has(c.child.id)) continue;
-      const gid = c.child.twinGroupId;
-      if (!gid) {
-        childAnchorX.set(c.child.id, c.child.position.x);
-        used.add(c.child.id);
-      } else {
-        const grp = sortedChildren.filter(
-          (cb) => cb.child.twinGroupId === gid,
-        );
-        const xs = grp.map((cb) => cb.child.position.x);
-        const anchor = (Math.min(...xs) + Math.max(...xs)) / 2;
-        grp.forEach((cb) => {
-          childAnchorX.set(cb.child.id, anchor);
-          used.add(cb.child.id);
-        });
-      }
-    }
-  }
-  const allAnchorXs = sortedChildren.map(
-    (c) => childAnchorX.get(c.child.id) ?? c.child.position.x,
-  );
-  const minChildX = hasChildren ? Math.min(...allAnchorXs) : 0;
-  const maxChildX = hasChildren ? Math.max(...allAnchorXs) : 0;
-  const hbarMinX = hasChildren ? Math.min(midX, minChildX) : 0;
-  const hbarMaxX = hasChildren ? Math.max(midX, maxChildX) : 0;
-  const needHbar = hasChildren && hbarMinX !== hbarMaxX;
+  // fork 幾何(hasChildren / trunkY / hbar / needHbar / sortedChildren / childAnchorX)
+  // 已由上方 computeForkGeometry(a, b, childBundles) 一併算出
 
   // 主幹/橫槓的 dash:用第一個子女的 bio 線型
   // (置出養場景:所有子女 bio 都是 placed-out → 整條 T 字都虛線)
@@ -402,7 +330,7 @@ export default function MarriageGroup({
             y1={midY}
             x2={midX}
             y2={trunkY}
-            stroke={baseStroke}
+            stroke={forkColor}
             strokeWidth={baseWidth}
             strokeDasharray={trunkDash}
           />
@@ -437,7 +365,7 @@ export default function MarriageGroup({
                 y1={trunkY}
                 x2={hbarMaxX}
                 y2={trunkY}
-                stroke={baseStroke}
+                stroke={forkColor}
                 strokeWidth={baseWidth}
                 strokeDasharray={trunkDash}
               />
@@ -479,7 +407,7 @@ export default function MarriageGroup({
               ? dragColor
               : childSelected
                 ? selColor
-                : baseStroke;
+                : forkColor;
             const cWidth = childDragging || childSelected ? 2.5 : baseWidth;
             const cDash = getDasharray(getLineStyleKey(bio));
 
@@ -588,7 +516,7 @@ export default function MarriageGroup({
                     y1={barY}
                     x2={maxX}
                     y2={barY}
-                    stroke={baseStroke}
+                    stroke={forkColor}
                     strokeWidth={baseWidth}
                   />
                 );

@@ -39,7 +39,23 @@ export function applyUpdate(): void {
   void updateSWFn?.(true);
 }
 
-const HOURLY = 60 * 60 * 1000;
+const CHECK_THROTTLE_MS = 6 * 60 * 60 * 1000; // 回分頁時最多每 6 小時檢查一次
+const CHECK_FALLBACK_MS = 24 * 60 * 60 * 1000; // 保底:分頁一直可見、從不切走
+let lastCheckAt = 0;
+
+/**
+ * 節流檢查更新:同源抓 sw.js 比對是否有新版,**不含任何使用者資料**。
+ * 距上次檢查 < 6 小時則跳過 —— 避免背景一直敲伺服器(不追蹤 / 不打擾原則)。
+ */
+function maybeCheckForUpdate(): void {
+  if (!registration) return;
+  const now = Date.now();
+  if (now - lastCheckAt < CHECK_THROTTLE_MS) return;
+  lastCheckAt = now;
+  registration.update().catch(() => {
+    // 離線 / 暫時失敗 → 忽略,下次觸發再試
+  });
+}
 
 export function initPwaUpdate(): void {
   updateSWFn = registerSW({
@@ -51,13 +67,14 @@ export function initPwaUpdate(): void {
     onRegisteredSW(_swUrl, r) {
       registration = r;
       if (!r) return;
-      // 定期(每小時)主動檢查 —— iPad 常駐 standalone 不會自然觸發更新檢查,
-      // 否則只能靠那顆手動按鈕(且舊本還壞掉)。
-      setInterval(() => {
-        r.update().catch(() => {
-          // 離線 / 暫時失敗 → 忽略,下一輪再試
-        });
-      }, HOURLY);
+      lastCheckAt = Date.now(); // 剛註冊已檢查過,避免切回分頁時立刻重複
+      // 不再每小時背景輪詢(不追蹤 / 不打擾伺服器)。改為:
+      //   (a) 使用者切回分頁時檢查(6 小時節流)——「人主動回來用」才檢查
+      //   (b) 24 小時保底 —— 涵蓋「分頁一直可見、從不切走」的極端情境
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') maybeCheckForUpdate();
+      });
+      setInterval(maybeCheckForUpdate, CHECK_FALLBACK_MS);
     },
   });
 }

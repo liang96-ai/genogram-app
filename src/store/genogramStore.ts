@@ -1685,6 +1685,22 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     // 不允許連到自己或原本另一端相同
     const other = end === 'from' ? line.toPersonId : line.fromPersonId;
     if (newPersonId === other) return;
+    // 查重:拖完後這條線的兩端,若與「另一條」既有線構成重複 → 整個動作 no-op(線留原位)
+    //   - member 線:同一對之間已有任何 member 線就算重複(對齊 createMarriageLine)
+    //   - relation 線:同一對且同 subType 才算重複(對齊 createRelationLine)
+    const newFrom = end === 'from' ? newPersonId : line.fromPersonId;
+    const newTo = end === 'from' ? line.toPersonId : newPersonId;
+    const samePair = (a: string, b: string) =>
+      (a === newFrom && b === newTo) || (a === newTo && b === newFrom);
+    const dup = c.lines.find(
+      (l) =>
+        l.id !== lineId &&
+        samePair(l.fromPersonId, l.toPersonId) &&
+        (line.category === 'member'
+          ? l.category === 'member'
+          : l.subType === line.subType),
+    );
+    if (dup) return;
     const newCase = touch({
       ...c,
       lines: c.lines.map((l) => {

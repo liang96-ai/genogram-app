@@ -450,6 +450,55 @@ function OverlapWarningMockup({ lang }: { lang: Lang }) {
 }
 
 // ============================================================
+// 共用元件:多段關係怎麼排 — 共同的人置中,一段一邊,子女各佔一側
+// ============================================================
+function MultiUnionMockup({ lang }: { lang: Lang }) {
+  const t =
+    lang === 'en'
+      ? {
+          ariaLabel: 'Put the shared parent in the middle, one union on each side',
+          hint: 'Shared parent in the middle → one union each side',
+          u1: 'Union 1',
+          u2: 'Union 2',
+        }
+      : {
+          ariaLabel: '把共同的人放中間,兩段關係各佔一邊',
+          hint: '共同的人放中間 → 一段一邊,子女不擠',
+          u1: '第一段',
+          u2: '第二段',
+        };
+  return (
+    <svg
+      viewBox="0 0 380 160"
+      width="100%"
+      style={{ display: 'block', margin: '8px auto', maxWidth: 440, background: '#fafafa', borderRadius: 8 }}
+      aria-label={t.ariaLabel}
+    >
+      <text x="190" y="18" textAnchor="middle" style={{ fontSize: 11.5, fill: '#1d1d1f', fontWeight: 600 }}>{t.hint}</text>
+      {/* 結構線:union1 實線 / union2 虛線(同居) + 兩組 fork */}
+      <g stroke="#404040" strokeWidth="2" fill="none">
+        <line x1="136" y1="52" x2="174" y2="52" />
+        <line x1="206" y1="52" x2="244" y2="52" strokeDasharray="5 3" />
+        <path d="M155,52 L155,88 M140,88 L170,88 M140,88 L140,104 M170,88 L170,104" />
+        <path d="M225,52 L225,88 M210,88 L240,88 M210,88 L210,104 M240,88 L240,104" />
+      </g>
+      {/* 人物:左伴侶(圓)· 共同的人置中(方)· 右伴侶(圓)· 兩側子女 */}
+      <g stroke="#404040" strokeWidth="2.25" fill="#ffffff">
+        <circle cx="120" cy="52" r="16" />
+        <rect x="174" y="36" width="32" height="32" />
+        <circle cx="260" cy="52" r="16" />
+        <rect x="129" y="104" width="22" height="22" />
+        <circle cx="170" cy="115" r="11" />
+        <rect x="199" y="104" width="22" height="22" />
+        <circle cx="240" cy="115" r="11" />
+      </g>
+      <text x="155" y="152" textAnchor="middle" style={{ fontSize: 11, fill: '#2e9e6b', fontWeight: 600 }}>{t.u1}</text>
+      <text x="225" y="152" textAnchor="middle" style={{ fontSize: 11, fill: '#2e9e6b', fontWeight: 600 }}>{t.u2}</text>
+    </svg>
+  );
+}
+
+// ============================================================
 // 共用元件:藍線翻轉箭頭 — 點藍線後在 Tab2 點同一按鈕翻轉方向
 // 左:箭頭 A→B / 右:箭頭 B→A
 // ============================================================
@@ -1237,7 +1286,7 @@ function InspectorMockup({ lang }: { lang: Lang }) {
 
 
 // ============================================================
-// 🌱 基礎教學 — 中文 (11 步) — 首次自動跳
+// 🌱 基礎教學 — 中文 (12 步) — 首次自動跳
 // ============================================================
 export const BASIC_STEPS_ZH: TutorialStep[] = [
   {
@@ -1364,6 +1413,27 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
           • 安全距離預設 1 格(約 80px)
           <br />
           • 拉<Strong>網絡關係線</Strong>時,若線跟線重疊太多也可能拉不過去 → 先把<Strong>兩邊人物的位子</Strong>調開再拉
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '',
+    title: '多段關係怎麼排',
+    content: (
+      <>
+        <P style={{ textAlign: 'left' }}>
+          一個人有<Strong>兩段關係、而且各有子女</Strong>時,怎麼排才不會擠成一團?
+        </P>
+        <MultiUnionMockup lang="zh" />
+        <p style={{ margin: '8px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
+          • 把<Strong>共同的那個人放中間</Strong>,一段在左、一段在右
+          <br />
+          • 每段的子女各自掛在<Strong>自己那一邊</Strong> → 天生不會擠
+          <br />
+          • 一定要畫同一邊也可以 —— 兩段的子女層會<Strong>自動錯開高度</Strong>,各自成層
+          <br />
+          • 空間真的擠不開時才會浮出<Strong>紅色警示</Strong>,提醒你把子女往下挪
         </p>
       </>
     ),
@@ -1504,7 +1574,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
 ];
 
 // ============================================================
-// 🌱 Basic Tutorial — EN (11 steps)
+// 🌱 Basic Tutorial — EN (12 steps)
 // ============================================================
 export const BASIC_STEPS_EN: TutorialStep[] = [
   {
@@ -1631,6 +1701,27 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           • Safe distance is ~1 grid (80px)
           <br />
           • When drawing a <Strong>relation line</Strong>, if lines overlap too much you may not be able to drag it across → <Strong>move the two people apart</Strong> first
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: '',
+    title: 'Arranging Multiple Unions',
+    content: (
+      <>
+        <P style={{ textAlign: 'left' }}>
+          When one person has <Strong>two unions, each with children</Strong>, how do you keep it from getting crowded?
+        </P>
+        <MultiUnionMockup lang="en" />
+        <p style={{ margin: '8px 0', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7, textAlign: 'left' }}>
+          • Put the <Strong>shared person in the middle</Strong> — one union on the left, one on the right
+          <br />
+          • Each union's children hang on <Strong>their own side</Strong> → no crowding
+          <br />
+          • Prefer both on the same side? That works too — the two child buses <Strong>auto-stagger to different heights</Strong>
+          <br />
+          • Only when there's truly no room left will a <Strong>red warning</Strong> appear, asking you to move the children down
         </p>
       </>
     ),

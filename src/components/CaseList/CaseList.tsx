@@ -196,13 +196,16 @@ export default function CaseList() {
                         setUpdateMsg(t('caseList.updateFound'));
                       else if (r === 'latest')
                         setUpdateMsg(t('caseList.updateLatest'));
+                      else if (r === 'error')
+                        setUpdateMsg(t('caseList.updateError'));
                       else {
+                        // 'unsupported':此瀏覽器無 SW,重整是合理 fallback
                         location.reload();
                         return;
                       }
                     } catch (err) {
                       console.error('Check update failed:', err);
-                      location.reload();
+                      setUpdateMsg(t('caseList.updateError'));
                       return;
                     } finally {
                       setCheckingUpdate(false);

@@ -252,6 +252,18 @@ export default function App() {
     };
   }, [currentCase, loaded, flushPendingSave]);
 
+  // 離開編輯器回列表時,立即把還沒寫出的編輯寫掉 ——
+  // 防「同一個案 0.8 秒內快速關掉再重開」:openCase 會 await db.cases.get() 讀 DB,
+  // 若沒先 flush 會讀到舊版、覆蓋掉最後一筆編輯。
+  // (goToList 不清空 currentCase → 靠 id 變化觸發的 flush 不會作用;用 appMode 轉換補上)
+  const prevAppModeRef = useRef(appMode);
+  useEffect(() => {
+    const leftEditor = prevAppModeRef.current === 'edit' && appMode !== 'edit';
+    prevAppModeRef.current = appMode;
+    // currentCase 為 null = 刪除個案(pendingSave 已由上方 effect 丟棄),不可寫回
+    if (leftEditor && currentCase) void flushPendingSave();
+  }, [appMode, currentCase, flushPendingSave]);
+
   // 有新版就緒 → 顯示更新橫幅(A 系列 #131)
   useEffect(() => {
     return onNeedRefreshChange(() => setUpdateReady(true));

@@ -19,7 +19,8 @@ import type {
 import PersonShape from './PersonShape';
 import Line from './Line';
 import SmallArrows from './SmallArrows';
-import MarriageGroup, { type ChildBundle } from './MarriageGroup';
+import MarriageGroup from './MarriageGroup';
+import { type ChildBundle, computeForkGeometry } from './forkGeometry';
 import NetworkUnitShape from './NetworkUnitShape';
 import EcosystemPolygon from './EcosystemPolygon';
 import TwinDialog from './TwinDialog';
@@ -627,6 +628,58 @@ export default function Canvas() {
           collidingUnitIds.add(u.id);
         }
       }
+    }
+  }
+
+  // 婚姻 fork 重疊處理(健檢 Fix6):
+  //   1. 自動錯層 — 兩段婚姻的子女橫桿 x 重疊且高度相同時,後者往下錯半格,
+  //      同一邊畫多段關係也能各自成層看得清。只調「顯示層」橫桿高度,不動使用者的人物位置。
+  //   2. 錯不開(空間被子女頂住)才標紅色警示,交回使用者調整。
+  const marriageTrunkYOverrides = new Map<string, number>();
+  const collidingMarriageIds = new Set<string>();
+  {
+    const OVERLAP_MIN = 8; // 橫桿 x 範圍至少疊到 8px 才算同一區
+    const SAME_LEVEL = 12; // 高度差 < 12px 視為同一層(需要錯開)
+    const STEP = GRID_SIZE / 2; // 每層錯開半格(40px)
+    const forks = marriageGroups
+      .map((g) => ({
+        id: g.marriage.id,
+        geo: computeForkGeometry(g.a, g.b, g.childBundles),
+      }))
+      .filter((f) => f.geo.hasChildren)
+      // 排序讓結果穩定:左邊的先佔基準層,右邊的往下錯
+      .sort((a, b) => a.geo.midX - b.geo.midX || a.id.localeCompare(b.id));
+    const placed: { id: string; geo: (typeof forks)[number]['geo']; y: number }[] =
+      [];
+    for (const f of forks) {
+      let y = f.geo.trunkY;
+      const maxY = f.geo.minChildTop - SAME_LEVEL; // 下限:別壓到自己的子女頂邊
+      const conflict = () =>
+        placed.some((p) => {
+          const xOverlap =
+            Math.min(f.geo.hbarMaxX, p.geo.hbarMaxX) -
+            Math.max(f.geo.hbarMinX, p.geo.hbarMinX);
+          return xOverlap >= OVERLAP_MIN && Math.abs(y - p.y) < SAME_LEVEL;
+        });
+      let guard = 0;
+      while (conflict() && y + STEP <= maxY && guard < 8) {
+        y += STEP;
+        guard++;
+      }
+      if (conflict()) {
+        // 錯到底仍同層(子女空間不夠)→ 紅色警示,交回使用者
+        collidingMarriageIds.add(f.id);
+        placed
+          .filter((p) => {
+            const xOverlap =
+              Math.min(f.geo.hbarMaxX, p.geo.hbarMaxX) -
+              Math.max(f.geo.hbarMinX, p.geo.hbarMinX);
+            return xOverlap >= OVERLAP_MIN && Math.abs(y - p.y) < SAME_LEVEL;
+          })
+          .forEach((p) => collidingMarriageIds.add(p.id));
+      }
+      if (y !== f.geo.trunkY) marriageTrunkYOverrides.set(f.id, y);
+      placed.push({ id: f.id, geo: f.geo, y });
     }
   }
 
@@ -2073,6 +2126,8 @@ export default function Canvas() {
           a={g.a}
           b={g.b}
           childBundles={g.childBundles}
+          colliding={collidingMarriageIds.has(g.marriage.id)}
+          trunkYOverride={marriageTrunkYOverrides.get(g.marriage.id)}
           selectedLineIds={selectedLineIds}
           handleDrag={handleDrag}
           onLinePointerDown={onLinePointerDown}
