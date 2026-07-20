@@ -83,6 +83,57 @@ const dict: Record<Lang, Record<string, string>> = {
     'menu.copyrightNotice':
       '⚠️ 量表版權聲明：本工具內建量表均為公開或授權版本（衛福部、WHO、CDC、Pfizer 等公開來源）。商業營利使用請洽各量表原始版權方確認授權範圍。量表結果僅供參考,不作臨床診斷依據。',
 
+    // ===== 快速建立家庭(文字輸入自動畫)=====
+    'quickBuild.menuLabel': '快速建立家庭',
+    'quickBuild.title': '快速建立家庭',
+    'quickBuild.desc':
+      '一行一個人:稱謂 + 年齡 + 電話 + 疾病 + 狀態。全程在你的裝置上運算,不會上傳任何資料。',
+    'quickBuild.anchor': '以誰為中心',
+    'quickBuild.anchorNone': '請選擇…',
+    'quickBuild.anchorHint': '所有稱謂都是相對這個人',
+    'quickBuild.unnamed': '未命名 #{n}',
+    'quickBuild.placeholder':
+      '爸爸 58歲 高血壓 0912345678\n媽媽 55 糖尿病\n爺爺 歿\n哥哥 32\n前妻 離婚\n兒子 5',
+    'quickBuild.repeatWarning':
+      '同一段文字貼兩次,會重複建立配偶 / 手足 / 子女(父母、祖父母不會)。',
+    'quickBuild.preview': '預覽 — 按下「建立」才會畫上去',
+    'quickBuild.empty': '在上面輸入文字,這裡會即時顯示會發生什麼事',
+    'quickBuild.build': '建立 {n} 行',
+    'quickBuild.failed': '快速建立失敗,已還原成執行前的狀態。',
+    'quickBuild.status.create': '新建',
+    'quickBuild.status.update': '更新既有',
+    'quickBuild.status.fillIn': '補資料',
+    'quickBuild.status.skip': '略過',
+    'quickBuild.alsoCreates': '將一併建立 {n} 人(補上中間的家人)',
+    'quickBuild.conflictTitle': '這些欄位跟既有資料不同 — 勾選 = 用新的',
+    'quickBuild.diseaseTitle': '會新增的疾病(取消勾選就不加)',
+    'quickBuild.chipHint': '目前判定:{kind} — 點一下切換 備註 / 姓名 / 疾病',
+    'quickBuild.kind.relation': '稱謂',
+    'quickBuild.kind.age': '年齡',
+    'quickBuild.kind.lifeSpan': '享年',
+    'quickBuild.kind.phone': '電話',
+    'quickBuild.kind.deceased': '已故',
+    'quickBuild.kind.divorced': '離婚',
+    'quickBuild.kind.disease': '疾病',
+    'quickBuild.kind.name': '姓名',
+    'quickBuild.kind.note': '備註',
+    'quickBuild.kind.unsupported': '暫不支援',
+    'quickBuild.field.name': '姓名',
+    'quickBuild.field.age': '年齡',
+    'quickBuild.field.lifeSpan': '享年',
+    'quickBuild.skip.no-relation': '看不懂這行的稱謂 — 這行不會建立',
+    'quickBuild.skip.unsupported':
+      '這個稱謂目前還不支援(叔伯姑姨、堂表親等旁系)— 請手動加',
+    'quickBuild.skip.no-anchor': '請先在上面選一位中心人物',
+    'quickBuild.skip.parent-incomplete':
+      '這個人已有單親(或父母形狀不明)— 請手動補另一位',
+    'quickBuild.skip.spouse-limit': '同一側已有 3 段關係(上限)— 請先手動調整',
+    'quickBuild.skip.no-parent-marriage':
+      '父母之間沒有關係線 — 請先手動連起來',
+    'quickBuild.skip.op-failed': '這行沒有成功建立',
+    'quickBuild.skip.prose-like':
+      '這看起來是一整段筆記,不是「一行一人」— 請先拆成每行一個人,否則整段會被塞進備註欄',
+
     // ===== Tab 名稱 =====
     'tab.basic': '基本資料',
     'tab.network': '網絡關係',
@@ -665,6 +716,60 @@ const dict: Record<Lang, Record<string, string>> = {
     'menu.language': 'Language',
     'menu.copyrightNotice':
       '⚠️ Scale Copyright Notice: All built-in scales are public-domain or properly licensed versions (Taiwan MOHW, WHO, CDC, Pfizer, etc.). For commercial use, please contact the original copyright holders. Results are for reference only, not for clinical diagnosis.',
+
+    // ===== Quick Build (type text → auto-draw) =====
+    'quickBuild.menuLabel': 'Quick Build Family',
+    'quickBuild.title': 'Quick Build Family',
+    'quickBuild.desc':
+      'One person per line: relation + age + phone + condition + status. Everything runs on your device — nothing is uploaded.',
+    'quickBuild.anchor': 'Relative to',
+    'quickBuild.anchorNone': 'Choose…',
+    'quickBuild.anchorHint': 'All relations are relative to this person',
+    'quickBuild.unnamed': 'Unnamed #{n}',
+    'quickBuild.placeholder':
+      'father 58 hypertension 0912345678\nmother 55 diabetes\ngrandfather deceased\nbrother 32\nex-wife divorced\nson 5',
+    'quickBuild.repeatWarning':
+      'Pasting the same text twice creates duplicate spouses / siblings / children (parents and grandparents are safe).',
+    'quickBuild.preview': 'Preview — nothing is drawn until you press Build',
+    'quickBuild.empty': 'Type above and this shows exactly what will happen',
+    'quickBuild.build': 'Build {n} line(s)',
+    'quickBuild.failed': 'Quick build failed — restored to the previous state.',
+    'quickBuild.status.create': 'New',
+    'quickBuild.status.update': 'Update',
+    'quickBuild.status.fillIn': 'Fill in',
+    'quickBuild.status.skip': 'Skipped',
+    'quickBuild.alsoCreates': 'Will also create {n} person(s) in between',
+    'quickBuild.conflictTitle':
+      'These differ from existing data — checked = use the new value',
+    'quickBuild.diseaseTitle': 'Conditions to add (uncheck to skip)',
+    'quickBuild.chipHint': 'Detected as {kind} — click to switch note / name / condition',
+    'quickBuild.kind.relation': 'relation',
+    'quickBuild.kind.age': 'age',
+    'quickBuild.kind.lifeSpan': 'age at death',
+    'quickBuild.kind.phone': 'phone',
+    'quickBuild.kind.deceased': 'deceased',
+    'quickBuild.kind.divorced': 'divorced',
+    'quickBuild.kind.disease': 'condition',
+    'quickBuild.kind.name': 'name',
+    'quickBuild.kind.note': 'note',
+    'quickBuild.kind.unsupported': 'not supported yet',
+    'quickBuild.field.name': 'Name',
+    'quickBuild.field.age': 'Age',
+    'quickBuild.field.lifeSpan': 'Age at death',
+    'quickBuild.skip.no-relation':
+      'No relation word recognised — this line is skipped',
+    'quickBuild.skip.unsupported':
+      'This relation is not supported yet (uncles, aunts, cousins) — please add it manually',
+    'quickBuild.skip.no-anchor': 'Please pick a central person above first',
+    'quickBuild.skip.parent-incomplete':
+      'This person already has a single parent (or an unclear one) — please add the other manually',
+    'quickBuild.skip.spouse-limit':
+      'Already 3 unions on that side (the limit) — please adjust manually first',
+    'quickBuild.skip.no-parent-marriage':
+      'No line between the parents — please connect them manually first',
+    'quickBuild.skip.op-failed': 'This line was not created',
+    'quickBuild.skip.prose-like':
+      'This looks like a whole paragraph of notes, not one person per line — please split it up first, otherwise the whole text ends up in the notes field',
 
     // ===== Tabs =====
     'tab.basic': 'Basic',

@@ -1,9 +1,14 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import pkg from './package.json' with { type: 'json' }
 
 // https://vite.dev/config/
 export default defineConfig({
+  // 首頁右下角版本號的唯一來源 = package.json,不在畫面上 hardcode 字串
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   build: {
     // 生產 build 不產 sourcemap — 使用者看不到原始碼結構,只有 minify 後的 bundle
     sourcemap: false,

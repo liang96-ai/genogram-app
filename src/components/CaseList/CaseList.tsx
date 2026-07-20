@@ -773,6 +773,24 @@ export default function CaseList() {
           }}
         />
       )}
+
+      {/* 版本號 — 固定右下角,來源 = package.json(vite define 注入),不擋任何操作 */}
+      <div
+        aria-hidden
+        style={{
+          position: 'fixed',
+          right: 'calc(env(safe-area-inset-right, 0px) + 12px)',
+          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)',
+          fontSize: 11,
+          color: '#86868b',
+          letterSpacing: 0.2,
+          pointerEvents: 'none',
+          userSelect: 'none',
+          zIndex: 1,
+        }}
+      >
+        v{__APP_VERSION__}
+      </div>
     </div>
   );
 }

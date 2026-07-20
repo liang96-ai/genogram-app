@@ -44,6 +44,9 @@ import { useGenogramStore } from './store/genogramStore';
 // 大塊且非常用的畫面 lazy 拆包(#127):教學手冊 / 符號圖例 開啟時才載入
 const Tutorial = lazy(() => import('./components/Tutorial/Tutorial'));
 const SymbolGallery = lazy(() => import('./components/Gallery/SymbolGallery'));
+const QuickBuildDialog = lazy(
+  () => import('./components/QuickBuild/QuickBuildDialog'),
+);
 
 // 啟動時就註冊 beforeinstallprompt 監聽(全域,只執行一次)
 setupPwaInstallListener();
@@ -667,6 +670,7 @@ function Toolbar({
   const [importOpen, setImportOpen] = useState(false);
   const [activeScaleId, setActiveScaleId] = useState<string | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [quickBuildOpen, setQuickBuildOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -842,6 +846,15 @@ function Toolbar({
             }}
           />
           <MenuDivider />
+          <MenuItem
+            icon="⚡"
+            label={t('quickBuild.menuLabel')}
+            onClick={() => {
+              setQuickBuildOpen(true);
+              setOpen(false);
+            }}
+          />
+          <MenuDivider />
           <MenuItem icon="💾" label="快照(記一個版本點)" disabled subtitle="即將推出" />
           <MenuItem
             icon="↑"
@@ -932,6 +945,11 @@ function Toolbar({
         </Suspense>
       )}
       {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
+      {quickBuildOpen && (
+        <Suspense fallback={null}>
+          <QuickBuildDialog onClose={() => setQuickBuildOpen(false)} />
+        </Suspense>
+      )}
       {exportOpen && (
         <ExportDialog
           defaultTab="image"
