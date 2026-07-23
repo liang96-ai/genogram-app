@@ -21,7 +21,8 @@ export default function ConfirmDialog() {
 
   if (!confirmState) return null;
 
-  const { message, onYes, onNo } = confirmState;
+  const { message, onYes, onNo, yesLabel, noLabel, tone } = confirmState;
+  const danger = tone !== 'normal'; // 預設仍是刪除語氣,既有呼叫端不受影響
   const isMac =
     typeof navigator !== 'undefined' &&
     /Mac|iPhone|iPad|iPod/.test(navigator.platform);
@@ -52,18 +53,28 @@ export default function ConfirmDialog() {
           boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
         }}
       >
-        <div style={{ fontSize: 14, color: '#1d1d1f', marginBottom: 16, lineHeight: 1.5 }}>
-          {message}
-        </div>
         <div
           style={{
-            fontSize: 11,
-            color: '#86868b',
+            fontSize: 14,
+            color: '#1d1d1f',
             marginBottom: 16,
+            lineHeight: 1.6,
+            whiteSpace: 'pre-line', // 訊息裡的換行要保留,不然條列會擠成一坨
           }}
         >
-          {t('confirm.shortcut', { mod: modKey })}
+          {message}
         </div>
+        {danger && (
+          <div
+            style={{
+              fontSize: 11,
+              color: '#86868b',
+              marginBottom: 16,
+            }}
+          >
+            {t('confirm.shortcut', { mod: modKey })}
+          </div>
+        )}
         <div
           style={{
             display: 'flex',
@@ -73,27 +84,28 @@ export default function ConfirmDialog() {
         >
           <button
             onClick={onNo}
-            autoFocus
+            autoFocus={danger}
             style={{
               padding: '8px 20px',
               fontSize: 13,
-              background: '#34c759',
-              color: '#ffffff',
-              border: 'none',
+              background: danger ? '#34c759' : '#ffffff',
+              color: danger ? '#ffffff' : '#1d1d1f',
+              border: danger ? 'none' : '1px solid #d2d2d7',
               borderRadius: 6,
               cursor: 'pointer',
               fontFamily: 'inherit',
               fontWeight: 500,
             }}
           >
-            {t('common.no')}
+            {noLabel ?? t('common.no')}
           </button>
           <button
             onClick={onYes}
+            autoFocus={!danger}
             style={{
               padding: '8px 20px',
               fontSize: 13,
-              background: '#ff3b30',
+              background: danger ? '#ff3b30' : '#007aff',
               color: '#ffffff',
               border: 'none',
               borderRadius: 6,
@@ -102,7 +114,7 @@ export default function ConfirmDialog() {
               fontWeight: 500,
             }}
           >
-            {t('common.yes')}
+            {yesLabel ?? t('common.yes')}
           </button>
         </div>
       </div>

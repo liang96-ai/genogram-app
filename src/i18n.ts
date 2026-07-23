@@ -134,6 +134,37 @@ const dict: Record<Lang, Record<string, string>> = {
     'quickBuild.skip.prose-like':
       '這看起來是一整段筆記,不是「一行一人」— 請先拆成每行一個人,否則整段會被塞進備註欄',
 
+    // ===== 安裝為 App(兩段式:先問要不要,再給步驟)=====
+    'install.confirm':
+      '要把「家系圖工具」安裝成 App 嗎?\n\n• 從桌面/主畫面直接開啟,不用記網址\n• 完全離線可用\n• 你的個案資料不會有任何變動',
+    'install.yes': '安裝',
+    'install.later': '稍後再說',
+    'install.stepsIOS':
+      '📱 iPhone / iPad 安裝步驟:\n\n1. 按 Safari 下方的分享鈕 ↑\n2. 選「加入主畫面」\n3. 之後從主畫面點 icon 開啟',
+    'install.stepsDesktop':
+      '📲 安裝步驟:\n\n• 電腦 Chrome / Edge:點網址列右邊的安裝圖示 ⊕\n• Android Chrome:右上選單 ⋮ → 安裝應用程式\n• Safari(電腦):檔案 → 加入 Dock',
+    'install.gotIt': '知道了',
+
+    // ===== 評估工具彈窗 =====
+    'scalePicker.searchPlaceholder': '搜尋量表名稱⋯',
+    'scalePicker.noResult': '找不到符合的量表',
+
+    // ===== 族譜(中文稱謂查詢)=====
+    'kinship.menuLabel': '族譜',
+    'kinship.title': '族譜',
+    'kinship.desc':
+      '從「我」開始一步一步點,右邊的圖會跟著長出來,告訴你這個人該怎麼稱呼。純查詢,不會動到你的家系圖。',
+    'kinship.nextStep': '再走一步',
+    'kinship.limit': '已經走到最深,請先倒回',
+    'kinship.back': '倒回一步',
+    'kinship.reset': '歸零',
+    'kinship.start': '點左邊任一個稱謂開始',
+    'kinship.alsoCalled': '也叫',
+    'kinship.noTerm': '沒有專門的稱謂',
+    'kinship.noTermHint':
+      '中文對這條關係沒有廣泛通用的專稱,一般直接稱呼名字,或用「⋯的⋯」描述。',
+    'kinship.disclaimer': '各地叫法略有不同,結果僅供參考。',
+
     // ===== Tab 名稱 =====
     'tab.basic': '基本資料',
     'tab.network': '網絡關係',
@@ -770,6 +801,38 @@ const dict: Record<Lang, Record<string, string>> = {
     'quickBuild.skip.op-failed': 'This line was not created',
     'quickBuild.skip.prose-like':
       'This looks like a whole paragraph of notes, not one person per line — please split it up first, otherwise the whole text ends up in the notes field',
+
+    // ===== Install as App =====
+    'install.confirm':
+      'Install Genogram Tool as an app?\n\n• Open it straight from your desktop / home screen\n• Works fully offline\n• Your case data is not affected',
+    'install.yes': 'Install',
+    'install.later': 'Maybe later',
+    'install.stepsIOS':
+      '📱 iPhone / iPad:\n\n1. Tap the Share button ↑ in Safari\n2. Choose "Add to Home Screen"\n3. Open it from the home screen icon',
+    'install.stepsDesktop':
+      '📲 How to install:\n\n• Chrome / Edge (desktop): click the install icon ⊕ in the address bar\n• Android Chrome: menu ⋮ → Install app\n• Safari (desktop): File → Add to Dock',
+    'install.gotIt': 'Got it',
+
+    // ===== Assessment tool picker =====
+    'scalePicker.searchPlaceholder': 'Search scales…',
+    'scalePicker.noResult': 'No matching scale',
+
+    // ===== Chinese kinship term lookup =====
+    // 稱謂詞本身刻意不翻譯 —— 這個功能的目的就是教中式稱謂,翻成英文就沒有意義了
+    'kinship.menuLabel': 'Chinese kinship terms',
+    'kinship.title': 'Chinese kinship terms',
+    'kinship.desc':
+      'Start from 我 (me) and step through relatives. The diagram on the right grows as you go and shows what to call each person. Lookup only — your genogram is untouched.',
+    'kinship.nextStep': 'One more step',
+    'kinship.limit': 'Maximum depth reached — step back first',
+    'kinship.back': 'Step back',
+    'kinship.reset': 'Reset',
+    'kinship.start': 'Pick a relative on the left to begin',
+    'kinship.alsoCalled': 'also called',
+    'kinship.noTerm': 'No specific term',
+    'kinship.noTermHint':
+      'Chinese has no widely used term for this relationship — people just use the name, or describe it as "X of X".',
+    'kinship.disclaimer': 'Usage varies by region; results are for reference only.',
 
     // ===== Tabs =====
     'tab.basic': 'Basic',

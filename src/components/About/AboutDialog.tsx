@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useT } from '../../i18n';
+import { checkForUpdate } from '../../services/pwaUpdate';
 
 /**
  * 關於 / About 對話框
@@ -11,6 +12,8 @@ const GITHUB_URL = 'https://github.com/liang96-ai/genogram-app';
 const FEEDBACK_EMAIL = 'genogram.feedback@gmail.com';
 
 export default function AboutDialog({ onClose }: { onClose: () => void }) {
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateMsg, setUpdateMsg] = useState<string | null>(null);
   const t = useT();
 
   useEffect(() => {
@@ -102,6 +105,67 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
           }}
         >
           {t('about.tagline')}
+        </div>
+
+        {/* 版本 + 檢查更新 —— 原本檢查更新在首頁漢堡/頂列,但自動檢查最長會延遲 6 小時,
+            使用者需要它時通常是想確認「我這版是不是最新」,跟版本號放一起最合理 */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            flexWrap: 'wrap',
+            padding: '10px 12px',
+            background: '#f5f5f7',
+            borderRadius: 8,
+            marginBottom: 18,
+          }}
+        >
+          <span style={{ fontSize: 13, color: '#1d1d1f', fontWeight: 500 }}>
+            v{__APP_VERSION__}
+          </span>
+          <button
+            onClick={async () => {
+              setUpdateMsg(null);
+              setCheckingUpdate(true);
+              try {
+                const r = await checkForUpdate();
+                if (r === 'update-found') setUpdateMsg(t('caseList.updateFound'));
+                else if (r === 'latest') setUpdateMsg(t('caseList.updateLatest'));
+                else if (r === 'error') setUpdateMsg(t('caseList.updateError'));
+                else {
+                  // 'unsupported':此瀏覽器無 SW,重整是合理 fallback
+                  location.reload();
+                  return;
+                }
+              } catch (err) {
+                console.error('Check update failed:', err);
+                setUpdateMsg(t('caseList.updateError'));
+              } finally {
+                setCheckingUpdate(false);
+              }
+            }}
+            disabled={checkingUpdate}
+            style={{
+              padding: '5px 12px',
+              fontSize: 12.5,
+              background: '#ffffff',
+              border: '1px solid #d2d2d7',
+              borderRadius: 6,
+              cursor: checkingUpdate ? 'default' : 'pointer',
+              fontFamily: 'inherit',
+              color: '#1d1d1f',
+              opacity: checkingUpdate ? 0.6 : 1,
+            }}
+          >
+            🔄{' '}
+            {checkingUpdate
+              ? t('caseList.updateChecking')
+              : t('caseList.checkUpdate')}
+          </button>
+          {updateMsg && (
+            <span style={{ fontSize: 12, color: '#6e6e73' }}>{updateMsg}</span>
+          )}
         </div>
 
         {/* Section: Open Source */}

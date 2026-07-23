@@ -5,7 +5,6 @@ import { useT } from '../../i18n';
 import { ExportDialog, ImportDialog } from './ExportImportDialog';
 import ShareDialog from './ShareDialog';
 import { usePwaInstall } from '../../services/pwaInstall';
-import { checkForUpdate } from '../../services/pwaUpdate';
 import {
   selectRootFolder,
   getRootFolderName,
@@ -25,6 +24,7 @@ import EyeComfortButton from '../EyeComfort/EyeComfortButton';
 
 // 符號圖例 lazy 拆包(#127)— 開圖例時才載入(symbolData 本身被 Tab1/Tab2 引用,仍在主包)
 const SymbolGallery = lazy(() => import('../Gallery/SymbolGallery'));
+const KinshipDialog = lazy(() => import('../Kinship/KinshipDialog'));
 
 export default function CaseList() {
   const t = useT();
@@ -46,12 +46,10 @@ export default function CaseList() {
   const [showShare, setShowShare] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [kinshipOpen, setKinshipOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   // 個案已刪除、但資料夾備份檔因權限休眠刪不掉 → 提示手動清(#125)
   const [folderDeleteWarn, setFolderDeleteWarn] = useState(false);
-  // 檢查更新按鈕狀態(A3 #132)— 取代舊的「賭 1.5 秒」邏輯
-  const [checkingUpdate, setCheckingUpdate] = useState(false);
-  const [updateMsg, setUpdateMsg] = useState<string | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
   // 第一次開啟才彈隱私說明(localStorage flag 控制只彈一次)
   const [privacyWelcomeOpen, setPrivacyWelcomeOpen] = useState(
@@ -170,105 +168,19 @@ export default function CaseList() {
                   }}
                 />
                 <HomeMenuItem
+                  icon="👨‍👩‍👧"
+                  label={t('kinship.menuLabel')}
+                  onClick={() => {
+                    setKinshipOpen(true);
+                    setMenuOpen(false);
+                  }}
+                />
+                <HomeMenuItem
                   icon="📕"
                   label={t('menu.tutorialBasic')}
                   onClick={() => {
                     setShowTutorial(true);
                     setMenuOpen(false);
-                  }}
-                />
-                <HomeMenuItem
-                  icon="📤"
-                  label={t('caseList.share')}
-                  onClick={() => {
-                    setShowShare(true);
-                    setMenuOpen(false);
-                  }}
-                />
-                {/* 檢查更新 — 不關選單,就地顯示結果 */}
-                <button
-                  onClick={async () => {
-                    setUpdateMsg(null);
-                    setCheckingUpdate(true);
-                    try {
-                      const r = await checkForUpdate();
-                      if (r === 'update-found')
-                        setUpdateMsg(t('caseList.updateFound'));
-                      else if (r === 'latest')
-                        setUpdateMsg(t('caseList.updateLatest'));
-                      else if (r === 'error')
-                        setUpdateMsg(t('caseList.updateError'));
-                      else {
-                        // 'unsupported':此瀏覽器無 SW,重整是合理 fallback
-                        location.reload();
-                        return;
-                      }
-                    } catch (err) {
-                      console.error('Check update failed:', err);
-                      setUpdateMsg(t('caseList.updateError'));
-                      return;
-                    } finally {
-                      setCheckingUpdate(false);
-                    }
-                  }}
-                  disabled={checkingUpdate}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    width: '100%',
-                    padding: '8px 10px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: 4,
-                    cursor: checkingUpdate ? 'default' : 'pointer',
-                    color: '#1d1d1f',
-                    fontSize: 13,
-                    fontFamily: 'inherit',
-                    textAlign: 'left',
-                    gap: 8,
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = '#f0f0f5')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = 'transparent')
-                  }
-                >
-                  <span style={{ width: 18, textAlign: 'center' }}>🔄</span>
-                  <span style={{ flex: 1 }}>
-                    {checkingUpdate
-                      ? t('caseList.updateChecking')
-                      : (updateMsg ?? t('caseList.checkUpdate'))}
-                  </span>
-                </button>
-                {fsaSupported && (
-                  <HomeMenuItem
-                    icon="📁"
-                    label={
-                      folderName
-                        ? `${t('caseList.folderLabel')}: ${folderName} · ${t('caseList.folderSwitch')}`
-                        : t('menu.folderSetup')
-                    }
-                    onClick={async () => {
-                      setMenuOpen(false);
-                      const h = await selectRootFolder();
-                      if (h) {
-                        setFolderName(h.name);
-                        try {
-                          const allCases = await db.cases.toArray();
-                          for (const g of allCases) await writeCaseJson(g);
-                        } catch (err) {
-                          console.error('sync to folder failed:', err);
-                        }
-                      }
-                    }}
-                  />
-                )}
-                <HomeMenuItem
-                  icon="🌐"
-                  label={`${t('menu.language')}: ${language === 'zh' ? '中文' : 'English'}`}
-                  onClick={() => {
-                    setLanguage(language === 'zh' ? 'en' : 'zh');
                   }}
                 />
                 <HomeMenuItem
@@ -279,35 +191,6 @@ export default function CaseList() {
                     setMenuOpen(false);
                   }}
                 />
-                <HomeMenuItem
-                  icon="✉️"
-                  label={t('menu.feedback')}
-                  onClick={() => {
-                    setFeedbackOpen(true);
-                    setMenuOpen(false);
-                  }}
-                />
-                {/* 安裝 App — 一律顯示(除非已安裝)。
-                    非原生可裝的瀏覽器(桌機/未觸發 beforeinstallprompt)給手動指引,
-                    避免入口在某些環境「消失」。 */}
-                {!isStandalone && (
-                  <HomeMenuItem
-                    icon="📲"
-                    label={t('caseList.install')}
-                    onClick={async () => {
-                      setMenuOpen(false);
-                      if (canInstall) {
-                        const r = await triggerInstall();
-                        if (r !== 'unavailable') return;
-                      }
-                      alert(
-                        isIOS
-                          ? '📱 iPhone / iPad 安裝步驟:\n\n1. 按 Safari 下方分享 ↑\n2. 選「加入主畫面」\n3. 之後從主畫面點 icon 開啟,離線可用'
-                          : '📲 安裝成 App:\n\n• 電腦 Chrome / Edge:點網址列右邊的「安裝」圖示 ⊕\n• Android Chrome:右上選單 ⋮ → 安裝應用程式\n• Safari(電腦):檔案 → 加入 Dock\n\n安裝後可離線使用、開啟更快。',
-                      );
-                    }}
-                  />
-                )}
                 <div
                   style={{ height: 1, background: '#e5e4e7', margin: '4px 4px' }}
                 />
@@ -363,21 +246,6 @@ export default function CaseList() {
                   <span style={{ width: 18, textAlign: 'center' }}>🗑️</span>
                   <span style={{ flex: 1 }}>{t('caseList.fullReset')}</span>
                 </button>
-                <div
-                  style={{ height: 1, background: '#e5e4e7', margin: '4px 4px' }}
-                />
-                <div
-                  style={{
-                    padding: '8px 10px',
-                    fontSize: 10,
-                    color: '#86868b',
-                    lineHeight: 1.6,
-                    maxWidth: 220,
-                    whiteSpace: 'normal',
-                  }}
-                >
-                  {t('menu.copyrightNotice')}
-                </div>
               </div>
             )}
           </div>
@@ -417,10 +285,83 @@ export default function CaseList() {
               🔒 {t('caseList.subtitle')}
             </span>
           </div>
-          {/* 護眼 + 支持:緊鄰漢堡(order:1),與編輯器頂列一致 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, order: 1 }}>
+          {/* 護眼 + 支持 + 常用工具:緊鄰漢堡(order:1),與編輯器頂列一致
+              v1.2.2:原本埋在漢堡選單裡的 6 個項目改成圖示鈕,滑鼠靠近顯示文字。
+              留在選單裡的是「開內容」類(圖例/族譜/教學/關於)與危險操作(全部重置)。 */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              order: 1,
+              flexWrap: 'wrap',
+            }}
+          >
             <EyeComfortButton size="lg" />
             <SupportButton size="lg" />
+            {fsaSupported && (
+              <TopBarIconButton
+                icon="📁"
+                label={
+                  folderName
+                    ? `${t('caseList.folderLabel')}: ${folderName} · ${t('caseList.folderSwitch')}`
+                    : t('menu.folderSetup')
+                }
+                onClick={async () => {
+                  const h = await selectRootFolder();
+                  if (h) {
+                    setFolderName(h.name);
+                    try {
+                      const allCases = await db.cases.toArray();
+                      for (const g of allCases) await writeCaseJson(g);
+                    } catch (err) {
+                      console.error('sync to folder failed:', err);
+                    }
+                  }
+                }}
+              />
+            )}
+            <TopBarIconButton
+              icon="🌐"
+              label={`${t('menu.language')}: ${language === 'zh' ? '中文' : 'English'}`}
+              onClick={() => setLanguage(language === 'zh' ? 'en' : 'zh')}
+            />
+            <TopBarIconButton
+              icon="✉️"
+              label={t('menu.feedback')}
+              onClick={() => setFeedbackOpen(true)}
+            />
+            {!isStandalone && (
+              <TopBarIconButton
+                icon="📲"
+                label={t('caseList.install')}
+                onClick={async () => {
+                  // 兩段式:先問「要不要裝」(可以按稍後),同意了才動作。
+                  // 舊版直接彈一個只有「確定」的 alert,對不熟軟體的使用者像是被強迫。
+                  const ok = await showConfirm(t('install.confirm'), {
+                    yes: t('install.yes'),
+                    no: t('install.later'),
+                    tone: 'normal',
+                  });
+                  if (!ok) return;
+                  if (canInstall) {
+                    const r = await triggerInstall();
+                    if (r !== 'unavailable') return;
+                  }
+                  // 瀏覽器不支援原生安裝流程 → 給手動步驟
+                  await showConfirm(
+                    isIOS ? t('install.stepsIOS') : t('install.stepsDesktop'),
+                    { yes: t('install.gotIt'), no: t('common.close'), tone: 'normal' },
+                  );
+                }}
+              />
+            )}
+            {/* 分享排最右 — 使用頻率低於資料夾/語言/回報 */}
+            <TopBarIconButton
+              icon="📤"
+              label={t('caseList.share')}
+              onClick={() => setShowShare(true)}
+            />
           </div>
         </div>
 
@@ -732,6 +673,11 @@ export default function CaseList() {
         />
       )}
       {showShare && <ShareDialog onClose={() => setShowShare(false)} />}
+      {kinshipOpen && (
+        <Suspense fallback={null}>
+          <KinshipDialog onClose={() => setKinshipOpen(false)} />
+        </Suspense>
+      )}
       {galleryOpen && (
         <Suspense fallback={null}>
           <SymbolGallery onClose={() => setGalleryOpen(false)} />
@@ -796,6 +742,54 @@ export default function CaseList() {
 }
 
 /* ==================== 首頁主選單項目 ==================== */
+/**
+ * 首頁頂列的圖示鈕 —— 尺寸與 EyeComfortButton size="lg" 對齊(40×36 / 圓角 9 / 0.5px 邊)。
+ * 文字只走原生 title tooltip:滑鼠靠近才出現,不佔版面。
+ * aria-label 給螢幕閱讀器與鍵盤使用者,不能只靠 emoji。
+ */
+function TopBarIconButton({
+  icon,
+  label,
+  onClick,
+  disabled,
+}: {
+  icon: string;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={label}
+      aria-label={label}
+      style={{
+        width: 40,
+        height: 36,
+        padding: 0,
+        background: '#ffffff',
+        border: '0.5px solid #d2d2d7',
+        borderRadius: 9,
+        cursor: disabled ? 'default' : 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'inherit',
+        fontSize: 17,
+        lineHeight: 1,
+        opacity: disabled ? 0.5 : 1,
+      }}
+      onMouseEnter={(e) => {
+        if (!disabled) e.currentTarget.style.background = '#f5f5f7';
+      }}
+      onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+    >
+      {icon}
+    </button>
+  );
+}
+
 function HomeMenuItem({
   icon,
   label,

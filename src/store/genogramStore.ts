@@ -429,6 +429,13 @@ type ConfirmState = {
   message: string;
   onYes: () => void;
   onNo: () => void;
+  /** 自訂按鈕文字 —— 不給就用預設的「是 / 否」。
+   *  像「安裝為 App」這種非破壞性詢問,寫「安裝 / 稍後」比「是 / 否」友善得多。 */
+  yesLabel?: string;
+  noLabel?: string;
+  /** 語氣。預設 'danger'(刪除類):確定鈕紅色、取消鈕搶焦點、附防誤按快捷提示。
+   *  'normal'(良性詢問,如安裝 App):確定鈕藍色、無快捷提示 —— 紅色會嚇到使用者。 */
+  tone?: 'danger' | 'normal';
 } | null;
 
 export type InspectorTarget =
@@ -602,7 +609,10 @@ type GenogramStore = {
   history: HistoryState;
 
   confirmState: ConfirmState;
-  showConfirm: (message: string) => Promise<boolean>;
+  showConfirm: (
+    message: string,
+    opts?: { yes?: string; no?: string; tone?: 'danger' | 'normal' },
+  ) => Promise<boolean>;
 
   setCurrentCase: (g: Genogram | null) => void;
 
@@ -3296,11 +3306,17 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   },
 
   confirmState: null,
-  showConfirm: (message: string) =>
+  showConfirm: (
+    message: string,
+    opts?: { yes?: string; no?: string; tone?: 'danger' | 'normal' },
+  ) =>
     new Promise<boolean>((resolve) => {
       set({
         confirmState: {
           message,
+          yesLabel: opts?.yes,
+          noLabel: opts?.no,
+          tone: opts?.tone,
           onYes: () => {
             resolve(true);
             set({ confirmState: null });

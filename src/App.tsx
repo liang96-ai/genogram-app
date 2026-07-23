@@ -20,10 +20,7 @@ import {
   SupportButton,
 } from './components/About/SupportDialog';
 import { useT } from './i18n';
-import {
-  getScale,
-  getScalesByCategory,
-} from './components/Scales/registry';
+import { getScale } from './components/Scales/registry';
 import { db, getDeletedCaseIds } from './services/database';
 import { isValidGenogram } from './services/exportImport';
 import type { Genogram } from './types/genogram';
@@ -47,6 +44,10 @@ const SymbolGallery = lazy(() => import('./components/Gallery/SymbolGallery'));
 const QuickBuildDialog = lazy(
   () => import('./components/QuickBuild/QuickBuildDialog'),
 );
+const ScalePickerDialog = lazy(
+  () => import('./components/Scales/ScalePickerDialog'),
+);
+const KinshipDialog = lazy(() => import('./components/Kinship/KinshipDialog'));
 
 // 啟動時就註冊 beforeinstallprompt 監聽(全域,只執行一次)
 setupPwaInstallListener();
@@ -658,9 +659,7 @@ function Toolbar({
   const redo = useGenogramStore((s) => s.redo);
   const canUndo = useGenogramStore((s) => s.history.past.length > 0);
   const canRedo = useGenogramStore((s) => s.history.future.length > 0);
-  const setShowTutorial = useGenogramStore((s) => s.setShowTutorial);
   const language = useGenogramStore((s) => s.language);
-  const setLanguage = useGenogramStore((s) => s.setLanguage);
   const t = useT();
   const [open, setOpen] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -671,6 +670,8 @@ function Toolbar({
   const [activeScaleId, setActiveScaleId] = useState<string | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [quickBuildOpen, setQuickBuildOpen] = useState(false);
+  const [kinshipOpen, setKinshipOpen] = useState(false);
+  const [scalePickerOpen, setScalePickerOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -836,16 +837,6 @@ function Toolbar({
               setOpen(false);
             }}
           />
-          <MenuDivider />
-          <MenuItem
-            icon="📖"
-            label={t('menu.symbolGallery')}
-            onClick={() => {
-              setGalleryOpen(true);
-              setOpen(false);
-            }}
-          />
-          <MenuDivider />
           <MenuItem
             icon="⚡"
             label={t('quickBuild.menuLabel')}
@@ -854,8 +845,6 @@ function Toolbar({
               setOpen(false);
             }}
           />
-          <MenuDivider />
-          <MenuItem icon="💾" label="快照(記一個版本點)" disabled subtitle="即將推出" />
           <MenuItem
             icon="↑"
             label={
@@ -881,60 +870,36 @@ function Toolbar({
               理由:個案內按匯入語意混亂(匯入別份檔案不會插進此個案,只會新增到 case list)
               首頁 CaseList 已有完整匯入入口 */}
           <MenuDivider />
-          <MenuLabel>{t('menu.assessmentTools')}</MenuLabel>
-          {getScalesByCategory().map((group) => (
-            <ScaleCategoryItem
-              key={group.category}
-              icon={group.icon}
-              label={group.label}
-              scales={group.scales.map((s) => ({ id: s.id, name: s.name }))}
-              onSelectScale={(id) => {
-                setActiveScaleId(id);
-                setOpen(false);
-              }}
-            />
-          ))}
-          <MenuDivider />
-          {/* v1.1 拿掉「設定資料夾」— 改成只在首頁漢堡顯示
-              理由:個案內漢堡聚焦在「當前個案操作」,設定資料夾是全 app 級設定
-              首頁 CaseList 已有此入口 */}
+          {/* 參考工具:查東西用的,不改個案內容 */}
           <MenuItem
-            icon="📕"
-            label={t('menu.tutorialBasic')}
+            icon="📖"
+            label={t('menu.symbolGallery')}
             onClick={() => {
-              setShowTutorial(true);
+              setGalleryOpen(true);
               setOpen(false);
             }}
           />
           <MenuItem
-            icon="🌐"
-            label={`${t('menu.language')}: ${language === 'zh' ? '中文' : 'English'}`}
+            icon="👨‍👩‍👧"
+            label={t('kinship.menuLabel')}
             onClick={() => {
-              setLanguage(language === 'zh' ? 'en' : 'zh');
-            }}
-          />
-          {/* 關於:原本是工具列上的 ℹ️ 鈕,改收進選單(眼睛鈕取代其位置) */}
-          <MenuItem
-            icon="ℹ️"
-            label={t('about.title')}
-            onClick={() => {
-              setAboutOpen(true);
+              setKinshipOpen(true);
               setOpen(false);
             }}
           />
           <MenuDivider />
-          <div
-            style={{
-              padding: '8px 10px',
-              fontSize: 10,
-              color: '#86868b',
-              lineHeight: 1.5,
-              maxWidth: 240,
-              whiteSpace: 'normal',
+          {/* v1.2.2:原本 7 個分類各自展開子選單,把選單撐得又長又難掃視 → 收成單一彈窗
+              (量表版權聲明也一併搬進該彈窗底部) */}
+          <MenuItem
+            icon="📋"
+            label={t('menu.assessmentTools')}
+            onClick={() => {
+              setScalePickerOpen(true);
+              setOpen(false);
             }}
-          >
-            {t('menu.copyrightNotice')}
-          </div>
+          />
+          {/* v1.2.2 拿掉「看基礎教學 / 語言 / 關於」— 三者都是全 app 級設定,首頁漢堡已有;
+              個案內漢堡聚焦在「當前個案操作」。「💾 快照」佔位鈕也一併移除(功能未實作)。 */}
           <MenuDivider />
           <MenuInfo>最後修改:{lastModified}</MenuInfo>
         </div>
@@ -948,6 +913,22 @@ function Toolbar({
       {quickBuildOpen && (
         <Suspense fallback={null}>
           <QuickBuildDialog onClose={() => setQuickBuildOpen(false)} />
+        </Suspense>
+      )}
+      {kinshipOpen && (
+        <Suspense fallback={null}>
+          <KinshipDialog onClose={() => setKinshipOpen(false)} />
+        </Suspense>
+      )}
+      {scalePickerOpen && (
+        <Suspense fallback={null}>
+          <ScalePickerDialog
+            onPick={(id) => {
+              setScalePickerOpen(false);
+              setActiveScaleId(id);
+            }}
+            onClose={() => setScalePickerOpen(false)}
+          />
         </Suspense>
       )}
       {exportOpen && (
@@ -1070,125 +1051,7 @@ function MenuInfo({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ScaleCategoryItem({
-  // v1.1: icon prop 保留(call site 還在傳),但內部不再渲染 — 評估工具區改純文字
-  label,
-  scales,
-  onSelectScale,
-}: {
-  icon?: string;
-  label: string;
-  scales: { id: string; name: string }[];
-  onSelectScale: (id: string) => void;
-}) {
-  const [hover, setHover] = useState(false);
-  const closeTimer = useRef<number | null>(null);
 
-  const open = () => {
-    if (closeTimer.current) {
-      window.clearTimeout(closeTimer.current);
-      closeTimer.current = null;
-    }
-    setHover(true);
-  };
-  const closeWithDelay = () => {
-    if (closeTimer.current) window.clearTimeout(closeTimer.current);
-    closeTimer.current = window.setTimeout(() => setHover(false), 120);
-  };
-
-  return (
-    <div
-      style={{ position: 'relative' }}
-      onMouseEnter={open}
-      onMouseLeave={closeWithDelay}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          width: '100%',
-          padding: '8px 10px',
-          background: hover ? '#f5f5f7' : 'transparent',
-          fontSize: 13,
-          color: '#1d1d1f',
-          cursor: 'default',
-          fontFamily: 'inherit',
-          textAlign: 'left',
-          userSelect: 'none',
-        }}
-      >
-        {/* v1.1 拿掉量表分類 icon — 評估工具區塊改純文字 */}
-        <span style={{ flex: 1 }}>{label}</span>
-        <span style={{ color: '#86868b', fontSize: 11 }}>▸</span>
-      </div>
-      {hover && (
-        <div
-          onMouseEnter={open}
-          onMouseLeave={closeWithDelay}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: '100%',
-            marginLeft: 4,
-            background: '#fff',
-            border: '1px solid #d2d2d7',
-            borderRadius: 8,
-            boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
-            padding: 4,
-            minWidth: 200,
-            zIndex: 10,
-          }}
-        >
-          {scales.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => onSelectScale(s.id)}
-              style={{
-                display: 'block',
-                width: '100%',
-                padding: '8px 10px',
-                background: 'transparent',
-                border: 'none',
-                fontSize: 12,
-                color: '#1d1d1f',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                textAlign: 'left',
-                borderRadius: 4,
-              }}
-              onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLElement).style.background = '#f5f5f7')
-              }
-              onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLElement).style.background =
-                  'transparent')
-              }
-            >
-              {s.name}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MenuLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        padding: '4px 10px 2px',
-        fontSize: 10,
-        color: '#86868b',
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
 
 const alertBtnStyle: React.CSSProperties = {
   padding: '4px 10px',
