@@ -18,6 +18,7 @@ import type {
 } from '../../types/genogram';
 import PersonShape from './PersonShape';
 import Line from './Line';
+import { UNIT_HALF_H, UNIT_HALF_W } from './unitBox';
 import SmallArrows from './SmallArrows';
 import MarriageGroup from './MarriageGroup';
 import { type ChildBundle, computeForkGeometry } from './forkGeometry';
@@ -141,7 +142,7 @@ function personHitsLine(
   const from = persons.find((p) => p.id === line.fromPersonId);
   const to = persons.find((p) => p.id === line.toPersonId);
   if (!from || !to) return false;
-  const halfSize = person.shape === 'institution' ? 90 : SHAPE_HALF;
+  const halfSize = person.shape === 'institution' ? UNIT_HALF_W : SHAPE_HALF;
   return (
     distToSegment(
       person.position.x,
@@ -606,19 +607,19 @@ export default function Canvas() {
         }
       }
     }
-    // 人 ↔ 單位(AABB 重疊:人 56x56,單位 180x40)
+    // 人 ↔ 單位(AABB 重疊;單位尺寸來自 unitBox.ts 單一來源)
     const ps = currentCase.persons;
     for (const u of us) {
       if (!u.isActive) continue;
-      const ux1 = u.position.x - 90;
-      const ux2 = u.position.x + 90;
-      const uy1 = u.position.y - 20;
-      const uy2 = u.position.y + 20;
+      const ux1 = u.position.x - UNIT_HALF_W;
+      const ux2 = u.position.x + UNIT_HALF_W;
+      const uy1 = u.position.y - UNIT_HALF_H;
+      const uy2 = u.position.y + UNIT_HALF_H;
       for (const p of ps) {
         const ph =
-          p.shape === 'institution' ? 90 : SHAPE_HALF;
+          p.shape === 'institution' ? UNIT_HALF_W : SHAPE_HALF;
         const phh =
-          p.shape === 'institution' ? 20 : SHAPE_HALF;
+          p.shape === 'institution' ? UNIT_HALF_H : SHAPE_HALF;
         const px1 = p.position.x - ph;
         const px2 = p.position.x + ph;
         const py1 = p.position.y - phh;
@@ -746,8 +747,8 @@ export default function Canvas() {
     const unit = units.find((u) => {
       if (u.id === sourceUnitId) return false;
       return (
-        Math.abs(u.position.x - x) <= 90 &&
-        Math.abs(u.position.y - y) <= 20
+        Math.abs(u.position.x - x) <= UNIT_HALF_W &&
+        Math.abs(u.position.y - y) <= UNIT_HALF_H
       );
     });
     if (unit) return { type: 'unit', id: unit.id };
@@ -761,7 +762,7 @@ export default function Canvas() {
     for (const p of currentCase.persons) {
       const dx = Math.abs(p.position.x - x);
       const dy = Math.abs(p.position.y - y);
-      const limit = p.shape === 'institution' ? 90 : SHAPE_HALF;
+      const limit = p.shape === 'institution' ? UNIT_HALF_W : SHAPE_HALF;
       if (dx <= limit && dy <= SHAPE_HALF) return p;
     }
     return null;
@@ -1338,14 +1339,14 @@ export default function Canvas() {
           })
           .map((l) => l.id);
 
-        // 網絡單位:單位盒(180x40) 跟 rect 有重疊就算被框到
+        // 網絡單位:單位盒跟 rect 有重疊就算被框到(尺寸見 unitBox.ts)
         const unitIds = (currentCase.networkUnits ?? [])
           .filter((u) => {
             if (!u.isActive) return false;
-            const ux1 = u.position.x - 90;
-            const ux2 = u.position.x + 90;
-            const uy1 = u.position.y - 20;
-            const uy2 = u.position.y + 20;
+            const ux1 = u.position.x - UNIT_HALF_W;
+            const ux2 = u.position.x + UNIT_HALF_W;
+            const uy1 = u.position.y - UNIT_HALF_H;
+            const uy2 = u.position.y + UNIT_HALF_H;
             return (
               rect.x1 < ux2 &&
               rect.x2 > ux1 &&
@@ -2074,7 +2075,7 @@ export default function Canvas() {
             ? child.position.y - SHAPE_HALF * 0.7
             : child.position.y - SHAPE_HALF;
         // 水平偏移:頂邊上靠父母那側(半寬 70% 處)
-        const halfW = child.shape === 'institution' ? 90 : SHAPE_HALF;
+        const halfW = child.shape === 'institution' ? UNIT_HALF_W : SHAPE_HALF;
         const hOffset = halfW * 0.6;
         const startX = parentOnLeft ? childX - hOffset : childX + hOffset;
         const startY = topY;

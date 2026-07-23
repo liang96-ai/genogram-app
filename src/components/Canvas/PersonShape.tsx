@@ -11,6 +11,13 @@ import {
   type PrivacyField,
 } from '../../store/genogramStore';
 import { useT } from '../../i18n';
+import {
+  layoutUnitLabel,
+  UNIT_H,
+  UNIT_HALF_H,
+  UNIT_HALF_W,
+  UNIT_W,
+} from './unitBox';
 import DeleteButton from './DeleteButton';
 
 // 懸浮提示文字 — 透過 i18n key 對照表(在 component 內 t())
@@ -58,11 +65,12 @@ const PROBAND_COLOR = '#ff3b30';
 // 病症填實色(McGoldrick 用填實表嚴重度,用深灰 #666 讓中央字可辨)
 const PATTERN_FILL = '#777777';
 
-// 機構長條:固定 3 格寬(180px),文字超出自動縮字/截斷
-const INST_WIDTH = 180;
-const INST_HALF = INST_WIDTH / 2;
-const INST_HEIGHT = SIZE * 0.7; // ~39px
-const INST_HALF_H = INST_HEIGHT / 2;
+// 機構長條:尺寸與文字排版都來自 unitBox.ts(與網絡單位同一個盒子)
+// 機構形狀與網絡單位是同一個長條盒 —— 共用單一來源,否則連線接邊會對不上
+const INST_WIDTH = UNIT_W;
+const INST_HALF = UNIT_HALF_W;
+const INST_HEIGHT = UNIT_H;
+const INST_HALF_H = UNIT_HALF_H;
 
 // CJK 與全形標點 → 全寬(≈fontSize);ASCII 半形 → 半寬(≈fontSize*0.55)
 // 依字型估寬比純字元數準很多 — 例如「手機: 0912-345678」實寬約只有
@@ -90,19 +98,8 @@ function truncateToWidth(
   return '…';
 }
 
-// 根據名字長度決定字體大小(機構 rect 內文字)
-function fitInstText(name: string): { text: string; fontSize: number } {
-  const n = name || '(未命名)';
-  const padding = 10; // 左右留白
-  const inner = INST_WIDTH - padding * 2; // 可用寬度
-  // 粗估 CJK 寬 ≈ fontSize;英數 ≈ fontSize*0.55
-  // 保守用 fontSize 當字寬(CJK 場景)
-  if (n.length * 13 <= inner) return { text: n, fontSize: 13 };
-  if (n.length * 11 <= inner) return { text: n, fontSize: 11 };
-  if (n.length * 10 <= inner) return { text: n, fontSize: 10 };
-  const maxChars = Math.floor(inner / 10) - 1;
-  return { text: n.slice(0, Math.max(1, maxChars)) + '…', fontSize: 10 };
-}
+// 機構框內文字 —— 與網絡單位共用 layoutUnitLabel(unitBox.ts),
+// 所以兩者的字級階梯、兩行斷行、中英寬度計算完全一致,不會再各自漂移。
 
 // 西元:'24(撇號 + 2 位)— 節省畫布空間
 // 民國:民115 — 加「民」字前綴避免跟西元混淆
@@ -513,7 +510,7 @@ export default function PersonShape({
   // 機構專屬:名字放框內;備注(person.notes)顯示在框下方
   const isInstitution = actualShape === 'institution';
   const instText = isInstitution
-    ? fitInstText(person.basicInfo?.name ?? '')
+    ? layoutUnitLabel(person.basicInfo?.name ?? '', t('unit.unnamed'))
     : null;
 
   // 建立懸浮提示(hover tooltip)— 依目前語言渲染
@@ -925,14 +922,23 @@ export default function PersonShape({
       {isInstitution && instText && (
         <text
           x={0}
-          y={5}
+          /* 一行垂直置中;兩行整組上抬半行,讓兩行合起來仍置中 */
+          y={
+            instText.lines.length > 1
+              ? instText.fontSize * 0.35 - instText.fontSize * 0.62
+              : instText.fontSize * 0.35
+          }
           textAnchor="middle"
           fontSize={instText.fontSize}
           fontWeight={500}
           fill="#1d1d1f"
           style={{ userSelect: 'none', pointerEvents: 'none' }}
         >
-          {instText.text}
+          {instText.lines.map((line, i) => (
+            <tspan key={i} x={0} dy={i === 0 ? 0 : instText.fontSize * 1.25}>
+              {line || ' '}
+            </tspan>
+          ))}
         </text>
       )}
       {isInstitution && (() => {

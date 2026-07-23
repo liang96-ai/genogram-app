@@ -44,8 +44,8 @@ const RELATION_GEOMETRY_TYPES = new Set<LineSubType>([
 // 跟 PersonShape.tsx 同步
 const SHAPE_HALF = 28;
 const DIAMOND_HALF = 34 / Math.SQRT2; // ≈ 24.04(對齊 PersonShape 縮小後的菱形 34）
-const INST_HALF_W = 90;
-const INST_HALF_H = 19.6;
+// 機構長條盒的接邊裁切 —— 尺寸來自單一來源,盒子放大時連線端點會自動跟著對
+import { UNIT_HALF_H as INST_HALF_H, UNIT_HALF_W as INST_HALF_W } from './unitBox';
 const PET_HALF = 16.8;
 
 function getActualShape(p: Person): BasicShape {

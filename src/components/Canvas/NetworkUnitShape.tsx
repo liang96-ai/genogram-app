@@ -10,29 +10,19 @@ import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import DeleteButton from './DeleteButton';
 import Line from './Line';
+import {
+  layoutUnitLabel,
+  UNIT_H,
+  UNIT_HALF_H,
+  UNIT_HALF_W,
+  UNIT_W,
+} from './unitBox';
 
 /**
  * 畫布上的網絡單位(長條形 + 頂部 ▲ 按鈕 + 使用者拉的 connectors)
  */
 
-const UNIT_W = 180;
-const UNIT_H = 40;
-const UNIT_HALF_W = UNIT_W / 2;
-const UNIT_HALF_H = UNIT_H / 2;
 const TRI_SIZE = 11;
-
-function fitText(
-  name: string,
-  unnamedLabel: string,
-  maxWidth = UNIT_W - 20,
-): { text: string; fontSize: number } {
-  const n = name || unnamedLabel;
-  if (n.length * 13 <= maxWidth) return { text: n, fontSize: 13 };
-  if (n.length * 11 <= maxWidth) return { text: n, fontSize: 11 };
-  if (n.length * 10 <= maxWidth) return { text: n, fontSize: 10 };
-  const maxChars = Math.floor(maxWidth / 10) - 1;
-  return { text: n.slice(0, Math.max(1, maxChars)) + '…', fontSize: 10 };
-}
 
 // 在線段 ab 上找離 source 最近的點(投影 + clamp 到端點)
 function closestPointOnSegment(
@@ -152,7 +142,7 @@ export default function NetworkUnitShape({
   const { x, y } = unit.position;
   const stroke = selected ? '#007aff' : '#1d1d1f';
   const strokeWidth = selected ? 2.5 : 1.5;
-  const instText = fitText(unit.name, t('unit.unnamed'));
+  const instText = layoutUnitLabel(unit.name, t('unit.unnamed'));
   const tooltip =
     unit.name +
     (unit.note ? ' — ' + unit.note : '') +
@@ -474,9 +464,9 @@ export default function NetworkUnitShape({
         {renaming ? (
           <foreignObject
             x={-UNIT_HALF_W + 6}
-            y={-12}
+            y={-20}
             width={UNIT_W - 12}
-            height={24}
+            height={40}
           >
             <input
               type="text"
@@ -504,10 +494,11 @@ export default function NetworkUnitShape({
               onPointerDown={(e) => e.stopPropagation()}
               style={{
                 width: '100%',
-                padding: '2px 6px',
-                fontSize: 13,
+                height: '100%',
+                padding: '2px 8px',
+                fontSize: 15,
                 border: '1px solid #007aff',
-                borderRadius: 4,
+                borderRadius: 6,
                 fontFamily: 'inherit',
                 textAlign: 'center',
                 boxSizing: 'border-box',
@@ -517,14 +508,23 @@ export default function NetworkUnitShape({
         ) : (
           <text
             x={0}
-            y={5}
+            /* 一行時垂直置中;兩行時整組往上抬半行,讓兩行合起來仍置中 */
+            y={
+              instText.lines.length > 1
+                ? instText.fontSize * 0.35 - instText.fontSize * 0.62
+                : instText.fontSize * 0.35
+            }
             textAnchor="middle"
             fontSize={instText.fontSize}
             fontWeight={500}
             fill="#1d1d1f"
             style={{ userSelect: 'none', pointerEvents: 'none' }}
           >
-            {instText.text}
+            {instText.lines.map((line, i) => (
+              <tspan key={i} x={0} dy={i === 0 ? 0 : instText.fontSize * 1.25}>
+                {line || ' '}
+              </tspan>
+            ))}
           </text>
         )}
         {unit.note && (() => {
