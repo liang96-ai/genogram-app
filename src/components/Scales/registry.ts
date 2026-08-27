@@ -21,9 +21,10 @@ import { cmsRiskScale } from './cmsRiskScale';
 
 // 已從 registry 拿掉但保留檔案的(未來有更多大數據/官方授權後可加回):
 //   crisisChecklist  — 自製,非官方
-//   mmseScale        — PAR Inc 商業授權,題目不能放
-//   capaScale        — 各縣市政府版本不同
+//   capaScale        — 各縣市政府版本不同(衛福部來源,無版權問題)
 //   devScreeningScale — 變體多(0-3/3-6),需取國健署標準
+// ⚠️ mmseScale 已整檔刪除(2026-08-27):PAR Inc 商業授權,連結構都不該放公開 repo。
+//    要做失智篩檢請改 SPMSQ / MoCA-Tw 開放版,不要把 MMSE 加回來。
 
 // 內建量表清單 — 公開可用的有題目;商業/缺公定版的 disabled 顯示連結
 export const BUILT_IN_SCALES: Scale[] = [
