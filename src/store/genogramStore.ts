@@ -1421,6 +1421,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       ...pushHistory(c, history, newCase),
       selectedPersonIds: [newP.id],
       selectedLineIds: [],
+      selectedHouseholdId: null,
       inspectorTarget: { type: 'person', id: newP.id },
     });
   },
@@ -1524,6 +1525,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     set({
       ...pushHistory(c, history, newCase),
       selectedPersonIds: [],
+      selectedHouseholdId: null, // 刪光成員會連帶解散空圈 —— 殘留選取一併清
       inspectorTarget: nextInspector,
     });
   },
@@ -1601,6 +1603,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       ...pushHistory(c, history, newCase),
       pendingRelation: null,
       selectedLineIds: [line.id],
+      selectedHouseholdId: null,
       inspectorTarget: { type: 'line', id: line.id },
     });
   },
@@ -1631,6 +1634,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       ...pushHistory(c, history, newCase),
       pendingMember: null,
       selectedLineIds: [line.id],
+      selectedHouseholdId: null,
       inspectorTarget: { type: 'line', id: line.id },
     });
   },
@@ -1661,6 +1665,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     set({
       ...pushHistory(c, history, newCase),
       selectedLineIds: [line.id],
+      selectedHouseholdId: null,
       inspectorTarget: { type: 'line', id: line.id },
     });
   },
@@ -2889,6 +2894,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       ...pushHistory(c, history, newCase),
       selectedPersonIds: [],
       selectedUnitIds: [],
+      selectedHouseholdId: null, // 同上:空圈解散時清殘留選取
       inspectorTarget: nextInspector,
     });
   },
@@ -3169,6 +3175,11 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   removeHousehold: (id) => {
     const { currentCase: c, history } = get();
     if (!c) return;
+    // 不存在(如殘留選取指向已解散的圈)→ 只清選取,不推空 history(#126 同款)
+    if (!(c.households ?? []).some((h) => h.id === id)) {
+      set({ selectedHouseholdId: null });
+      return;
+    }
     const next = touch({
       ...c,
       households: (c.households ?? []).filter((h) => h.id !== id),
