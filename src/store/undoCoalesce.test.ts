@@ -82,6 +82,18 @@ describe('打字合併:一次編輯 = 一格', () => {
     expect(nameOf()).toBe(initial);
   });
 
+  it('訪談筆記內容同樣合併(逐鍵直寫的最後一處)', () => {
+    S().addInterviewNote({ date: '2026-08-27T10:00:00Z', content: '' });
+    const note = S().currentCase!.interviewNotes![0];
+    const before = past();
+    for (const v of ['今', '今天', '今天訪視']) {
+      S().updateInterviewNote(note.id, { content: v });
+      vi.advanceTimersByTime(100);
+    }
+    expect(past() - before).toBe(1);
+    expect(S().currentCase!.interviewNotes![0].content).toBe('今天訪視');
+  });
+
   it('單位名稱與線備註同樣合併', () => {
     S().addNetworkUnit('機構');
     const unit = S().currentCase!.networkUnits![0];

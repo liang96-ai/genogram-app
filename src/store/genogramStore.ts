@@ -3225,7 +3225,14 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
         n.id === id ? { ...n, ...patch } : n,
       ),
     });
+    // 筆記 textarea 逐鍵直寫 —— 跟人物/單位/線一樣走打字合併窗,
+    // 不然打一段筆記就把 20 格復原全沖光(批次三同病的最後一處)
+    if (shouldCoalesce('note', id)) {
+      set({ currentCase: next, history: { ...history, future: [] } });
+      return;
+    }
     set(pushHistory(c, history, next));
+    editWindowReopen('note', id);
   },
   removeInterviewNote: (id) => {
     const { currentCase: c, history } = get();
