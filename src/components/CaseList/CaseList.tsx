@@ -79,8 +79,10 @@ export default function CaseList() {
   // 點「新增個案」時若還沒設資料夾,先彈資料夾提醒;
   // 提醒關閉(選了或暫時不要)後再開 NewCaseDialog
   const [folderPromptForNew, setFolderPromptForNew] = useState(false);
-  // 備份提醒(2026-08-27 決議):單份資料使用者的安全網;每次啟動最多一次,關掉這個 session 不再出現
-  const [backupRemindDays, setBackupRemindDays] = useState<number | null>(null);
+  // 備份提醒(2026-08-27 決議):單份資料使用者的安全網;未按掉前每次回首頁都會出現,按掉後這個 session 不再出現
+  const [backupRemindDays, setBackupRemindDays] = useState<
+    number | 'never' | null
+  >(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 點外面關 menu
@@ -584,7 +586,9 @@ export default function CaseList() {
           >
             <span style={{ fontSize: 16 }}>⏰</span>
             <span style={{ flex: 1, minWidth: 200 }}>
-              {t('backupRemind.text', { days: backupRemindDays })}
+              {backupRemindDays === 'never'
+                ? t('backupRemind.textNever')
+                : t('backupRemind.text', { days: backupRemindDays ?? 0 })}
             </span>
             <button
               onClick={() => {

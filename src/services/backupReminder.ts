@@ -49,9 +49,11 @@ export async function recordFullBackup(): Promise<void> {
  *   1. 沒設定過備份資料夾(有資料夾 = write-through 持續備份,不打擾)
  *   2. 距上次全備份超過 14 天(從未備份過則看「有沒有任何編輯」)
  *   3. 上次備份之後有編輯(沒動過就沒有新風險)
- * @returns 天數(給提醒文案用);不需提醒回 null
+ * @returns 天數(給提醒文案用);從未備份過回 'never'(文案不能編造天數);不需提醒回 null
  */
-export async function daysSinceBackupIfShouldRemind(): Promise<number | null> {
+export async function daysSinceBackupIfShouldRemind(): Promise<
+  number | 'never' | null
+> {
   try {
     const folderConfigured = !!(await db.settings.get('rootDirHandle'));
     if (folderConfigured) return null;
@@ -59,7 +61,7 @@ export async function daysSinceBackupIfShouldRemind(): Promise<number | null> {
     if (meta.editsSince === 0) return null;
     if (!meta.lastBackupAt) {
       // 從未備份:也要等到「確實用了一陣子」才開口 —— 用編輯次數當代理
-      return meta.editsSince >= 20 ? REMIND_AFTER_DAYS : null;
+      return meta.editsSince >= 20 ? 'never' : null;
     }
     const days = Math.floor(
       (Date.now() - new Date(meta.lastBackupAt).getTime()) / 86400000,

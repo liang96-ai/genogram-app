@@ -322,6 +322,7 @@ export default function App() {
         target &&
         (target.tagName === 'INPUT' ||
           target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' || // 下拉選單的 ↑↓ 是選選項,不是移人物(2026-08-29 審查)
           target.isContentEditable)
       ) {
         return;

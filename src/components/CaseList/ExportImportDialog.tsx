@@ -152,6 +152,9 @@ export function ExportDialog({
         // backup 模式(可能是子集 + 設定)
         const bundle = await buildBackupExport();
         bundle.cases = cases;
+        // 「歸零備份計數」只給真正的全備份:子集+設定也走這條路,
+        // 但只備份部分個案不能封住備份提醒 14 天(2026-08-29 審查)
+        const isFullBackup = cases.length === caseList.length;
         // 優先寫到使用者選的資料夾的 _backups/ 子資料夾
         // 沒設資料夾時才退回下載到 Downloads
         const folderName = getRootFolderName();
@@ -165,7 +168,7 @@ export function ExportDialog({
                 path: `${folderName}/_backups/${filename}`,
               }),
             );
-            void recordFullBackup();
+            if (isFullBackup) void recordFullBackup();
             notifyExportSuccess();
             onClose();
             return;
@@ -173,7 +176,7 @@ export function ExportDialog({
           // 寫資料夾失敗 → fallback 下載
         }
         downloadJSON(bundle, dataFilename);
-        void recordFullBackup();
+        if (isFullBackup) void recordFullBackup();
       } else if (cases.length === 1) {
         downloadJSON(buildSingleExport(cases[0]));
       } else {

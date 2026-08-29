@@ -6,14 +6,14 @@
 //   本檔           = 把走路器接到既有 store actions;不寫任何座標/幾何
 //
 // 兩件硬要求(工作單 1.5-2 / 1.5-6):
-//   1. 整批只留 **一個** undo 快照 —— store MAX_HISTORY = 5,批次 6-8 個 action 會把
+//   1. 整批只留 **一個** undo 快照 —— store 有 MAX_HISTORY 上限,批次 6-8 個 action 會把
 //      「建立前」狀態擠掉。做法:外層記快照,批次跑完後直接覆寫 history,
 //      **不改動任何既有 action 的行為**。
 //   2. expand 系列全部回傳 void → 用 person-set / line-set diff 取新 id,
 //      不用「抓最新一條線」heuristic。
 // ========================================
 
-import { MAX_HISTORY, useGenogramStore } from '../store/genogramStore';
+import { breakEditWindow, MAX_HISTORY, useGenogramStore } from '../store/genogramStore';
 import type { BasicInfo, Person, TextInfo } from '../types/genogram';
 import {
   applyDivorceIntent,
@@ -265,6 +265,9 @@ export function executeQuickBuild(
       future: [],
     },
   });
+  // 批次中 update 系動作可能留下打字合併窗:不關窗的話,使用者在 900ms 內
+  // 對同一人接著打字會走 coalesce 不推格,undo 一步就整批+打字全退
+  breakEditWindow();
 
   return {
     ok: true,

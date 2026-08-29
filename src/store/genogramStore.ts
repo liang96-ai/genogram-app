@@ -641,7 +641,7 @@ type GenogramStore = {
   commitMoveHistory: (before: Genogram) => void;
   removePersons: (ids: string[]) => void;
   /** 框選同時含人物與網絡單位時的合併刪除 —— 一次 pushHistory,undo 一步全回來。
-   *  (分開呼叫 removePersons + removeNetworkUnit 會吃掉兩格復原,大刪一次就把 5 格上限沖光)*/
+   *  (分開呼叫 removePersons + removeNetworkUnit 會吃掉兩格復原,白耗 MAX_HISTORY 上限)*/
   removePersonsAndUnits: (personIds: string[], unitIds: string[]) => void;
   cycleShape: (id: string) => void;
 
@@ -909,8 +909,10 @@ function shouldCoalesce(kind: string, id: string): boolean {
   return hit;
 }
 
-/** 任何非文字編輯的歷史事件都要關窗 —— 之後的打字必須開新格 */
-function breakEditWindow(): void {
+/** 任何非文字編輯的歷史事件都要關窗 —— 之後的打字必須開新格。
+ *  export 給不走 pushHistory 的兩個直推 history 者(commitMoveHistory 由本檔自用、
+ *  quickBuildExecutor 批次收斂)與測試隔離用。 */
+export function breakEditWindow(): void {
   editWindow = null;
 }
 
@@ -1509,6 +1511,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const { currentCase: c, history } = get();
     if (!c || !before || before === c) return;
     if (before.id !== c.id) return; // 換個案間隙的殘留快照 → 丟棄
+    breakEditWindow(); // 拖曳/微調也是歷史事件:之後的打字要開新格
     set({
       history: {
         past: [...history.past, before].slice(-MAX_HISTORY),

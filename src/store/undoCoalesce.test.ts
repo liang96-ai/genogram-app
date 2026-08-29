@@ -8,6 +8,7 @@
 // 跑真實 store(非 mock);時間用 vitest fake timers 控制。
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  breakEditWindow,
   createEmptyCase,
   MAX_HISTORY,
   useGenogramStore,
@@ -28,8 +29,10 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2026-08-27T10:00:00Z'));
   seed();
-  // 每個測試從乾淨的窗開始:推進超過窗寬,確保上一測試的窗必然過期
-  vi.advanceTimersByTime(5000);
+  // 每個測試從乾淨的窗開始 —— 直接關窗。
+  // (原本用「推進 5000ms」想讓上一測試的窗過期,但 setSystemTime 每次都回到
+  //  同一時刻,上一測試留下的 at 可能落在「未來」,時間推進保證不了過期)
+  breakEditWindow();
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -113,6 +116,21 @@ describe('窗的關閉時機', () => {
     vi.advanceTimersByTime(100);
     S().updatePerson(id, { basicInfo: { name: '繼續打' } });
     // 打字1 + expandParents + 打字2 = 3 格
+    expect(past() - before).toBe(3);
+  });
+
+  it('拖曳結算(commitMoveHistory)也關窗:之後的打字開新格', () => {
+    const id = meId();
+    const before = past();
+    S().updatePerson(id, { basicInfo: { name: '打字' } });
+    vi.advanceTimersByTime(100);
+    // 模擬拖曳:記快照 → 移動(不推歷史)→ 手勢結束結算
+    const snapshot = S().currentCase!;
+    S().movePerson(id, 120, 120);
+    S().commitMoveHistory(snapshot);
+    vi.advanceTimersByTime(100);
+    S().updatePerson(id, { basicInfo: { name: '打字二' } });
+    // 打字1 + 拖曳結算 + 打字2 = 3 格(打字2 不准併回打字1 的窗)
     expect(past() - before).toBe(3);
   });
 

@@ -183,6 +183,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'household.create': '圈成同住({n} 人)',
     'household.createTip': '把選取的人圈進一個同住圈(虛線圓,表示實際住在一起)',
     'backupRemind.text': '你已經 {days} 天沒有完整備份了,而這台裝置沒有資料夾備份 — 個案只存在瀏覽器裡,建議現在備份一份。',
+    'backupRemind.textNever': '你還沒有做過完整備份,而這台裝置沒有資料夾備份 — 個案只存在瀏覽器裡,建議現在備份一份。',
     'backupRemind.doIt': '立即備份',
     'backupRemind.later': '這次先不要',
 
@@ -920,6 +921,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'household.create': 'Circle as household ({n})',
     'household.createTip': 'Group the selected people into a household circle (dashed — living together)',
     'backupRemind.text': "It's been {days} days since your last full backup, and this device has no folder backup — cases live only in this browser. A backup now is a good idea.",
+    'backupRemind.textNever': "You haven't made a full backup yet, and this device has no folder backup — cases live only in this browser. A backup now is a good idea.",
     'backupRemind.doIt': 'Back up now',
     'backupRemind.later': 'Not now',
 
