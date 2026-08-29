@@ -13,19 +13,15 @@ const dict: Record<Lang, Record<string, string>> = {
     'common.cancel': '取消',
     'common.delete': '刪除',
     'common.add': '新增',
-    'common.edit': '編輯',
     'common.close': '關閉',
     'common.confirm': '確定',
     'common.yes': '是',
     'common.no': '否',
     'common.more': '更多',
-    'common.optional': '選填',
-    'common.required': '必填',
     'common.addItem': '新增一項',
     'common.removeFromHistory': '從歷史移除',
     'common.expand': '展開',
     'common.collapse': '收合',
-    'common.empty': '尚無紀錄',
 
     // ===== Confirm Dialog =====
     'confirm.shortcut': '按 Esc 取消 · 下次想跳過此視窗:{mod} + Delete',
@@ -42,19 +38,10 @@ const dict: Record<Lang, Record<string, string>> = {
     'import.invalid': '略過 {n} 筆損壞資料(格式不完整)',
 
     // ===== 主選單 =====
-    'menu.undo': '復原',
-    'menu.redo': '重做',
     'menu.symbolGallery': '符號圖例',
-    'menu.export': '輸出檔案',
-    'menu.import': '輸入檔案',
-    'menu.tutorial': '看教學',
     'menu.tutorialBasic': '看基礎教學',
-    'menu.tutorialAdvanced': '看進階教學',
     'menu.folderSetup': '設定資料夾',
     'menu.feedback': '回報意見 / 建議',
-    'menu.probandStyle': '案主樣式',
-    'menu.probandBorder': '雙紅匡(標準)',
-    'menu.probandTraditional': '黑色填滿(舊版)',
 
     // ===== Feedback Dialog =====
     'feedback.title': '回報意見 / 建議',
@@ -71,7 +58,6 @@ const dict: Record<Lang, Record<string, string>> = {
     'feedback.bodyDescLabel': '描述',
     'feedback.bodyDeviceLabel': '裝置資訊',
     'tutorial.levelBasic': '基礎',
-    'tutorial.levelAdvanced': '進階',
     'tutorial.progress': '第 {current} / {total} 步',
     'tutorial.stepNum': '第 {n} 步',
     'tutorial.skip': '跳過教學',
@@ -351,7 +337,6 @@ const dict: Record<Lang, Record<string, string>> = {
     'tab2.unitDeleteConfirm': '刪除「{name}」單位?',
     'tab2.unitDeletePermanent': '徹底刪除「{name}」單位?',
     'tab2.unitNotePlaceholder': '例:國小 / 每週三去 / …',
-    'tab2.unitNoteHint': '連線在畫布上拖:點單位上方的 ▲ 拉出線到對象。',
     'tab2.note': '備注',
     'tab2.toggleActive': '取消使用中 → 移到曾經資源',
     'tab2.toggleInactive': '啟用 → 移到服務中',
@@ -407,16 +392,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'tab4.fsUnsupported': '⚠ 此瀏覽器不支援本機資料夾(iOS Safari 限制)。附件只能存外部連結。',
 
     // ===== Line Properties =====
-    'lineProps.title': '線條屬性',
-    'lineProps.type': '類型(選類型自動套對應線條樣式)',
-    'lineProps.note': '附註',
     'lineProps.notePlaceholder': '例:98 年離婚',
-    'lineProps.private': '🔒 此線保密(圖片匯出隱藏關係細節時整條移除)',
-    'lineProps.delete': '刪除此線條',
-    'lineProps.deleteConfirm': '確定要刪除這條線條嗎?',
-    'lineProps.group.marriage': '婚姻',
-    'lineProps.group.parent': '親子',
-    'lineProps.group.sibling': '手足',
     'lineProps.subType.marriage': '結婚',
     'lineProps.subType.engagement': '訂婚',
     'lineProps.subType.divorce': '離婚',
@@ -497,7 +473,6 @@ const dict: Record<Lang, Record<string, string>> = {
     'tab2.toggleMarriage': '婚姻線',
     'tab2.toggleRelation': '互動關係線',
     'tab2.marriageSectionTitle': '婚姻線',
-    'tab2.marriageHeaderTip': '點 → 選人物 → 拉到另一人完成婚姻線;或點現有婚姻線改類型',
     'tab2.marriagePending': '點兩個人物完成「{name}」婚姻線(Esc 取消)',
     'relation.title': '互動關係線',
     'relation.group.positive': '正向',
@@ -505,9 +480,6 @@ const dict: Record<Lang, Record<string, string>> = {
     'relation.group.violence': '暴力',
     'relation.group.cutoff': '照顧 / 斷裂',
     'relation.pendingBanner': '點另一人物完成「{name}」互動關係線(Esc 取消)',
-    'relation.headerTip': '點 → 選人物 → 拉到另一人完成;或點現有互動關係線改類型',
-    'relation.private': '保密此線',
-    'relation.privateTip': '勾起來 → 匯出圖片時整條線(含備注)消失',
     // 15 個 RelationSubType labels
     'lineProps.subType.connected': '連結',
     'lineProps.subType.close': '親密',
@@ -530,7 +502,6 @@ const dict: Record<Lang, Record<string, string>> = {
     'gallery.standard': '共 {n} 個(McGoldrick 標準)',
     'gallery.searchPlaceholder': '搜尋編號/名稱/類別…',
     'gallery.noResults': '沒有符合「{query}」的符號',
-    'gallery.footerHint': '💡 每個符號右上角是編號(#1-#{n})。你可以用編號指定「#12 是 Tier 1」來分類。',
     // v1.1 新增 — Gallery 頁腳「📚 學術依據與引用」link
     'gallery.references': '📚 學術依據與引用',
     'gallery.referencesDialogTitle': '📚 符號規範主要參考',
@@ -601,21 +572,16 @@ const dict: Record<Lang, Record<string, string>> = {
     // ===== Case List =====
     'caseList.title': '🌳 家系圖工具',
     'caseList.subtitle': '100% 在地儲存 · 永不上傳 · 離線可用',
-    'caseList.tutorial': '📖 看教學',
-    'caseList.tutorialTitle': '看教學',
     'caseList.install': '安裝為 App',
-    'caseList.installTitle': '一鍵安裝到桌面 / 主畫面',
     'caseList.folderLabel': '目前資料夾',
     'caseList.folderNotSet': '尚未選資料夾 — 個案只存在瀏覽器,清快取會消失',
     'caseList.folderSelect': '選資料夾',
     'caseList.folderSwitch': '切換資料夾',
     'caseList.folderSwitchTitle': '重新開啟資料夾選擇器(自動定位到之前的位置)',
     'caseList.share': '分享',
-    'caseList.shareTitle': '分享給其他社工/心理師同行',
     'caseList.menuTitle': '主選單',
     // v1.1 — 首頁 2 個維護按鈕
     'caseList.checkUpdate': '檢查更新',
-    'caseList.checkUpdateTitle': '檢查是否有新版本;有新版會在上方出現「立即更新」提示',
     'caseList.updateChecking': '檢查中…',
     'caseList.updateFound': '⬇ 新版下載中,稍候提示',
     'caseList.updateLatest': '✓ 已是最新版',
@@ -637,15 +603,12 @@ const dict: Record<Lang, Record<string, string>> = {
     'share.nativeShare': '系統分享',
     'share.nativeShareTitle': '用作業系統內建分享功能(手機常用)',
     'share.shareTitle': '家系圖工具',
-    'share.footerHint':
-      '建議:LINE / Email / 社群貼文 都可以貼。配 QR Code 海報效果最好。',
     'share.template':
       '🌳 家系圖工具\n{url}\n\n特色:\n✓ 只要按上下左右、拉動線條,快速畫,好上手。\n✓ 100% 在地儲存,個案資料不上雲端,離線可用。\n✓ 方便交流傳送,可傳送完整檔其他人接手,或是隱匿個資傳送。\n✓ 符號字典、互動關係線、醫療資訊、附件好存放。',
     'caseList.addCase': '新增個案',
     'caseList.import': '匯入',
     'caseList.backupTitle': '全備份(包含所有個案 + 設定)',
     'caseList.backup': '備份',
-    'caseList.allCases': '全部個案',
     'caseList.groupWeek': '一週內',
     'caseList.groupMonth': '一個月內',
     'caseList.groupOlder': '更早',
@@ -714,18 +677,13 @@ const dict: Record<Lang, Record<string, string>> = {
 
     // ===== About =====
     'about.title': '關於',
-    'about.openButton': '關於 / 支持本專案',
     'about.tagline':
       '本工具為「社會工作、家庭治療、教育、醫療」等領域而設計。完全免費 · 完全開源 · 不收集任何資料 · 所有資料只存在你的瀏覽器內。',
     'about.openSourceTitle': '📖 開源 · 可驗證的隱私',
     'about.openSourceBody':
       '本工具採 AGPL-3.0 授權,程式碼完全公開。你可以親自查看 GitHub 上的程式,驗證確實沒有任何資料被偷偷上傳。',
     'about.supportTitle': '支持本專案',
-    'about.supportBody':
-      '維護開源工具是長期且無償的工作。如果本工具對你或你的單位有幫助,以下是支持的方式:',
     'about.personalTitle': '個人實務 — 免費',
-    'about.personalBody':
-      '若這工具有幫到您,歡迎請我喝杯飲料(任何金額都很開心)。',
     'about.personalNote':
       '個人使用永久免費。想隨喜支持,點工具列的 ☕ 請我喝杯飲料。',
     'about.orgTitle': '組織使用 — 邀請以年費表達支持',
@@ -765,19 +723,15 @@ const dict: Record<Lang, Record<string, string>> = {
     'common.cancel': 'Cancel',
     'common.delete': 'Delete',
     'common.add': 'Add',
-    'common.edit': 'Edit',
     'common.close': 'Close',
     'common.confirm': 'Confirm',
     'common.yes': 'Yes',
     'common.no': 'No',
     'common.more': 'More',
-    'common.optional': 'Optional',
-    'common.required': 'Required',
     'common.addItem': 'Add item',
     'common.removeFromHistory': 'Remove from history',
     'common.expand': 'Expand',
     'common.collapse': 'Collapse',
-    'common.empty': 'No records yet',
 
     // ===== Confirm Dialog =====
     'confirm.shortcut': 'Esc to cancel. Skip next time: {mod} + Delete',
@@ -794,19 +748,10 @@ const dict: Record<Lang, Record<string, string>> = {
     'import.invalid': 'Skipped {n} corrupted item(s) (incomplete format)',
 
     // ===== Main menu =====
-    'menu.undo': 'Undo',
-    'menu.redo': 'Redo',
     'menu.symbolGallery': 'Symbol Legend',
-    'menu.export': 'Output File',
-    'menu.import': 'Input File',
-    'menu.tutorial': 'Tutorial',
     'menu.tutorialBasic': 'Basic Tutorial',
-    'menu.tutorialAdvanced': 'Advanced Tutorial',
     'menu.folderSetup': 'Set Folder',
     'menu.feedback': 'Send Feedback',
-    'menu.probandStyle': 'Proband style',
-    'menu.probandBorder': 'Double border (standard)',
-    'menu.probandTraditional': 'Black fill (legacy)',
 
     // ===== Feedback Dialog =====
     'feedback.title': 'Send Feedback / Suggestion',
@@ -823,7 +768,6 @@ const dict: Record<Lang, Record<string, string>> = {
     'feedback.bodyDescLabel': 'Description',
     'feedback.bodyDeviceLabel': 'Device info',
     'tutorial.levelBasic': 'Basic',
-    'tutorial.levelAdvanced': 'Advanced',
     'tutorial.progress': 'Step {current} of {total}',
     'tutorial.stepNum': 'Step {n}',
     'tutorial.skip': 'Skip',
@@ -1107,7 +1051,6 @@ const dict: Record<Lang, Record<string, string>> = {
     'tab2.unitDeleteConfirm': 'Delete unit "{name}"?',
     'tab2.unitDeletePermanent': 'Permanently delete unit "{name}"?',
     'tab2.unitNotePlaceholder': 'e.g. Elementary school / Every Wed / …',
-    'tab2.unitNoteHint': 'Drag a connection on canvas: tap the ▲ above the unit to draw a line.',
     'tab2.note': 'Note',
     'tab2.toggleActive': 'Deactivate → move to history',
     'tab2.toggleInactive': 'Activate → move to active',
@@ -1163,16 +1106,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'tab4.fsUnsupported': '⚠ This browser does not support local folders (iOS Safari limit). Attachments can only be external links.',
 
     // ===== Line Properties =====
-    'lineProps.title': 'Line Properties',
-    'lineProps.type': 'Type (auto-applies line style)',
-    'lineProps.note': 'Note',
     'lineProps.notePlaceholder': 'e.g. Divorced 2009',
-    'lineProps.private': '🔒 Private (removed entirely from image export when relations hidden)',
-    'lineProps.delete': 'Delete this line',
-    'lineProps.deleteConfirm': 'Delete this line?',
-    'lineProps.group.marriage': 'Marriage',
-    'lineProps.group.parent': 'Parent–Child',
-    'lineProps.group.sibling': 'Sibling',
     'lineProps.subType.marriage': 'Married',
     'lineProps.subType.engagement': 'Engaged',
     'lineProps.subType.divorce': 'Divorced',
@@ -1253,7 +1187,6 @@ const dict: Record<Lang, Record<string, string>> = {
     'tab2.toggleMarriage': 'Marriage',
     'tab2.toggleRelation': 'Relation',
     'tab2.marriageSectionTitle': 'Marriage Lines',
-    'tab2.marriageHeaderTip': 'Tap → select a person → drag to another to draw a marriage line; or tap an existing marriage line to retype',
     'tab2.marriagePending': 'Click two persons to complete "{name}" marriage line (Esc to cancel)',
     'relation.title': 'Relation Lines',
     'relation.group.positive': 'Positive',
@@ -1261,9 +1194,6 @@ const dict: Record<Lang, Record<string, string>> = {
     'relation.group.violence': 'Violence',
     'relation.group.cutoff': 'Care / Cutoff',
     'relation.pendingBanner': 'Click another person to complete "{name}" relation (Esc to cancel)',
-    'relation.headerTip': 'Tap → select a person → drag to another to draw; or tap an existing relation to retype',
-    'relation.private': 'Private',
-    'relation.privateTip': 'Check → entire line (with notes) hidden on image export',
     // 15 RelationSubType labels
     'lineProps.subType.connected': 'Connected',
     'lineProps.subType.close': 'Close',
@@ -1286,7 +1216,6 @@ const dict: Record<Lang, Record<string, string>> = {
     'gallery.standard': 'Total {n} symbols (McGoldrick standard)',
     'gallery.searchPlaceholder': 'Search number / name / category…',
     'gallery.noResults': 'No symbols matching "{query}"',
-    'gallery.footerHint': '💡 Top-right of each symbol is its number (#1-#{n}). You can refer to "#12 is Tier 1" for grouping.',
     // v1.1 — Gallery footer "📚 Academic references" link
     'gallery.references': '📚 Academic references',
     'gallery.referencesDialogTitle': '📚 Symbol Standards & References',
@@ -1357,21 +1286,16 @@ const dict: Record<Lang, Record<string, string>> = {
     // ===== Case List =====
     'caseList.title': '🌳 Genogram Tool',
     'caseList.subtitle': '100% local · Never uploaded · Works offline',
-    'caseList.tutorial': '📖 Tutorial',
-    'caseList.tutorialTitle': 'Tutorial',
     'caseList.install': 'Install as App',
-    'caseList.installTitle': 'One-click install to desktop / home screen',
     'caseList.folderLabel': 'Current folder',
     'caseList.folderNotSet': 'No folder selected — cases only in browser, will be lost if cache is cleared',
     'caseList.folderSelect': 'Pick folder',
     'caseList.folderSwitch': 'Switch folder',
     'caseList.folderSwitchTitle': 'Re-open folder picker (auto-positioned to previous location)',
     'caseList.share': 'Share',
-    'caseList.shareTitle': 'Share with other social workers / therapists',
     'caseList.menuTitle': 'Main menu',
     // v1.1 — 2 maintenance buttons on home page
     'caseList.checkUpdate': 'Check update',
-    'caseList.checkUpdateTitle': 'Check for a new version; if found, an "Update now" prompt appears at the top',
     'caseList.updateChecking': 'Checking…',
     'caseList.updateFound': '⬇ Downloading update…',
     'caseList.updateLatest': '✓ Up to date',
@@ -1393,15 +1317,12 @@ const dict: Record<Lang, Record<string, string>> = {
     'share.nativeShare': 'Native Share',
     'share.nativeShareTitle': 'Use OS built-in share (common on mobile)',
     'share.shareTitle': 'Genogram Tool',
-    'share.footerHint':
-      'Tips: Works for LINE / Email / social media posts. Pair with the QR code for posters.',
     'share.template':
       '🌳 Genogram Tool\n{url}\n\nFeatures:\n✓ Click the arrows, drag the lines — quick to draw, easy to learn.\n✓ 100% local storage, never uploaded, works offline.\n✓ Easy to share — send the full file for handoff, or strip private data first.\n✓ Built-in symbol dictionary, relation lines, medical info, and attachments.',
     'caseList.addCase': 'New case',
     'caseList.import': 'Import',
     'caseList.backupTitle': 'Full backup (all cases + settings)',
     'caseList.backup': 'Backup',
-    'caseList.allCases': 'All cases',
     'caseList.groupWeek': 'Past Week',
     'caseList.groupMonth': 'Past Month',
     'caseList.groupOlder': 'Older',
@@ -1470,18 +1391,13 @@ const dict: Record<Lang, Record<string, string>> = {
 
     // ===== About =====
     'about.title': 'About',
-    'about.openButton': 'About / Support this project',
     'about.tagline':
       'A privacy-first tool for people working in social services, family therapy, education, and healthcare. Completely free · Fully open source · No data collection · All data stays in your browser.',
     'about.openSourceTitle': '📖 Open Source · Verifiable Privacy',
     'about.openSourceBody':
       'Licensed under AGPL-3.0, the source code is fully public. You can inspect the code on GitHub yourself to verify that no data is ever secretly uploaded.',
     'about.supportTitle': 'Support This Project',
-    'about.supportBody':
-      'Maintaining open-source software is long-term, unpaid work. Here are ways to support if this tool has been useful:',
     'about.personalTitle': 'Personal use — Free',
-    'about.personalBody':
-      'If this tool helps you, feel free to buy me a coffee (any amount is appreciated).',
     'about.personalNote':
       'Free forever for personal use. To chip in, tap ☕ in the toolbar to buy me a drink.',
     'about.orgTitle': 'Organizations — invited to support via an annual fee',

@@ -5,14 +5,10 @@ import Inspector from './components/Inspector/Inspector';
 import ConfirmDialog from './components/ConfirmDialog';
 import HoverTooltip from './components/HoverTooltip';
 import CaseList from './components/CaseList/CaseList';
-import {
-  ExportDialog,
-  ImportDialog,
-} from './components/CaseList/ExportImportDialog';
+import { ExportDialog } from './components/CaseList/ExportImportDialog';
 // hasTutorialBeenSeen 暫不使用(教學手冊改為選單觸發)— 需要時從 './components/Tutorial/tutorialSeen' 匯入
 import ScaleDialog from './components/Scales/ScaleDialog';
 import InstallBanner from './components/InstallBanner';
-import FolderSetupModal from './components/CaseList/FolderSetupModal';
 import AboutDialog from './components/About/AboutDialog';
 import EyeComfortButton from './components/EyeComfort/EyeComfortButton';
 import {
@@ -97,7 +93,6 @@ export default function App() {
     tRef.current = t;
   }, [t]);
   const [loaded, setLoaded] = useState(false);
-  const [showFolderSetup, setShowFolderSetup] = useState(false);
   // 儲存異常警示(#120):db = IndexedDB 失敗(紅)/ folder = 資料夾備份失效(黃)
   const [saveIssue, setSaveIssue] = useState<null | 'db' | 'folder'>(null);
   // 同個案開兩個視窗警告(#124)
@@ -652,25 +647,6 @@ export default function App() {
         <CaseList />
         {banners}
         <ConfirmDialog />
-        {showFolderSetup && (
-          <FolderSetupModal
-            onClose={() => setShowFolderSetup(false)}
-            onSelected={async () => {
-              setShowFolderSetup(false);
-              // 先救回資料夾裡已有的個案(pull),再把現有個案寫出(push)
-              try {
-                const restored = await rescueCasesFromFolder();
-                const allCases = await db.cases.toArray();
-                for (const g of allCases) await writeCaseJson(g);
-                await loadCaseList();
-                if (restored > 0)
-                  alert(t('caseList.folderRescued', { n: restored }));
-              } catch (err) {
-                console.error('initial sync to folder failed:', err);
-              }
-            }}
-          />
-        )}
         {showTutorial && (
           <Suspense fallback={null}>
             <Tutorial onClose={() => setShowTutorial(false)} />
@@ -706,24 +682,6 @@ export default function App() {
       {banners}
       <ConfirmDialog />
       <HoverTooltip />
-      {showFolderSetup && (
-        <FolderSetupModal
-          onClose={() => setShowFolderSetup(false)}
-          onSelected={async () => {
-            setShowFolderSetup(false);
-            try {
-              const restored = await rescueCasesFromFolder();
-              const allCases = await db.cases.toArray();
-              for (const g of allCases) await writeCaseJson(g);
-              await loadCaseList();
-              if (restored > 0)
-                alert(t('caseList.folderRescued', { n: restored }));
-            } catch (err) {
-              console.error('initial sync to folder failed:', err);
-            }
-          }}
-        />
-      )}
       {showTutorial && (
         <Suspense fallback={null}>
           <Tutorial onClose={() => setShowTutorial(false)} />
@@ -753,7 +711,6 @@ function Toolbar({
   const [renaming, setRenaming] = useState(false);
   const [draftName, setDraftName] = useState('');
   const [exportOpen, setExportOpen] = useState(false);
-  const [importOpen, setImportOpen] = useState(false);
   const [activeScaleId, setActiveScaleId] = useState<string | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [quickBuildOpen, setQuickBuildOpen] = useState(false);
@@ -1026,7 +983,6 @@ function Toolbar({
           onClose={() => setExportOpen(false)}
         />
       )}
-      {importOpen && <ImportDialog onClose={() => setImportOpen(false)} />}
       {activeScaleId && (() => {
         const scale = getScale(activeScaleId);
         if (!scale) return null;
@@ -1167,7 +1123,6 @@ const hamburgerBtnStyle: React.CSSProperties = {
   fontFamily: 'inherit',
 };
 
-// FolderSetupModal 已移到 src/components/CaseList/FolderSetupModal.tsx
 
 
 

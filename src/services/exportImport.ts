@@ -293,18 +293,3 @@ export async function detectConflicts(
   return conflicts;
 }
 
-/* ==================== 加密接口(Phase 2 預留) ==================== */
-
-export async function encryptExport(
-  _bundle: ExportBundle,
-  _password: string,
-): Promise<Blob> {
-  throw new Error('Phase 2 not implemented');
-}
-
-export async function decryptImport(
-  _file: File,
-  _password: string,
-): Promise<ExportBundle> {
-  throw new Error('Phase 2 not implemented');
-}

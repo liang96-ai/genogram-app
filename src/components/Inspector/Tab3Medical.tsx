@@ -1757,14 +1757,10 @@ export default function Tab3Medical({ person }: Props) {
   );
 }
 
-type SuggestGroup = { label: string; icon?: string; items: string[] };
-
 // Inline-add 暫存列:有建議自動完成下拉 + ✓ 存 + × 取消
-// flat 模式(meds):一條長 list 可滾
-// groups 模式(diseases):分區可折疊
+// flat 模式:一條長 list 可滾
 function TypeaheadDraft({
   suggestions,
-  groups,
   historySet,
   onRemoveHistory,
   onSave,
@@ -1772,7 +1768,6 @@ function TypeaheadDraft({
   placeholder,
 }: {
   suggestions?: string[];
-  groups?: SuggestGroup[];
   historySet?: Set<string>;
   onRemoveHistory?: (name: string) => void;
   onSave: (value: string) => void;
@@ -1782,7 +1777,6 @@ function TypeaheadDraft({
   const trans = useT();
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(true);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1821,16 +1815,6 @@ function TypeaheadDraft({
     );
     el?.scrollIntoView({ block: 'nearest' });
   }, [selectedIdx]);
-  // grouped 過濾(diseases) — 打字時自動展開
-  const querying = query.trim().length > 0;
-  const groupedFiltered = groups
-    ? groups
-        .map((g) => ({
-          ...g,
-          items: g.items.filter((s) => fuzzyMatch(query, s)),
-        }))
-        .filter((g) => g.items.length > 0)
-    : [];
 
   const save = () => {
     const v = query.trim();
@@ -1884,9 +1868,7 @@ function TypeaheadDraft({
           <CrossGlyph size={13} stroke={1.8} />
         </button>
       </div>
-      {open &&
-        ((suggestions && flatFiltered.length > 0) ||
-          (groups && groupedFiltered.length > 0)) && (
+      {open && suggestions && flatFiltered.length > 0 && (
           <div
             ref={listRef}
             style={{
@@ -1904,7 +1886,6 @@ function TypeaheadDraft({
               overflowY: 'auto',
             }}
           >
-            {/* C 模式:一條長 list(藥物用) */}
             {suggestions && (
               <>
                 <div
@@ -1932,59 +1913,6 @@ function TypeaheadDraft({
               </>
             )}
 
-            {/* D 模式:分組可折疊(疾病用) */}
-            {groups &&
-              groupedFiltered.map((g) => {
-                const expanded = expandedGroups.has(g.label) || querying;
-                return (
-                  <div key={g.label}>
-                    <div
-                      onClick={() => {
-                        const next = new Set(expandedGroups);
-                        if (next.has(g.label)) next.delete(g.label);
-                        else next.add(g.label);
-                        setExpandedGroups(next);
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '6px 10px',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: '#1d1d1f',
-                        background: '#f5f5f7',
-                        borderBottom: '1px solid #e5e4e7',
-                        cursor: 'pointer',
-                        userSelect: 'none',
-                        position: 'sticky',
-                        top: 0,
-                        zIndex: 1,
-                      }}
-                    >
-                      <span style={{ marginRight: 6 }}>
-                        {expanded ? '▼' : '▶'}
-                      </span>
-                      <span style={{ marginRight: 6 }}>{g.icon}</span>
-                      <span style={{ flex: 1 }}>{g.label}</span>
-                      <span style={{ color: '#86868b', fontWeight: 400 }}>
-                        {g.items.length}
-                      </span>
-                    </div>
-                    {expanded &&
-                      g.items.map((s) =>
-                        renderItem(
-                          s,
-                          historySet,
-                          onSave,
-                          onRemoveHistory,
-                          undefined,
-                          undefined,
-                          trans('common.removeFromHistory'),
-                        ),
-                      )}
-                  </div>
-                );
-              })}
           </div>
         )}
     </div>

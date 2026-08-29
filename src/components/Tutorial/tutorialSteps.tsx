@@ -1879,5 +1879,3 @@ export function getBasicSteps(lang: 'zh' | 'en'): TutorialStep[] {
 }
 
 // 向後相容:舊名稱
-export const BASIC_STEPS = BASIC_STEPS_ZH;
-export const TUTORIAL_STEPS = BASIC_STEPS_ZH;

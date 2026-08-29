@@ -530,7 +530,6 @@ type GenogramStore = {
 
   // App routing
   appMode: AppMode;
-  setAppMode: (mode: AppMode) => void;
   caseList: Genogram[];
   loadCaseList: () => Promise<void>;
   openCase: (id: string) => Promise<void>;
@@ -618,7 +617,6 @@ type GenogramStore = {
     opts?: { yes?: string; no?: string; tone?: 'danger' | 'normal' },
   ) => Promise<boolean>;
 
-  setCurrentCase: (g: Genogram | null) => void;
 
   selectUnit: (id: string | null) => void;
   selectUnits: (ids: string[]) => void;
@@ -634,7 +632,6 @@ type GenogramStore = {
 
   addPerson: (p: Person) => void;
   addPersonAtCenter: (centerX: number, centerY: number) => void;
-  addInstitution: (anchorPersonId: string, name: string) => void;
   updatePerson: (id: string, patch: Partial<Person>) => void;
   movePerson: (id: string, x: number, y: number) => void;
   /** 拖曳結束時補記一格復原(#123)— 傳入「拖曳開始前」的快照 */
@@ -681,11 +678,9 @@ type GenogramStore = {
     toPersonId: string,
   ) => void;
 
-  addLine: (l: Line) => void;
   updateLine: (id: string, patch: Partial<Line>) => void;
   removeLine: (id: string) => void;
   updateLineEndpoint: (lineId: string, end: 'from' | 'to', newPersonId: string) => void;
-  mergeBioToMarriage: (bioLineId: string, marriageLineId: string) => void;
   cycleLineSubType: (lineId: string) => void;
   /** 拖小孩 A 到婚姻線 M:新增 A→M1 / A→M2 為 placed-out(虛線、父母縮小);
    *  不動 A 既有的親生父母線。A 跳到 fork 下方(疊在既有 children 上,使用者自己挪) */
@@ -701,7 +696,6 @@ type GenogramStore = {
   ) => void;
   /** 點虛線父母線 → 升為主要(實線),同時把該 child 其他主要線降為 placed-out;
    *  支援婚姻配對:會把同 child 對應配偶那條線一起升 */
-  promoteParentLine: (lineId: string) => void;
   /** 全選保密:把全個案中所有「關係線」(category='relation')private 全設為 value(case-wide) */
   toggleAllRelationLinesPrivate: (value: boolean) => void;
   /** 目前選中的 connector(全 canvas 同時最多一個) */
@@ -735,7 +729,6 @@ type GenogramStore = {
 
   // View actions
   setViewPan: (x: number, y: number) => void;
-  setViewZoom: (z: number) => void;
   setView: (pan: { x: number; y: number }, zoom: number) => void;
   resetView: () => void;
   fitView: (viewportW: number, viewportH: number) => void;
@@ -824,15 +817,6 @@ type GenogramStore = {
   ) => void;
   removeMajorEvent: (id: string) => void;
 
-  // 資源使用紀錄(ResourceUsage)
-  addResourceUsage: (
-    ru: Omit<import('../types/genogram').ResourceUsage, 'id'>,
-  ) => void;
-  updateResourceUsage: (
-    id: string,
-    patch: Partial<import('../types/genogram').ResourceUsage>,
-  ) => void;
-  removeResourceUsage: (id: string) => void;
 
   // 同住成員圈(Household)
   addHousehold: (memberIds: string[], label?: string) => void;
@@ -933,7 +917,6 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
 
   appMode: 'list',
   caseList: [],
-  setAppMode: (mode) => set({ appMode: mode }),
   loadCaseList: async () => {
     try {
       const all = await db.cases.toArray();
@@ -1237,22 +1220,6 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   },
   history: { past: [], future: [] },
 
-  setCurrentCase: (currentCase) => {
-    const migrated = currentCase ? migrateGenogram(currentCase) : null;
-    set({
-      currentCase: migrated,
-      selectedPersonIds: [],
-      selectedLineIds: [],
-      selectedUnitIds: [],
-      selectedEcosystemId: null,
-      editingEcosystemId: null,
-      inspectorTarget:
-        migrated && migrated.persons.length > 0
-          ? { type: 'person', id: migrated.persons[0].id }
-          : null,
-      history: { past: [], future: [] },
-    });
-  },
 
   selectPerson: (id) =>
     set((s) => ({
@@ -1405,43 +1372,6 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     set({ ...pushHistory(c, history, newCase) });
   },
 
-  addInstitution: (anchorPersonId, name) => {
-    const { currentCase: c, history } = get();
-    if (!c) return;
-    const anchor = c.persons.find((p) => p.id === anchorPersonId);
-    if (!anchor) return;
-    const trimmed = name.trim();
-    if (!trimmed) return;
-
-    // 預設位置:anchor 右下
-    const idealX = snapToGrid(anchor.position.x + GRID_SIZE * 3);
-    const idealY = snapToGrid(anchor.position.y + GRID_SIZE * 2);
-    // 碰撞避開:整批位置 resolve(單個也適用)
-    const resolved = resolveBatchPositions(
-      c.persons,
-      [{ x: idealX, y: idealY }],
-      [],
-      // 撞到就往右一格,避免永遠往下堆
-      () => ({ dx: GRID_SIZE * 2, dy: 0 }),
-    );
-
-    const newInst: Person = {
-      id: uid('p'),
-      position: resolved[0],
-      shape: 'institution',
-      basicInfo: { name: trimmed },
-    };
-    const line = mkLine(anchorPersonId, newInst.id, 'connected');
-
-    const newCase = touch({
-      ...c,
-      persons: [...c.persons, newInst],
-      lines: [...c.lines, line],
-    });
-    set({ ...pushHistory(c, history, newCase) });
-    // 記住這個單位名稱到歷史
-    get().addInstitutionToHistory(trimmed);
-  },
 
   addPersonAtCenter: (centerX, centerY) => {
     const { currentCase: c, history } = get();
@@ -1706,12 +1636,6 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     });
   },
 
-  addLine: (line) => {
-    const { currentCase: c, history } = get();
-    if (!c) return;
-    const newCase = touch({ ...c, lines: [...c.lines, line] });
-    set({ ...pushHistory(c, history, newCase) });
-  },
 
   updateLine: (id, patch) => {
     const { currentCase: c, history } = get();
@@ -1975,73 +1899,6 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     set({ ...pushHistory(c, history, newCase) });
   },
 
-  mergeBioToMarriage: (bioLineId, marriageLineId) => {
-    const { currentCase: c, history } = get();
-    if (!c) return;
-    const bio = c.lines.find((l) => l.id === bioLineId);
-    const m = c.lines.find((l) => l.id === marriageLineId);
-    if (!bio || !m) return;
-    const BIO = ['biological', 'adopted', 'placed-out', 'fostered'];
-    if (!BIO.includes(bio.subType)) return;
-    const childId = bio.toPersonId;
-    const newA = m.fromPersonId;
-    const newB = m.toPersonId;
-    if (childId === newA || childId === newB) return;
-
-    // 找原本的親生父母(拖的 bio 的 from,以及另一個配偶透過婚姻找到的)
-    const originalParentFrom = bio.fromPersonId;
-    // 找跟 originalParentFrom 有 marriage-like 關係的配偶
-    const originalMarriage = c.lines.find(
-      (l) =>
-        (l.subType === 'marriage' ||
-          l.subType === 'engagement' ||
-          l.subType === 'partnership' ||
-          l.subType === 'cohabitation' ||
-          l.subType === 'cohabitation-commit') &&
-        (l.fromPersonId === originalParentFrom ||
-          l.toPersonId === originalParentFrom),
-    );
-    const originalParentOther = originalMarriage
-      ? originalMarriage.fromPersonId === originalParentFrom
-        ? originalMarriage.toPersonId
-        : originalMarriage.fromPersonId
-      : null;
-
-    // 建立新的線集合
-    let newLines = [...c.lines];
-
-    // Step 1: 把原親生父母雙方到 childId 的 bio 都改成 placed-out
-    newLines = newLines.map((l) => {
-      if (
-        l.toPersonId === childId &&
-        BIO.includes(l.subType) &&
-        (l.fromPersonId === originalParentFrom ||
-          (originalParentOther && l.fromPersonId === originalParentOther))
-      ) {
-        return { ...l, subType: 'placed-out' as LineSubType };
-      }
-      return l;
-    });
-
-    // Step 2: 在新父母加 adopted bio (如果還沒有)
-    const hasNewA = newLines.some(
-      (l) =>
-        l.fromPersonId === newA &&
-        l.toPersonId === childId &&
-        BIO.includes(l.subType),
-    );
-    if (!hasNewA) newLines.push(mkLine(newA, childId, 'adopted'));
-    const hasNewB = newLines.some(
-      (l) =>
-        l.fromPersonId === newB &&
-        l.toPersonId === childId &&
-        BIO.includes(l.subType),
-    );
-    if (!hasNewB) newLines.push(mkLine(newB, childId, 'adopted'));
-
-    const newCase = touch({ ...c, lines: newLines });
-    set({ ...pushHistory(c, history, newCase) });
-  },
 
   addSecondaryParentsFromMarriage: (childId, marriageLineId) => {
     const { currentCase: c, history } = get();
@@ -2134,59 +1991,6 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     set({ ...pushHistory(c, history, newCase) });
   },
 
-  promoteParentLine: (lineId) => {
-    const { currentCase: c, history } = get();
-    if (!c) return;
-    const line = c.lines.find((l) => l.id === lineId);
-    if (!line) return;
-    const BIO_LIKE = new Set<LineSubType>([
-      'biological',
-      'adopted',
-      'placed-out',
-      'fostered',
-      'sperm-donor',
-    ]);
-    if (!BIO_LIKE.has(line.subType)) return;
-    const childId = line.toPersonId;
-    const promotedParentId = line.fromPersonId;
-
-    // 找 promotedParent 的「目前配偶」(透過 marriage-like 線),配偶那條線也一起升
-    // v1.1 共用常數
-    const spouseLine = c.lines.find(
-      (l) =>
-        MARRIAGE_SUBTYPE_SET.has(l.subType) &&
-        (l.fromPersonId === promotedParentId ||
-          l.toPersonId === promotedParentId),
-    );
-    const spouseId = spouseLine
-      ? spouseLine.fromPersonId === promotedParentId
-        ? spouseLine.toPersonId
-        : spouseLine.fromPersonId
-      : null;
-    const primarySet = new Set<string>([promotedParentId]);
-    if (spouseId) primarySet.add(spouseId);
-
-    // 對該 child 的每條 bio-like 線:
-    //  - from 在 primarySet → 升 biological(實線)
-    //  - 其他 → 降 placed-out(虛線)
-    const newLines = c.lines.map((l) => {
-      if (l.toPersonId !== childId || !BIO_LIKE.has(l.subType)) return l;
-      if (primarySet.has(l.fromPersonId)) {
-        return {
-          ...l,
-          subType: 'biological' as LineSubType,
-          visual: { ...l.visual, lineStyle: 'solid' as const },
-        };
-      }
-      return {
-        ...l,
-        subType: 'placed-out' as LineSubType,
-        visual: { ...l.visual, lineStyle: 'dashed' as const },
-      };
-    });
-    const newCase = touch({ ...c, lines: newLines });
-    set({ ...pushHistory(c, history, newCase) });
-  },
 
   expandParents: (childId) => {
     const { currentCase: c, history } = get();
@@ -2715,7 +2519,6 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     set((s) => ({ inspectorCollapsed: !s.inspectorCollapsed })),
 
   setViewPan: (x, y) => set({ viewPan: { x, y } }),
-  setViewZoom: (z) => set({ viewZoom: clampZoom(z) }),
   setView: (pan, zoom) => set({ viewPan: pan, viewZoom: clampZoom(zoom) }),
   resetView: () => set({ viewPan: { x: 0, y: 0 }, viewZoom: 1 }),
   centerViewOnContent: (viewportW, viewportH) => {
@@ -3300,37 +3103,6 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     set(pushHistory(c, history, next));
   },
 
-  // 資源使用紀錄
-  addResourceUsage: (ru) => {
-    const { currentCase: c, history } = get();
-    if (!c) return;
-    const id = `ru_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const next = touch({
-      ...c,
-      resourceUsages: [...(c.resourceUsages ?? []), { ...ru, id }],
-    });
-    set(pushHistory(c, history, next));
-  },
-  updateResourceUsage: (id, patch) => {
-    const { currentCase: c, history } = get();
-    if (!c) return;
-    const next = touch({
-      ...c,
-      resourceUsages: (c.resourceUsages ?? []).map((r) =>
-        r.id === id ? { ...r, ...patch } : r,
-      ),
-    });
-    set(pushHistory(c, history, next));
-  },
-  removeResourceUsage: (id) => {
-    const { currentCase: c, history } = get();
-    if (!c) return;
-    const next = touch({
-      ...c,
-      resourceUsages: (c.resourceUsages ?? []).filter((r) => r.id !== id),
-    });
-    set(pushHistory(c, history, next));
-  },
 
   // 同住成員圈
   addHousehold: (memberIds, label) => {
