@@ -4,6 +4,7 @@ import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import { rescueCasesFromFolder } from '../../services/folderRescue';
 import ScaleSummary from './ScaleSummary';
+import MajorEventTimeline from './MajorEventTimeline';
 import {
   isFileSystemAccessSupported,
   selectRootFolder,
@@ -38,6 +39,7 @@ export default function Tab4Custom() {
   );
   const addAttachment = useGenogramStore((s) => s.addAttachment);
   const removeAttachment = useGenogramStore((s) => s.removeAttachment);
+  const addMajorEvent = useGenogramStore((s) => s.addMajorEvent);
 
   const [hasRootDir, setHasRootDir] = useState(!!getRootDirHandle());
   const fsSupported = isFileSystemAccessSupported();
@@ -64,6 +66,7 @@ export default function Tab4Custom() {
 
   const notes = currentCase.interviewNotes ?? [];
   const attachments = currentCase.attachments ?? [];
+  const events = currentCase.majorEvents ?? [];
 
   return (
     <div style={{ padding: 16, overflowY: 'auto', height: '100%' }}>
@@ -110,6 +113,28 @@ export default function Tab4Custom() {
             />
           ))
       )}
+
+      {/* === 重大事件時間軸 === */}
+      <SectionTitle
+        title={`${t('tab4.majorEvents')} (${events.length})`}
+        action={
+          <button
+            onClick={() => {
+              const d = new Date();
+              const pad = (n: number) => String(n).padStart(2, '0');
+              addMajorEvent({
+                date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+                title: '',
+              });
+            }}
+            style={inlineAddBtn}
+            title={t('common.addItem')}
+          >
+            <PlusGlyph size={13} stroke={1.8} />
+          </button>
+        }
+      />
+      <MajorEventTimeline />
 
       {/* === 文件附件 === */}
       <SectionTitle

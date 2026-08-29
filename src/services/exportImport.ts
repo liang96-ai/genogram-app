@@ -14,6 +14,10 @@ export interface ExportBundle {
     institutionHistory?: string[];
     diseaseHistory?: string[];
     medicationHistory?: string[];
+    educationHistory?: string[];
+    ethnicityHistory?: string[];
+    religionHistory?: string[];
+    disabilityTypeHistory?: string[];
   };
 }
 
@@ -48,10 +52,14 @@ export function buildMultiExport(cases: Genogram[]): ExportBundle {
 
 export async function buildBackupExport(): Promise<ExportBundle> {
   const cases = await db.cases.toArray();
-  const [instH, disH, medH] = await Promise.all([
+  const [instH, disH, medH, eduH, ethH, relH, dtH] = await Promise.all([
     db.settings.get('institutionHistory'),
     db.settings.get('diseaseHistory'),
     db.settings.get('medicationHistory'),
+    db.settings.get('educationHistory'),
+    db.settings.get('ethnicityHistory'),
+    db.settings.get('religionHistory'),
+    db.settings.get('disabilityTypeHistory'),
   ]);
   const pickArr = (rec: unknown): string[] | undefined => {
     if (
@@ -75,6 +83,10 @@ export async function buildBackupExport(): Promise<ExportBundle> {
       institutionHistory: pickArr(instH),
       diseaseHistory: pickArr(disH),
       medicationHistory: pickArr(medH),
+      educationHistory: pickArr(eduH),
+      ethnicityHistory: pickArr(ethH),
+      religionHistory: pickArr(relH),
+      disabilityTypeHistory: pickArr(dtH),
     },
   };
 }
@@ -259,6 +271,10 @@ export async function applyImport(
       merge('institutionHistory', bundle.settings.institutionHistory),
       merge('diseaseHistory', bundle.settings.diseaseHistory),
       merge('medicationHistory', bundle.settings.medicationHistory),
+      merge('educationHistory', bundle.settings.educationHistory),
+      merge('ethnicityHistory', bundle.settings.ethnicityHistory),
+      merge('religionHistory', bundle.settings.religionHistory),
+      merge('disabilityTypeHistory', bundle.settings.disabilityTypeHistory),
     ]);
   }
   // 使用者明確匯入 = 解除墓碑(#125),之後資料夾救援不再跳過這些 id
