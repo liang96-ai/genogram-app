@@ -192,7 +192,9 @@ const uid = (prefix: string) =>
 export const GRID_SIZE = 60;
 export const SHAPE_HALF = 28;
 export const snapToGrid = (v: number) => Math.round(v / GRID_SIZE) * GRID_SIZE;
-export const MAX_HISTORY = 5;
+// 20(2026-08-27 決議):配合下方「文字編輯合併窗」——
+// 打字不再逐鍵吃格之後,20 格的實際覆蓋範圍已經很深;再大是純記憶體浪費(每格=整份個案快照)
+export const MAX_HISTORY = 20;
 
 export const COLLISION_TOLERANCE = GRID_SIZE * 0.6;
 
@@ -873,6 +875,9 @@ function pushHistory(
   history: HistoryState,
   newCase: Genogram,
 ) {
+  // 任何推格都是「新的歷史事件」→ 關掉文字合併窗;
+  // 文字動作推完自己的第一格後會用 editWindowReopen 把窗開回來
+  breakEditWindow();
   const newPast = currentCase
     ? [...history.past, currentCase].slice(-MAX_HISTORY)
     : history.past;
@@ -880,6 +885,38 @@ function pushHistory(
     currentCase: newCase,
     history: { past: newPast, future: [] as Genogram[] },
   };
+}
+
+// ==================== 復原合併窗(2026-08-27 決議)====================
+// 病灶:updatePerson/updateNetworkUnit/updateLine 逐鍵 pushHistory —
+// 在右欄打 5 個字就吃掉 5 格復原,把畫布排版的復原歷史全洗掉。
+// 解法:同一個目標在 900ms 內的連續更新「共用第一格」——
+// 第一次更新照常推快照(= 打字前的狀態),之後的連續更新只改 currentCase 不推格,
+// 停手超過 900ms、或動了別的東西(任何其他 pushHistory / undo / redo),窗就關閉。
+// 中文輸入法組字期間 onChange 連續觸發,天然落在同一窗內,組字中不會多吃格。
+const EDIT_COALESCE_MS = 900;
+let editWindow: { kind: string; id: string; at: number } | null = null;
+
+/** 這次更新要不要「併入上一格」?(true = 不推新快照) */
+function shouldCoalesce(kind: string, id: string): boolean {
+  const now = Date.now();
+  const hit =
+    editWindow !== null &&
+    editWindow.kind === kind &&
+    editWindow.id === id &&
+    now - editWindow.at < EDIT_COALESCE_MS;
+  editWindow = { kind, id, at: now };
+  return hit;
+}
+
+/** 任何非文字編輯的歷史事件都要關窗 —— 之後的打字必須開新格 */
+function breakEditWindow(): void {
+  editWindow = null;
+}
+
+/** 文字動作推完自己的第一格後重開窗(pushHistory 內的 breakEditWindow 會把它關掉) */
+function editWindowReopen(kind: string, id: string): void {
+  editWindow = { kind, id, at: Date.now() };
 }
 
 function savePrivateFields(fields: Record<PrivacyField, boolean>): void {
@@ -1442,7 +1479,14 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
           : p,
       ),
     });
+    if (shouldCoalesce('person', id)) {
+      // 併入上一格:只更新現況,不推快照(上一格已存著這串編輯開始前的狀態)
+      set({ currentCase: newCase, history: { ...history, future: [] } });
+      return;
+    }
     set({ ...pushHistory(c, history, newCase) });
+    // pushHistory 會關窗(對其他動作正確);文字動作推完第一格要重開窗
+    editWindowReopen('person', id);
   },
 
   // 拖移不記 history(避免每個 pointer move 都 push)
@@ -1677,7 +1721,12 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
           : l,
       ),
     });
+    if (shouldCoalesce('line', id)) {
+      set({ currentCase: newCase, history: { ...history, future: [] } });
+      return;
+    }
     set({ ...pushHistory(c, history, newCase) });
+    editWindowReopen('line', id);
   },
 
   removeLine: (id) => {
@@ -2610,6 +2659,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   },
 
   undo: () => {
+    breakEditWindow(); // undo 後的打字必須開新格,不能併回舊窗
     const { currentCase, history } = get();
     if (history.past.length === 0) return;
     const previous = history.past[history.past.length - 1];
@@ -2631,6 +2681,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   },
 
   redo: () => {
+    breakEditWindow();
     const { currentCase, history } = get();
     if (history.future.length === 0) return;
     const next = history.future[0];
@@ -2946,7 +2997,12 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const units = c.networkUnits ?? [];
     const newUnits = units.map((u) => (u.id === id ? { ...u, ...patch } : u));
     const newCase = touch({ ...c, networkUnits: newUnits });
+    if (shouldCoalesce('unit', id)) {
+      set({ currentCase: newCase, history: { ...history, future: [] } });
+      return;
+    }
     set({ ...pushHistory(c, history, newCase) });
+    editWindowReopen('unit', id);
   },
   removePersonsAndUnits: (personIds, unitIds) => {
     const { currentCase: c, history, inspectorTarget } = get();
