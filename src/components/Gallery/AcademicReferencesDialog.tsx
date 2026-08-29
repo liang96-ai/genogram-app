@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useT } from '../../i18n';
 
 type Props = {
@@ -16,6 +17,17 @@ type Props = {
 // 學術引用屬 fair use,不需作者同意
 export default function AcademicReferencesDialog({ onClose }: Props) {
   const t = useT();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        // capture + stop:此窗疊在符號圖例上,Esc 只關自己,不連坐下層
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [onClose]);
 
   return (
     <div

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import type { Scale, ScaleAnswer } from './types';
@@ -74,11 +74,14 @@ export default function ScaleDialog({ scale, onClose }: Props) {
   const t = useT();
   const currentCase = useGenogramStore((s) => s.currentCase);
   const caseList = useGenogramStore((s) => s.caseList);
+  const showConfirm = useGenogramStore((s) => s.showConfirm);
   const openCase = useGenogramStore((s) => s.openCase);
   const addScaleResult = useGenogramStore((s) => s.addScaleResult);
 
   const [answers, setAnswers] = useState<Record<string, ScaleAnswer>>({});
   const [notes, setNotes] = useState('');
+  // 受測者(2026-08-27 決議)—— 同一案家測阿嬤/媳婦/案主要分得清;schema 早已預留 targetPersonId
+  const [targetPersonId, setTargetPersonId] = useState<string>('');
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   // 沒開個案時:讓使用者選一個個案儲存(或不存,只看分數)
   const [targetCaseId, setTargetCaseId] = useState<string | 'unbound'>(
@@ -86,13 +89,28 @@ export default function ScaleDialog({ scale, onClose }: Props) {
   );
 
   // Esc 關閉
+  // 有作答/有備註時關閉先確認 —— 15-20 題填一半被 Esc 蒸發是最嘔的白做工
+  const dirty = Object.keys(answers).length > 0 || notes.trim().length > 0;
+  const requestClose = useCallback(async () => {
+    if (!dirty) {
+      onClose();
+      return;
+    }
+    const ok = await showConfirm(t('scaleDialog.discardConfirm'), {
+      yes: t('scaleDialog.discardYes'),
+      no: t('scaleDialog.discardNo'),
+      tone: 'normal',
+    });
+    if (ok) onClose();
+  }, [dirty, onClose, showConfirm, t]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') void requestClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [requestClose]);
 
   // boolean 題視為「未勾 = 沒此狀況 = false」,不需要使用者主動點;只 likert/choice 需要選
   const allAnswered = scale.questions.every(
@@ -106,6 +124,13 @@ export default function ScaleDialog({ scale, onClose }: Props) {
     }
   });
   const result = allAnswered ? scale.scoring(filledAnswers) : null;
+
+  // 綁定的個案:若就是目前開著的個案,一定要用 currentCase(caseList 是啟動時的快照,
+  // 本 session 新建的個案、剛加的人物都不在裡面 —— 「畫完立刻施測」是主流程,審查抓到)
+  const boundCase =
+    targetCaseId !== 'unbound' && targetCaseId === currentCase?.id
+      ? currentCase
+      : caseList.find((cc) => cc.id === targetCaseId);
 
   const save = async () => {
     if (!result) return;
@@ -125,9 +150,12 @@ export default function ScaleDialog({ scale, onClose }: Props) {
       totalScore: result.totalScore,
       level: result.level,
       levelColor: result.levelColor,
+      targetPersonId: targetPersonId || undefined,
       notes: notes.trim() || undefined,
     });
     onClose();
+    // 存去哪要說清楚(2026-08-27 決議)—— 第一次存的人找不到紀錄在哪
+    alert(t('scaleDialog.savedTo', { name: boundCase?.caseName ?? '' }));
   };
 
   const levelColorMap = {
@@ -137,7 +165,7 @@ export default function ScaleDialog({ scale, onClose }: Props) {
   } as const;
 
   return (
-    <div style={overlay} onClick={onClose} role="dialog" aria-modal="true">
+    <div style={overlay} onClick={() => void requestClose()} role="dialog" aria-modal="true">
       <div style={sheet} onClick={(e) => e.stopPropagation()}>
         <div style={header}>
           <div>
@@ -162,7 +190,7 @@ export default function ScaleDialog({ scale, onClose }: Props) {
             )}
           </div>
           <button
-            onClick={onClose}
+            onClick={() => void requestClose()}
             style={{ ...ghostBtn, padding: '4px 10px' }}
             title={t('common.close')}
           >
@@ -405,7 +433,10 @@ export default function ScaleDialog({ scale, onClose }: Props) {
                 </label>
                 <select
                   value={targetCaseId}
-                  onChange={(e) => setTargetCaseId(e.target.value)}
+                  onChange={(e) => {
+                    setTargetCaseId(e.target.value);
+                    setTargetPersonId(''); // 換了個案,受測者必須重選 — 跨案 id 不能殘留
+                  }}
                   style={{
                     flex: 1,
                     fontSize: 13,
@@ -424,6 +455,50 @@ export default function ScaleDialog({ scale, onClose }: Props) {
                   ))}
                 </select>
               </div>
+              {/* 受測者 —— schema 早已預留 targetPersonId,零遷移(2026-08-27 決議) */}
+              {targetCaseId !== 'unbound' && (
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 8,
+                    alignItems: 'center',
+                    marginBottom: 8,
+                  }}
+                >
+                  <label
+                    style={{
+                      fontSize: 12,
+                      color: '#86868b',
+                      minWidth: 56,
+                    }}
+                  >
+                    {t('scaleDialog.targetPerson')}
+                  </label>
+                  <select
+                    value={targetPersonId}
+                    onChange={(e) => setTargetPersonId(e.target.value)}
+                    style={{
+                      flex: 1,
+                      fontSize: 13,
+                      padding: '4px 8px',
+                      border: '1px solid #d2d2d7',
+                      borderRadius: 4,
+                      background: '#fff',
+                    }}
+                  >
+                    <option value="">{t('scaleDialog.targetPersonNone')}</option>
+                    {(boundCase?.persons ?? []).map(
+                      (p, i) => (
+                        <option key={p.id} value={p.id}>
+                          {p.basicInfo?.name?.trim() ||
+                            t('quickBuild.unnamed', { n: i + 1 })}
+                          {p.isProband ? ' ★' : ''}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </div>
+              )}
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -453,7 +528,7 @@ export default function ScaleDialog({ scale, onClose }: Props) {
                 : t('scaleDialog.progress', { n: Object.keys(answers).length, total: scale.questions.length })}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={onClose} style={ghostBtn}>
+              <button onClick={() => void requestClose()} style={ghostBtn}>
                 {t('common.cancel')}
               </button>
               <button
@@ -473,7 +548,7 @@ export default function ScaleDialog({ scale, onClose }: Props) {
         {scale.disabled && (
           <div style={footer}>
             <div style={{ flex: 1 }} />
-            <button onClick={onClose} style={ghostBtn}>
+            <button onClick={() => void requestClose()} style={ghostBtn}>
               {t('common.close')}
             </button>
           </div>

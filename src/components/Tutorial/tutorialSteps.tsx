@@ -1338,9 +1338,9 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
           <br />
           • <Strong>網絡關係</Strong>:互動關係線(15 種)+ 機構單位
           <br />
-          • <Strong>醫療</Strong>:疾病、用藥、量表評估
+          • <Strong>醫療</Strong>:疾病、用藥
           <br />
-          • <Strong>附件存放</Strong>:個案備注 / 附件
+          • <Strong>附件存放</Strong>:個案備注 / 附件 / 量表紀錄(量表從 <Code>☰</Code> →「評估工具」開始施測)
         </P>
         <InspectorMockup lang="zh" />
         <P>
@@ -1552,9 +1552,13 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         <p style={{ margin: '10px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
           💡 長時間使用眼睛酸?點頂列 <Code>👁</Code> 開<Strong>護眼暖色</Strong>,畫面變暖不刺眼 —— 匯出仍是純白,不影響資料。
         </p>
+        <p style={{ margin: '10px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
+          ⚡ 趕時間?<Code>☰</Code> →「<Strong>快速建立家庭</Strong>」:一行打一個人
+          (例:<Code>爸爸 58歲 高血壓</Code>),按建立就自動長出家系圖。
+        </p>
         <P>
-          有任何問題,點主選單 <Code>☰</Code> →「關於 / 支持本專案」,
-          或 <Code>☰</Code> →「回報意見 / 建議」直接寫信給開發者。
+          有任何問題,回到首頁點頂列 <Code>✉️</Code> 直接寫信給開發者;
+          <Code>☰</Code> →「關於」可查看版本與支持方式。
         </P>
         <div style={{ margin: '14px 0 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
           <p style={{ margin: 0, fontSize: 13, color: '#1d1d1f', lineHeight: 1.7, textAlign: 'center' }}>
@@ -1626,9 +1630,9 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           <br />
           • <Strong>Network</Strong>: Relation lines (15 kinds) + institutions
           <br />
-          • <Strong>Medical</Strong>: Diseases, medications, scale assessments
+          • <Strong>Medical</Strong>: Diseases, medications
           <br />
-          • <Strong>Attachments</Strong>: Case notes / attachments
+          • <Strong>Attachments</Strong>: Case notes / attachments / scale records (start assessments from <Code>☰</Code> → "Assessment Tools")
         </P>
         <InspectorMockup lang="en" />
         <P>
@@ -1841,9 +1845,13 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
         <p style={{ margin: '10px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
           💡 Eyes tired after long sessions? Tap <Code>👁</Code> in the top bar for <Strong>eye-comfort warmth</Strong> — the screen warms up; exports stay pure white.
         </p>
+        <p style={{ margin: '10px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
+          ⚡ In a hurry? <Code>☰</Code> → "<Strong>Quick Build Family</Strong>": one person per line
+          (e.g. <Code>father 58 hypertension</Code>) and the genogram draws itself.
+        </p>
         <P>
-          For questions, open the main menu <Code>☰</Code> → "About / Support",
-          or <Code>☰</Code> → "Feedback" to email the developer directly.
+          For questions, use the <Code>✉️</Code> button on the home page top bar to email the developer;
+          <Code>☰</Code> → "About" shows the version and ways to support.
         </P>
         <div style={{ margin: '14px 0 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
           <p style={{ margin: 0, fontSize: 13, color: '#1d1d1f', lineHeight: 1.7, textAlign: 'center' }}>

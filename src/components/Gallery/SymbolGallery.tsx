@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SYMBOLS, type SymbolCategory, type SymbolEntry } from './symbolData';
 import { useT } from '../../i18n';
 import { useGenogramStore } from '../../store/genogramStore';
@@ -19,6 +19,14 @@ function groupByCategory(items: SymbolEntry[]): [SymbolCategory, SymbolEntry[]][
 }
 
 export default function SymbolGallery({ onClose }: Props) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   const t = useT();
   const lang = useGenogramStore((s) => s.language);
   const [query, setQuery] = useState('');

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { PlusGlyph } from '../PlusGlyph';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
+import { rescueCasesFromFolder } from '../../services/folderRescue';
 import ScaleSummary from './ScaleSummary';
 import {
   isFileSystemAccessSupported,
@@ -120,7 +121,15 @@ export default function Tab4Custom() {
             hasRootDir={hasRootDir}
             onSetupFolder={async () => {
               const h = await selectRootFolder();
-              if (h) setHasRootDir(true);
+              if (h) {
+                setHasRootDir(true);
+                // 同一顆資料夾也可能藏著還沒進 DB 的個案 —— 順手救回(2026-08-27)
+                rescueCasesFromFolder()
+                  .then((n) => {
+                    if (n > 0) alert(t('caseList.folderRescued', { n }));
+                  })
+                  .catch(() => {});
+              }
             }}
             onAddInFolder={(filename, size, mime) =>
               addAttachment({ filename, inFolder: true, size, mime })

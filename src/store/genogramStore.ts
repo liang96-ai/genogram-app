@@ -638,6 +638,9 @@ type GenogramStore = {
   /** 拖曳結束時補記一格復原(#123)— 傳入「拖曳開始前」的快照 */
   commitMoveHistory: (before: Genogram) => void;
   removePersons: (ids: string[]) => void;
+  /** 框選同時含人物與網絡單位時的合併刪除 —— 一次 pushHistory,undo 一步全回來。
+   *  (分開呼叫 removePersons + removeNetworkUnit 會吃掉兩格復原,大刪一次就把 5 格上限沖光)*/
+  removePersonsAndUnits: (personIds: string[], unitIds: string[]) => void;
   cycleShape: (id: string) => void;
 
   /** Tab2 關係線 pending mode:點按鈕後等使用者點下一個人物完成連線 */
@@ -941,7 +944,9 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       set({
         currentCase: fresh,
         appMode: 'edit',
-        selectedPersonIds: [],
+        // 新個案直接選取案主(2026-08-27 決議):教學說「選中人物會出現 4 個箭頭」,
+        // 空白畫布沒選取的話,新手要自己悟出「先點一下人」
+        selectedPersonIds: [fresh.persons[0].id],
         selectedLineIds: [],
         selectedUnitIds: [],
         selectedEcosystemId: null,
@@ -2941,6 +2946,57 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const newUnits = units.map((u) => (u.id === id ? { ...u, ...patch } : u));
     const newCase = touch({ ...c, networkUnits: newUnits });
     set({ ...pushHistory(c, history, newCase) });
+  },
+  removePersonsAndUnits: (personIds, unitIds) => {
+    const { currentCase: c, history, inspectorTarget } = get();
+    if (!c) return;
+    const pset = new Set(personIds);
+    const uset = new Set(unitIds);
+    // 人物部分:沿用 removePersons 的連帶清理規則(connector / linkedPersonIds / household)
+    const keptUnits = (c.networkUnits ?? [])
+      .filter((u) => !uset.has(u.id))
+      .map((u) => {
+        const conns = (u.connectors ?? []).filter(
+          (cn) => !(cn.target.type === 'person' && pset.has(cn.target.id)),
+        );
+        const linked = u.linkedPersonIds?.filter((pid) => !pset.has(pid));
+        if (
+          conns.length === (u.connectors ?? []).length &&
+          (linked?.length ?? 0) === (u.linkedPersonIds?.length ?? 0)
+        ) {
+          return u;
+        }
+        return { ...u, connectors: conns, linkedPersonIds: linked };
+      });
+    const newHouseholds = (c.households ?? [])
+      .map((h) => ({
+        ...h,
+        memberIds: h.memberIds.filter((m) => !pset.has(m)),
+      }))
+      .filter((h) => h.memberIds.length > 0);
+    const newCase = touch({
+      ...c,
+      persons: c.persons.filter((p) => !pset.has(p.id)),
+      lines: c.lines.filter(
+        (l) => !pset.has(l.fromPersonId) && !pset.has(l.toPersonId),
+      ),
+      networkUnits: c.networkUnits ? keptUnits : c.networkUnits,
+      households: c.households ? newHouseholds : c.households,
+    });
+    // InspectorTarget 只有 person/line 兩型(單位的檢視走 selectedUnitIds),
+    // 所以只需處理「被刪的人正是 Inspector 顯示中的人」
+    const nextInspector =
+      inspectorTarget?.type === 'person' && pset.has(inspectorTarget.id)
+        ? newCase.persons.length > 0
+          ? ({ type: 'person', id: newCase.persons[0].id } as const)
+          : null
+        : inspectorTarget;
+    set({
+      ...pushHistory(c, history, newCase),
+      selectedPersonIds: [],
+      selectedUnitIds: [],
+      inspectorTarget: nextInspector,
+    });
   },
   removeNetworkUnit: (id) => {
     const { currentCase: c, history } = get();

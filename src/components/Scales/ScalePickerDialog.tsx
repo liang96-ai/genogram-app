@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useT } from '../../i18n';
+import { useGenogramStore } from '../../store/genogramStore';
 import { getScalesByCategory } from './registry';
 
 /**
@@ -20,6 +21,13 @@ export default function ScalePickerDialog({
 }) {
   const t = useT();
   const groups = useMemo(() => getScalesByCategory(), []);
+  // 已測次數(2026-08-27 決議)—— 選單看得出這個個案做過幾次,不用點進附件翻
+  // ⚠️ selector 只取 currentCase:`?? []` 放進 selector 會每次回傳新陣列,
+  //    zustand v5 直通 useSyncExternalStore 無快取 → 未施測個案無限重渲染(審查抓到的 crash)
+  const currentCase = useGenogramStore((s) => s.currentCase);
+  const scaleResults = currentCase?.scaleResults ?? [];
+  const countFor = (scaleId: string) =>
+    scaleResults.filter((r) => r.scaleId === scaleId).length;
   const [activeCat, setActiveCat] = useState(groups[0]?.category ?? '');
   const [query, setQuery] = useState('');
 
@@ -213,9 +221,31 @@ export default function ScalePickerDialog({
                   }
                 >
                   <div
-                    style={{ fontSize: 13.5, color: '#1d1d1f', fontWeight: 500 }}
+                    style={{
+                      fontSize: 13.5,
+                      color: '#1d1d1f',
+                      fontWeight: 500,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
                   >
-                    {s.name}
+                    <span>{s.name}</span>
+                    {countFor(s.id) > 0 && (
+                      <span
+                        style={{
+                          fontSize: 10.5,
+                          fontWeight: 500,
+                          color: '#3b4ba8',
+                          background: '#eef1ff',
+                          borderRadius: 8,
+                          padding: '1px 8px',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {t('scalePicker.doneTimes', { n: countFor(s.id) })}
+                      </span>
+                    )}
                   </div>
                   {q && (
                     <div style={{ fontSize: 11, color: '#3b4ba8', marginTop: 2 }}>

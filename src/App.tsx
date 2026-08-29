@@ -21,14 +21,10 @@ import {
 } from './components/About/SupportDialog';
 import { useT } from './i18n';
 import { getScale } from './components/Scales/registry';
-import { db, getDeletedCaseIds } from './services/database';
-import { isValidGenogram } from './services/exportImport';
+import { db } from './services/database';
 import type { Genogram } from './types/genogram';
-import {
-  loadRootDirHandle,
-  writeCaseJson,
-  loadAllCasesFromFolder,
-} from './services/fileSystem';
+import { loadRootDirHandle, writeCaseJson } from './services/fileSystem';
+import { rescueCasesFromFolder } from './services/folderRescue';
 import { setupPwaInstallListener } from './services/pwaInstall';
 import {
   applyUpdate,
@@ -66,6 +62,7 @@ export default function App() {
   const selectedEcosystemId = useGenogramStore((s) => s.selectedEcosystemId);
   const selectedConnector = useGenogramStore((s) => s.selectedConnector);
   const removePersons = useGenogramStore((s) => s.removePersons);
+  const removePersonsAndUnits = useGenogramStore((s) => s.removePersonsAndUnits);
   const removeLine = useGenogramStore((s) => s.removeLine);
   const removeNetworkUnit = useGenogramStore((s) => s.removeNetworkUnit);
   const removeConnector = useGenogramStore((s) => s.removeConnector);
@@ -165,32 +162,11 @@ export default function App() {
         const dirHandle = await loadRootDirHandle();
 
         if (dirHandle) {
-          // 掃資料夾 → 找 IndexedDB 沒有的個案補進去(救回瀏覽器清掉的資料)
+          // 掃資料夾 → 找 IndexedDB 沒有的個案補進去(抽成共用 rescueCasesFromFolder,
+          // 所有「選資料夾」入口也會呼叫同一份 —— 換電腦選完資料夾個案要立刻出現)
           try {
-            const [tombstones, cases] = await Promise.all([
-              getDeletedCaseIds(),
-              loadAllCasesFromFolder(),
-            ]);
-            const skip = new Set(tombstones);
-            let restored = 0;
-            for (const g of cases) {
-              // 壞檔(#119)與已刪除個案的殘留備份(#125)都不救
-              if (!isValidGenogram(g)) {
-                console.warn(
-                  'skip invalid case.json in folder:',
-                  (g as { id?: unknown })?.id,
-                );
-                continue;
-              }
-              if (skip.has(g.id)) continue;
-              const exists = await db.cases.get(g.id);
-              if (!exists) {
-                await db.cases.put(g);
-                restored++;
-              }
-            }
+            const restored = await rescueCasesFromFolder();
             if (restored > 0) {
-              // 重新載個案清單(有新還原進來的)
               await loadCaseList();
             }
           } catch (err) {
@@ -350,7 +326,21 @@ export default function App() {
       // Delete — 單獨按:跳確認;Cmd/Ctrl + Delete:直接刪除
       if (e.key === 'Delete' || e.key === 'Backspace') {
         const skipConfirm = e.metaKey || e.ctrlKey;
-        if (selectedPersonIds.length > 0) {
+        if (selectedPersonIds.length > 0 && selectedUnitIds.length > 0) {
+          // 框選同時圈到人物與網絡單位:一起刪、一步復原(2026-08-27 決議)——
+          // 舊行為只刪人物,單位留在原地,使用者會以為沒刪成功
+          e.preventDefault();
+          const doIt = () =>
+            removePersonsAndUnits(selectedPersonIds, selectedUnitIds);
+          if (skipConfirm) {
+            doIt();
+          } else {
+            const ok = await showConfirm(
+              `確定要刪除 ${selectedPersonIds.length} 個人物與 ${selectedUnitIds.length} 個網絡單位嗎?相關線條也會一併刪除。`,
+            );
+            if (ok) doIt();
+          }
+        } else if (selectedPersonIds.length > 0) {
           e.preventDefault();
           if (skipConfirm) {
             removePersons(selectedPersonIds);
@@ -430,6 +420,7 @@ export default function App() {
     currentCase,
     showConfirm,
     removePersons,
+    removePersonsAndUnits,
     removeLine,
     removeNetworkUnit,
     removeConnector,
@@ -581,11 +572,14 @@ export default function App() {
             onClose={() => setShowFolderSetup(false)}
             onSelected={async () => {
               setShowFolderSetup(false);
-              // 選好資料夾後,把目前 IndexedDB 的個案全部寫一份進去(初始備份)
+              // 先救回資料夾裡已有的個案(pull),再把現有個案寫出(push)
               try {
+                const restored = await rescueCasesFromFolder();
                 const allCases = await db.cases.toArray();
                 for (const g of allCases) await writeCaseJson(g);
                 await loadCaseList();
+                if (restored > 0)
+                  alert(t('caseList.folderRescued', { n: restored }));
               } catch (err) {
                 console.error('initial sync to folder failed:', err);
               }
@@ -632,9 +626,12 @@ export default function App() {
           onSelected={async () => {
             setShowFolderSetup(false);
             try {
+              const restored = await rescueCasesFromFolder();
               const allCases = await db.cases.toArray();
               for (const g of allCases) await writeCaseJson(g);
               await loadCaseList();
+              if (restored > 0)
+                alert(t('caseList.folderRescued', { n: restored }));
             } catch (err) {
               console.error('initial sync to folder failed:', err);
             }

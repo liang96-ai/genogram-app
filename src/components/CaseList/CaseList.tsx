@@ -12,6 +12,7 @@ import {
   writeCaseJson,
 } from '../../services/fileSystem';
 import { db } from '../../services/database';
+import { rescueCasesFromFolder } from '../../services/folderRescue';
 import FeedbackDialog from './FeedbackDialog';
 import PrivacyWelcomeDialog, {
   hasAcknowledgedPrivacy,
@@ -21,6 +22,24 @@ import { hasTutorialBeenSeen } from '../Tutorial/tutorialSeen';
 import AboutDialog from '../About/AboutDialog';
 import { SupportButton } from '../About/SupportDialog';
 import EyeComfortButton from '../EyeComfort/EyeComfortButton';
+
+/** 選完資料夾後的固定三步(2026-08-27 決議):先把資料夾裡的個案救回來(pull),
+ *  再把現有個案寫出去(push),缺一步都會有一邊資料看起來「消失」。回傳救回筆數。 */
+async function syncAfterFolderPick(): Promise<number> {
+  let restored = 0;
+  try {
+    restored = await rescueCasesFromFolder();
+  } catch (err) {
+    console.error('rescue from folder failed:', err);
+  }
+  try {
+    const allCases = await db.cases.toArray();
+    for (const g of allCases) await writeCaseJson(g);
+  } catch (err) {
+    console.error('sync to folder failed:', err);
+  }
+  return restored;
+}
 
 // 符號圖例 lazy 拆包(#127)— 開圖例時才載入(symbolData 本身被 Tab1/Tab2 引用,仍在主包)
 const SymbolGallery = lazy(() => import('../Gallery/SymbolGallery'));
@@ -40,6 +59,7 @@ export default function CaseList() {
   const setLanguage = useGenogramStore((s) => s.setLanguage);
 
   const [showNew, setShowNew] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [exportTarget, setExportTarget] = useState<string | null>(null);
   const [folderName, setFolderName] = useState<string | null>(null);
@@ -311,12 +331,10 @@ export default function CaseList() {
                   const h = await selectRootFolder();
                   if (h) {
                     setFolderName(h.name);
-                    try {
-                      const allCases = await db.cases.toArray();
-                      for (const g of allCases) await writeCaseJson(g);
-                    } catch (err) {
-                      console.error('sync to folder failed:', err);
-                    }
+                    const restored = await syncAfterFolderPick();
+                    await loadCaseList();
+                    if (restored > 0)
+                      alert(t('caseList.folderRescued', { n: restored }));
                   }
                 }}
               />
@@ -478,13 +496,10 @@ export default function CaseList() {
                 const h = await selectRootFolder();
                 if (h) {
                   setFolderName(h.name);
-                  try {
-                    const allCases = await db.cases.toArray();
-                    for (const g of allCases) await writeCaseJson(g);
-                    await loadCaseList();
-                  } catch (err) {
-                    console.error('sync to new folder failed:', err);
-                  }
+                  const restored = await syncAfterFolderPick();
+                  await loadCaseList();
+                  if (restored > 0)
+                    alert(t('caseList.folderRescued', { n: restored }));
                 }
               }}
               style={{
@@ -542,6 +557,26 @@ export default function CaseList() {
           </div>
         )}
 
+        {/* 搜尋(2026-08-27 決議)— caseload 50-150 案是台灣社工常態,肉眼掃卡片牆不現實 */}
+        {caseList.length > 0 && (
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('caseList.searchPlaceholder')}
+            style={{
+              width: '100%',
+              padding: '9px 14px',
+              fontSize: 14,
+              border: '1px solid #d2d2d7',
+              borderRadius: 9,
+              fontFamily: 'inherit',
+              color: '#1d1d1f',
+              boxSizing: 'border-box',
+              marginBottom: 14,
+              background: '#ffffff',
+            }}
+          />
+        )}
         {/* Case List — 依最近使用分三階(1週內 / 1月內 / 更早) */}
         {caseList.length === 0 ? (
           <div
@@ -579,7 +614,11 @@ export default function CaseList() {
               { key: 'older', labelKey: 'caseList.groupOlder', items: [] },
             ];
             // 各組內按時間倒序排
-            const sorted = [...caseList].sort((a, b) => {
+            const q = searchQuery.trim().toLowerCase();
+            const visible = q
+              ? caseList.filter((c) => c.caseName.toLowerCase().includes(q))
+              : caseList;
+            const sorted = [...visible].sort((a, b) => {
               const ta = new Date(a.lastModifiedAt).getTime();
               const tb = new Date(b.lastModifiedAt).getTime();
               return tb - ta;
@@ -590,6 +629,20 @@ export default function CaseList() {
               if (age <= W) groups[0].items.push(c);
               else if (age <= M) groups[1].items.push(c);
               else groups[2].items.push(c);
+            }
+            if (q && sorted.length === 0) {
+              return (
+                <div
+                  style={{
+                    padding: '30px 0',
+                    textAlign: 'center',
+                    color: '#86868b',
+                    fontSize: 13,
+                  }}
+                >
+                  {t('caseList.searchNoResult', { q: searchQuery.trim() })}
+                </div>
+              );
             }
             return (
               <>
@@ -705,16 +758,13 @@ export default function CaseList() {
             setShowNew(true);
           }}
           onSelected={async () => {
-            // 使用者選了資料夾 → 同步既有個案到資料夾 → 再開新個案 dialog
+            // 使用者選了資料夾 → 先救回資料夾裡的個案、再同步寫出 → 再開新個案 dialog
             setFolderPromptForNew(false);
             setFolderName(getRootFolderName());
-            try {
-              const allCases = await db.cases.toArray();
-              for (const g of allCases) await writeCaseJson(g);
-              await loadCaseList();
-            } catch (err) {
-              console.error('sync to new folder failed:', err);
-            }
+            const restored = await syncAfterFolderPick();
+            await loadCaseList();
+            if (restored > 0)
+              alert(t('caseList.folderRescued', { n: restored }));
             setShowNew(true);
           }}
         />

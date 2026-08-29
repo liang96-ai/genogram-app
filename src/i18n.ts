@@ -145,6 +145,25 @@ const dict: Record<Lang, Record<string, string>> = {
       '📲 安裝步驟:\n\n• 電腦 Chrome / Edge:點網址列右邊的安裝圖示 ⊕\n• Android Chrome:右上選單 ⋮ → 安裝應用程式\n• Safari(電腦):檔案 → 加入 Dock',
     'install.gotIt': '知道了',
 
+    // ===== v1.3 批次二:防白做工 =====
+    'caseList.searchPlaceholder': '搜尋個案名稱⋯',
+    'caseList.searchNoResult': '找不到「{q}」— 檢查一下有沒有錯字,或它可能已被刪除',
+    'caseList.folderRescued': '✓ 已從資料夾救回 {n} 筆個案',
+    'quickBuild.discardConfirm': '你打的內容還沒建立,關掉就會消失。要放棄嗎?',
+    'quickBuild.discardYes': '放棄輸入',
+    'quickBuild.discardNo': '繼續編輯',
+    'scaleDialog.discardConfirm': '這份量表還沒儲存,關掉就會消失。要放棄嗎?',
+    'scaleDialog.discardYes': '放棄此次施測',
+    'scaleDialog.discardNo': '繼續填寫',
+    'scaleDialog.targetPerson': '受測者',
+    'scaleDialog.targetPersonNone': '(未指定 — 整個家庭/未綁人)',
+    'scaleDialog.savedTo': '✓ 已儲存到「{name}」的附件存放分頁(量表紀錄)',
+    'scaleSummary.deleteConfirm': '確定要刪除 {date} 這筆施測紀錄嗎?這是臨床紀錄,刪了就沒有了。',
+    'scalePicker.doneTimes': '已測 {n} 次',
+    'import.sideFile': '檔案裡',
+    'import.sideLocal': '電腦裡',
+    'import.personsUnit': ' 人',
+
     // ===== v1.3 批次一:匯出安全 / 遮蔽指示 / 共用電腦 =====
     'export.svg': 'SVG 向量(放進 Word 縮放不糊)',
     'privacyBadge.masking': '遮蔽中 · {n} 個欄位',
@@ -821,6 +840,25 @@ const dict: Record<Lang, Record<string, string>> = {
     'install.stepsDesktop':
       '📲 How to install:\n\n• Chrome / Edge (desktop): click the install icon ⊕ in the address bar\n• Android Chrome: menu ⋮ → Install app\n• Safari (desktop): File → Add to Dock',
     'install.gotIt': 'Got it',
+
+    // ===== v1.3 batch 2: no lost work =====
+    'caseList.searchPlaceholder': 'Search case names…',
+    'caseList.searchNoResult': 'No case matching "{q}" — check for typos, or it may have been deleted',
+    'caseList.folderRescued': '✓ Restored {n} case(s) from the backup folder',
+    'quickBuild.discardConfirm': 'Your text has not been built yet and will be lost. Discard it?',
+    'quickBuild.discardYes': 'Discard',
+    'quickBuild.discardNo': 'Keep editing',
+    'scaleDialog.discardConfirm': 'This assessment has not been saved and will be lost. Discard it?',
+    'scaleDialog.discardYes': 'Discard assessment',
+    'scaleDialog.discardNo': 'Keep filling',
+    'scaleDialog.targetPerson': 'Assessed person',
+    'scaleDialog.targetPersonNone': '(not specified — whole family)',
+    'scaleDialog.savedTo': '✓ Saved to "{name}" under the Attachments tab (scale records)',
+    'scaleSummary.deleteConfirm': 'Delete the assessment record dated {date}? This is a clinical record and cannot be recovered.',
+    'scalePicker.doneTimes': 'done ×{n}',
+    'import.sideFile': 'In file',
+    'import.sideLocal': 'On this computer',
+    'import.personsUnit': ' people',
 
     // ===== v1.3 batch 1: export safety / mask badge / shared computer =====
     'export.svg': 'SVG vector (scales cleanly in Word)',

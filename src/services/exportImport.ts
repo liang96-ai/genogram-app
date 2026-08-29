@@ -1,4 +1,5 @@
 import { db, removeDeletedCaseIds } from './database';
+import { writeCaseJson } from './fileSystem';
 import type { Genogram, Line, Person } from '../types/genogram';
 
 export type ExportType = 'single' | 'multi' | 'backup';
@@ -110,7 +111,9 @@ export function parseImport(text: string): ExportBundle {
   try {
     obj = JSON.parse(text);
   } catch {
-    throw new Error('檔案不是合法的 JSON');
+    throw new Error(
+      '無法讀取這個檔案 —— 它不是本工具匯出的 .json 個案檔(可能選到了 PDF、圖片或其他程式的檔案)',
+    );
   }
   if (!obj || typeof obj !== 'object') throw new Error('檔案格式錯誤');
   const bundle = obj as Partial<ExportBundle>;
@@ -123,7 +126,10 @@ export function parseImport(text: string): ExportBundle {
       `不支援的檔案版本 (${ver || 'unknown'});此版本可讀 1.x 系列的檔案`,
     );
   }
-  if (!Array.isArray(bundle.cases)) throw new Error('檔案缺少 cases');
+  if (!Array.isArray(bundle.cases))
+    throw new Error(
+      '這不是本工具匯出的個案檔(裡面沒有個案內容)。請選擇當初用「輸出檔案」存下來的 .json',
+    );
   return bundle as ExportBundle;
 }
 
@@ -188,6 +194,9 @@ export async function applyImport(
   let skipped = 0;
   let invalid = 0;
   const importedIds: string[] = [];
+  // 匯入成功的個案要立刻寫進備份資料夾(2026-08-27 決議)——
+  // 不然「同事傳來的 10 筆」在資料夾裡不存在,清快取就是真丟失,而使用者以為有備份
+  const written: Genogram[] = [];
   const now = new Date().toISOString();
   for (const c of bundle.cases) {
     // 壞資料直接寫進 DB 會讓首頁渲染炸掉(#119)→ 跳過並計數
@@ -199,7 +208,8 @@ export async function applyImport(
     const existing = await db.cases.get(c.id);
     if (!existing) {
       // 沒衝突 → 直接加
-      await db.cases.put({ ...c, lastModifiedAt: now });
+      await db.cases.put({ ...c, lastModifiedAt: c.lastModifiedAt || now });
+      written.push({ ...c, lastModifiedAt: c.lastModifiedAt || now });
       added++;
       continue;
     }
@@ -207,7 +217,8 @@ export async function applyImport(
     if (action === 'skip') {
       skipped++;
     } else if (action === 'overwrite') {
-      await db.cases.put({ ...c, lastModifiedAt: now });
+      await db.cases.put({ ...c, lastModifiedAt: c.lastModifiedAt || now });
+      written.push({ ...c, lastModifiedAt: c.lastModifiedAt || now });
       overwritten++;
     } else {
       // duplicate
@@ -215,11 +226,17 @@ export async function applyImport(
         ...c,
         id: uid('case'),
         caseName: `${c.caseName} (匯入)`,
-        lastModifiedAt: now,
+        lastModifiedAt: c.lastModifiedAt || now,
       };
       await db.cases.put(dup);
+      written.push(dup);
       added++;
     }
+  }
+  for (const g of written) {
+    writeCaseJson(g).catch((err) =>
+      console.error('import writeCaseJson failed:', err),
+    );
   }
   // 含 settings → 合併 history(不限 backup,任何含 settings 的都合併)
   if (bundle.settings) {

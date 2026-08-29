@@ -18,6 +18,7 @@ export default function ScaleSummary() {
   const t = useT();
   const currentCase = useGenogramStore((s) => s.currentCase);
   const removeScaleResult = useGenogramStore((s) => s.removeScaleResult);
+  const showConfirm = useGenogramStore((s) => s.showConfirm);
   const [expandedScaleId, setExpandedScaleId] = useState<string | null>(null);
 
   const allResults = currentCase?.scaleResults ?? [];
@@ -154,7 +155,13 @@ export default function ScaleSummary() {
                       )}
                     </div>
                     <button
-                      onClick={() => removeScaleResult(r.id)}
+                      onClick={async () => {
+                        // 一筆施測就是一筆臨床紀錄,誤點 × 不該直接消失(2026-08-27 決議)
+                        const ok = await showConfirm(
+                          t('scaleSummary.deleteConfirm', { date: r.date }),
+                        );
+                        if (ok) removeScaleResult(r.id);
+                      }}
                       title={t('scaleSummary.deleteRecord')}
                       style={{
                         background: 'transparent',

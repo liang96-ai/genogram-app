@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { selectRootFolder } from '../../services/fileSystem';
 
 /**
@@ -12,6 +13,14 @@ export default function FolderSetupModal({
   onClose: () => void;
   onSelected: () => void;
 }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   return (
     <div
       onClick={onClose}

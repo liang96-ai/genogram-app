@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Genogram } from '../../types/genogram';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import {
@@ -10,6 +9,7 @@ import {
   detectConflicts,
   downloadJSON,
   singleExportFilename,
+  type CaseConflict,
   parseImport,
   type ConflictAction,
   type ExportBundle,
@@ -72,11 +72,32 @@ export function ExportDialog({
   );
 
   // 圖片匯出設定
-  const [imgFormat, setImgFormat] = useState<ImageFormat>('png');
-  const [imgScale, setImgScale] = useState<1 | 2 | 3>(2);
-  const [imgRange, setImgRange] = useState<ImageRange>('auto');
-  const [imgHideDotGrid, setImgHideDotGrid] = useState(true);
-  const [imgSimplifyLines, setImgSimplifyLines] = useState(false);
+  // 記住上次的圖片匯出設定(2026-08-27 決議)—— 每週交督導不用重勾;
+  // 特別是「隱藏關係細節」忘了勾會把敏感關係寄給不該看的人
+  const imgPrefs = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('exportImagePrefs') ?? '{}');
+    } catch {
+      return {};
+    }
+  })();
+  const [imgFormat, setImgFormat] = useState<ImageFormat>(
+    imgPrefs.format === 'jpg' || imgPrefs.format === 'svg'
+      ? imgPrefs.format
+      : 'png',
+  );
+  const [imgScale, setImgScale] = useState<1 | 2 | 3>(
+    imgPrefs.scale === 1 || imgPrefs.scale === 3 ? imgPrefs.scale : 2,
+  );
+  const [imgRange, setImgRange] = useState<ImageRange>(
+    imgPrefs.range === 'view' ? 'view' : 'auto',
+  );
+  const [imgHideDotGrid, setImgHideDotGrid] = useState(
+    imgPrefs.hideDotGrid !== false,
+  );
+  const [imgSimplifyLines, setImgSimplifyLines] = useState(
+    imgPrefs.simplifyLines === true,
+  );
   const [imgBusy, setImgBusy] = useState(false);
   const [imgError, setImgError] = useState<string | null>(null);
 
@@ -173,6 +194,20 @@ export function ExportDialog({
         return;
       }
       setImgBusy(false);
+    }
+    try {
+      localStorage.setItem(
+        'exportImagePrefs',
+        JSON.stringify({
+          format: imgFormat,
+          scale: imgScale,
+          range: imgRange,
+          hideDotGrid: imgHideDotGrid,
+          simplifyLines: imgSimplifyLines,
+        }),
+      );
+    } catch {
+      // 存偏好失敗不影響匯出
     }
     notifyExportSuccess(); // 所有成功匯出(JSON/圖片)的共同出口
     onClose();
@@ -425,7 +460,7 @@ export function ExportDialog({
 
 type ImportStep =
   | { kind: 'pick' }
-  | { kind: 'preview'; bundle: ExportBundle; conflicts: Genogram[] }
+  | { kind: 'preview'; bundle: ExportBundle; conflicts: CaseConflict[] }
   | { kind: 'done'; result: ImportResult };
 
 export function ImportDialog({ onClose }: { onClose: () => void }) {
@@ -444,12 +479,11 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
       const text = await file.text();
       const bundle = parseImport(text);
       const conflicts = await detectConflicts(bundle);
-      const conflictCases = conflicts.map((c) => c.incoming);
       // 預設衝突動作 = duplicate
       const decisions = new Map<string, ConflictAction>();
-      for (const c of conflictCases) decisions.set(c.id, 'duplicate');
+      for (const c of conflicts) decisions.set(c.incoming.id, 'duplicate');
       setConflictDecisions(decisions);
-      setStep({ kind: 'preview', bundle, conflicts: conflictCases });
+      setStep({ kind: 'preview', bundle, conflicts });
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -467,7 +501,7 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
     if (step.kind !== 'preview') return;
     setBulkAction(action);
     const next = new Map<string, ConflictAction>();
-    for (const c of step.conflicts) next.set(c.id, action);
+    for (const c of step.conflicts) next.set(c.incoming.id, action);
     setConflictDecisions(next);
   };
 
@@ -582,7 +616,10 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
                   borderRadius: 6,
                 }}
               >
-                {step.conflicts.map((c) => (
+                {step.conflicts.map(({ incoming, existing }) => {
+                  const c = incoming;
+                  const fmt = (iso: string) => String(iso ?? '').slice(0, 10) || '—';
+                  return (
                   <div
                     key={c.id}
                     style={{
@@ -591,8 +628,16 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
                       fontSize: 12,
                     }}
                   >
-                    <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                    <div style={{ fontWeight: 500, marginBottom: 2 }}>
                       {c.caseName}
+                    </div>
+                    {/* 兩邊比一比(2026-08-27 決議)—— 沒有日期與人數,「覆蓋」就是盲選 */}
+                    <div style={{ fontSize: 11, color: '#6e6e73', marginBottom: 4 }}>
+                      {t('import.sideFile')}:{fmt(c.lastModifiedAt)} · {c.persons.length}
+                      {t('import.personsUnit')}
+                      {'　'}
+                      {t('import.sideLocal')}:{fmt(existing.lastModifiedAt)} · {existing.persons.length}
+                      {t('import.personsUnit')}
                     </div>
                     <div
                       style={{ display: 'flex', gap: 6, marginTop: 4 }}
@@ -633,7 +678,7 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
                       )}
                     </div>
                   </div>
-                ))}
+                );})}
               </div>
             </>
           )}

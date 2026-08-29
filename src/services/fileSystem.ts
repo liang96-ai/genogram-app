@@ -200,10 +200,42 @@ export async function writeCaseJson(g: Genogram): Promise<boolean> {
       new Blob([JSON.stringify(g, null, 2)], { type: 'application/json' }),
     );
     await writable.close();
+    void updateFolderIndex(); // 目錄檔跟著更新(fire-and-forget,失敗不影響備份本體)
     return true;
   } catch (err) {
     console.error('writeCaseJson failed:', err);
     return false;
+  }
+}
+
+/**
+ * 在資料夾根維護一份人看得懂的目錄(2026-08-27 決議)——
+ * 資料夾裡全是 case_c_xxxx 亂碼名,要抄個案給同事或人工救援時得逐檔打開猜。
+ * 純輔助輸出:App 讀取備份永遠只認 case_<id>/case.json,不讀這份。
+ */
+async function updateFolderIndex(): Promise<void> {
+  if (!rootDirHandle) return;
+  try {
+    const all = await db.cases.toArray();
+    const lines = all
+      .sort((a, b) => (b.lastModifiedAt > a.lastModifiedAt ? 1 : -1))
+      .map(
+        (c) =>
+          `${c.caseName}  →  case_${c.id}/  (最後修改 ${String(c.lastModifiedAt).slice(0, 10)},${c.persons.length} 人)`,
+      );
+    const text = [
+      '家系圖工具 備份資料夾目錄(自動產生,可放心刪除 —— App 不讀這份檔案)',
+      `更新於 ${new Date().toISOString().slice(0, 16).replace('T', ' ')}`,
+      '',
+      ...lines,
+      '',
+    ].join('\n');
+    const fh = await rootDirHandle.getFileHandle('_目錄.txt', { create: true });
+    const w = await fh.createWritable();
+    await w.write(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+    await w.close();
+  } catch (err) {
+    console.warn('updateFolderIndex failed (non-fatal):', err);
   }
 }
 
@@ -293,10 +325,12 @@ export async function writeBackupToFolder(
 
 /** 刪除整個個案資料夾(case_<id>/ + 內含 case.json + attachments/) */
 export async function deleteCaseFolder(caseId: string): Promise<boolean> {
+
   if (!rootDirHandle) return false;
   if (!(await ensureRootPermission())) return false;
   try {
     await rootDirHandle.removeEntry(`case_${caseId}`, { recursive: true });
+    void updateFolderIndex();
     return true;
   } catch (err) {
     console.error('deleteCaseFolder failed:', err);

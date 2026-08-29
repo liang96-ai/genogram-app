@@ -12,11 +12,14 @@ export default function ConfirmDialog() {
       // Enter 不再=直接確認(#128 防誤按刪除);取消鈕 autoFocus,Enter 觸發的是焦點按鈕
       if (e.key === 'Escape') {
         e.preventDefault();
+        // capture + stopPropagation:確認框開著時,Esc 只歸它管 ——
+        // 不然底下的彈窗(匯出/量表)會一起被關掉,使用者勾好的東西全丟(2026-08-27 決議)
+        e.stopPropagation();
         confirmState.onNo();
       }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
   }, [confirmState]);
 
   if (!confirmState) return null;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../i18n';
 import { useGenogramStore } from '../../store/genogramStore';
 import {
@@ -28,6 +28,7 @@ import { executeQuickBuild } from '../../services/quickBuildExecutor';
 export default function QuickBuildDialog({ onClose }: { onClose: () => void }) {
   const t = useT();
   const currentCase = useGenogramStore((s) => s.currentCase);
+  const showConfirm = useGenogramStore((s) => s.showConfirm);
   const diseaseHistory = useGenogramStore((s) => s.diseaseHistory);
 
   const persons = useMemo(() => currentCase?.persons ?? [], [currentCase]);
@@ -48,13 +49,27 @@ export default function QuickBuildDialog({ onClose }: { onClose: () => void }) {
     return () => window.clearTimeout(id);
   }, [text]);
 
+  // 有輸入時關閉先確認(2026-08-27 決議)—— 打了十行家庭描述,手滑 Esc / 點到外面就全蒸發
+  const requestClose = useCallback(async () => {
+    if (!text.trim()) {
+      onClose();
+      return;
+    }
+    const ok = await showConfirm(t('quickBuild.discardConfirm'), {
+      yes: t('quickBuild.discardYes'),
+      no: t('quickBuild.discardNo'),
+      tone: 'normal',
+    });
+    if (ok) onClose();
+  }, [text, onClose, showConfirm, t]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') void requestClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [requestClose]);
 
   const plan = useMemo(
     () =>
@@ -98,7 +113,7 @@ export default function QuickBuildDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      onClick={onClose}
+      onClick={() => void requestClose()}
       role="dialog"
       aria-modal="true"
       style={{
@@ -138,7 +153,7 @@ export default function QuickBuildDialog({ onClose }: { onClose: () => void }) {
             ⚡ {t('quickBuild.title')}
           </div>
           <button
-            onClick={onClose}
+            onClick={() => void requestClose()}
             aria-label={t('common.close')}
             style={{
               width: 28,
@@ -298,7 +313,7 @@ export default function QuickBuildDialog({ onClose }: { onClose: () => void }) {
           }}
         >
           <button
-            onClick={onClose}
+            onClick={() => void requestClose()}
             style={{
               padding: '8px 18px',
               fontSize: 14,
