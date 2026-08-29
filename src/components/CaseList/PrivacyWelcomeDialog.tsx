@@ -101,6 +101,10 @@ export default function PrivacyWelcomeDialog({ onClose }: Props) {
           title={t('privacy.welcomePoint3Title')}
           body={t('privacy.welcomePoint3Body')}
         />
+        <Point
+          title={t('privacy.welcomePoint4Title')}
+          body={t('privacy.welcomePoint4Body')}
+        />
 
         <div style={{ marginBottom: 20 }} />
 

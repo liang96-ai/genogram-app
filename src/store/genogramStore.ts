@@ -576,6 +576,8 @@ type GenogramStore = {
 
   privacyEnabled: boolean;
   privateFields: Record<PrivacyField, boolean>;
+  /** 載入上次的遮蔽設定(2026-08-27 決議:遮蔽不再重開歸零 —— 團督前設好的隱私,隔天要還在)*/
+  loadPrivacySettings: () => Promise<void>;
   setPrivacyEnabled: (v: boolean) => void;
   togglePrivateField: (f: PrivacyField) => void;
   setSectionFields: (section: PrivacySection, value: boolean) => void;
@@ -876,6 +878,12 @@ function pushHistory(
   };
 }
 
+function savePrivateFields(fields: Record<PrivacyField, boolean>): void {
+  db.settings
+    .put({ key: 'privateFields', value: fields })
+    .catch((err) => console.error('save privateFields failed:', err));
+}
+
 export const useGenogramStore = create<GenogramStore>((set, get) => ({
   showTutorial: false,
   setShowTutorial: (v) => set({ showTutorial: v }),
@@ -1059,7 +1067,38 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   disabilityTypeHistory: [],
   privacyEnabled: false,
   privateFields: DEFAULT_PRIVATE_FIELDS,
-  setPrivacyEnabled: (v) => set({ privacyEnabled: v }),
+  loadPrivacySettings: async () => {
+    try {
+      const [en, fields] = await Promise.all([
+        db.settings.get('privacyEnabled'),
+        db.settings.get('privateFields'),
+      ]);
+      const patch: Partial<{
+        privacyEnabled: boolean;
+        privateFields: Record<PrivacyField, boolean>;
+      }> = {};
+      if (en && typeof en === 'object' && 'value' in en)
+        patch.privacyEnabled = !!(en as { value: unknown }).value;
+      if (fields && typeof fields === 'object' && 'value' in fields) {
+        const v = (fields as { value: unknown }).value;
+        if (v && typeof v === 'object')
+          // 蓋在預設值上 —— 未來新增的欄位沒存過就用預設,不會 undefined
+          patch.privateFields = {
+            ...DEFAULT_PRIVATE_FIELDS,
+            ...(v as Record<PrivacyField, boolean>),
+          };
+      }
+      if (Object.keys(patch).length) set(patch);
+    } catch (err) {
+      console.error('load privacy settings failed:', err);
+    }
+  },
+  setPrivacyEnabled: (v) => {
+    set({ privacyEnabled: v });
+    db.settings
+      .put({ key: 'privacyEnabled', value: v })
+      .catch((err) => console.error('save privacyEnabled failed:', err));
+  },
 
   language: 'zh',
   setLanguage: (lang) => {
@@ -1135,18 +1174,22 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     } as const;
     set({ [map[key]]: value });
   },
-  togglePrivateField: (f) =>
+  togglePrivateField: (f) => {
     set((s) => ({
       privateFields: { ...s.privateFields, [f]: !s.privateFields[f] },
-    })),
-  setSectionFields: (section, value) =>
+    }));
+    savePrivateFields(get().privateFields);
+  },
+  setSectionFields: (section, value) => {
     set((s) => {
       const next = { ...s.privateFields };
       fieldsInSection(section).forEach((f) => {
         next[f] = value;
       });
       return { privateFields: next };
-    }),
+    });
+    savePrivateFields(get().privateFields);
+  },
   history: { past: [], future: [] },
 
   setCurrentCase: (currentCase) => {

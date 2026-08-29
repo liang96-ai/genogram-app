@@ -145,6 +145,15 @@ const dict: Record<Lang, Record<string, string>> = {
       '📲 安裝步驟:\n\n• 電腦 Chrome / Edge:點網址列右邊的安裝圖示 ⊕\n• Android Chrome:右上選單 ⋮ → 安裝應用程式\n• Safari(電腦):檔案 → 加入 Dock',
     'install.gotIt': '知道了',
 
+    // ===== v1.3 批次一:匯出安全 / 遮蔽指示 / 共用電腦 =====
+    'export.svg': 'SVG 向量(放進 Word 縮放不糊)',
+    'privacyBadge.masking': '遮蔽中 · {n} 個欄位',
+    'privacyBadge.tooltip':
+      '目前有欄位設為保密,不會顯示在畫布與匯出圖上。要調整:選一個人物 → 基本資料 → 保密功能',
+    'privacy.welcomePoint4Title': '⚠️ 一台電腦多人共用時',
+    'privacy.welcomePoint4Body':
+      '「只在你的裝置上」也代表:同一個瀏覽器帳號打開就看得到。機構共用電腦請一人一個系統帳號(或瀏覽器設定檔),下班登出。',
+
     // ===== 評估工具彈窗 =====
     'scalePicker.searchPlaceholder': '搜尋量表名稱⋯',
     'scalePicker.noResult': '找不到符合的量表',
@@ -602,7 +611,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'export.privacyApplied': '💡 已套用「保密」設定 — 勾保密的欄位不會出現在圖上。',
     // v1.1: 匯出 json 前的個資警告(B 版 — 短而溫暖)
     'export.privacyWarning':
-      '⚠️ 這份檔案含完整個資\n\n透過網路傳送有外洩風險,本工具提醒你多加留意。',
+      '⚠️ 這份檔案含完整個資\n\n透過網路傳送(email / LINE / 雲端)就離開了你的裝置,請依機構規範處理。\n交接建議:當面用隨身碟或機構內部系統傳遞,對方匯入成功後刪除暫存檔。',
     'export.processing': '處理中…',
     'export.download': '下載',
     'import.title': '匯入',
@@ -812,6 +821,15 @@ const dict: Record<Lang, Record<string, string>> = {
     'install.stepsDesktop':
       '📲 How to install:\n\n• Chrome / Edge (desktop): click the install icon ⊕ in the address bar\n• Android Chrome: menu ⋮ → Install app\n• Safari (desktop): File → Add to Dock',
     'install.gotIt': 'Got it',
+
+    // ===== v1.3 batch 1: export safety / mask badge / shared computer =====
+    'export.svg': 'SVG vector (scales cleanly in Word)',
+    'privacyBadge.masking': 'Masking on · {n} fields',
+    'privacyBadge.tooltip':
+      'Some fields are set to private and hidden on the canvas and in exported images. To adjust: select a person → Basic → Privacy',
+    'privacy.welcomePoint4Title': '⚠️ Shared computers',
+    'privacy.welcomePoint4Body':
+      '"Only on your device" also means anyone opening the same browser account can see it. On shared office computers, use one system account (or browser profile) per worker, and log out after work.',
 
     // ===== Assessment tool picker =====
     'scalePicker.searchPlaceholder': 'Search scales…',
@@ -1271,7 +1289,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'export.privacyApplied': "💡 Privacy settings applied — fields marked private won't appear.",
     // v1.1: privacy reminder before exporting JSON (warm, short)
     'export.privacyWarning':
-      "⚠️ This file contains complete personal data.\n\nSending over the internet carries a leak risk — please handle with care.",
+      "⚠️ This file contains complete personal data.\n\nSending it online (email / messaging / cloud) means it leaves your device — follow your agency's data policy.\nFor handovers: prefer USB in person or your agency's internal system, and delete temp copies once imported.",
     'export.processing': 'Processing…',
     'export.download': 'Download',
     'import.title': 'Import',

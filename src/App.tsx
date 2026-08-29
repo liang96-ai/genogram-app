@@ -81,6 +81,7 @@ export default function App() {
     (s) => s.loadAttributeHistory,
   );
   const loadLanguage = useGenogramStore((s) => s.loadLanguage);
+  const loadPrivacySettings = useGenogramStore((s) => s.loadPrivacySettings);
   const loadProbandStyle = useGenogramStore((s) => s.loadProbandStyle);
 
   const t = useT();
@@ -145,6 +146,7 @@ export default function App() {
           loadCaseList(),
           loadLanguage(),
           loadProbandStyle(),
+          loadPrivacySettings(),
         ]);
 
         // 請求持久化儲存(#133)— 降低 IndexedDB 被瀏覽器驅逐的機率;失敗不影響
@@ -207,6 +209,7 @@ export default function App() {
       cancelled = true;
     };
   }, [
+    loadPrivacySettings,
     loadInstitutionHistory,
     loadMedicalHistory,
     loadAttributeHistory,
@@ -616,6 +619,7 @@ export default function App() {
           <Canvas />
           <Toolbar onBack={() => goToList()} onRename={renameCase} />
           <ViewToolbar />
+          <PrivacyMaskBadge />
         </div>
         <Inspector />
       </div>
@@ -1081,3 +1085,42 @@ const hamburgerBtnStyle: React.CSSProperties = {
 
 // FolderSetupModal 已移到 src/components/CaseList/FolderSetupModal.tsx
 
+
+
+/** 遮蔽常駐指示(2026-08-27 決議)——
+ *  遮蔽設定現在會被記住,所以「今天開著遮蔽」必須看得見,
+ *  否則反過來變成「想看全部卻不知道為什麼看不到」。 */
+function PrivacyMaskBadge() {
+  const t = useT();
+  const privacyEnabled = useGenogramStore((s) => s.privacyEnabled);
+  const privateFields = useGenogramStore((s) => s.privateFields);
+  // Inspector 拖到左側時,ViewToolbar 也會移到左下角 —— 徽章換邊,別疊在縮放鈕上(獨立審查抓到的)
+  const inspectorSide = useGenogramStore((s) => s.inspectorSide);
+  const n = Object.values(privateFields).filter(Boolean).length;
+  if (!privacyEnabled || n === 0) return null;
+  return (
+    <div
+      title={t('privacyBadge.tooltip')}
+      style={{
+        position: 'absolute',
+        ...(inspectorSide === 'left' ? { right: 12 } : { left: 12 }),
+        bottom: 12,
+        zIndex: 40,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '5px 12px',
+        background: '#fff7e8',
+        border: '1px solid #e8cfa0',
+        borderRadius: 999,
+        fontSize: 12,
+        fontWeight: 500,
+        color: '#8a5a00',
+        pointerEvents: 'auto',
+        userSelect: 'none',
+      }}
+    >
+      🔒 {t('privacyBadge.masking', { n })}
+    </div>
+  );
+}

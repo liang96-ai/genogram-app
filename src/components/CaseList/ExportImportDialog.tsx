@@ -9,6 +9,7 @@ import {
   buildSingleExport,
   detectConflicts,
   downloadJSON,
+  singleExportFilename,
   parseImport,
   type ConflictAction,
   type ExportBundle,
@@ -36,9 +37,6 @@ const todayString = (): string => {
   const d = new Date();
   return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
 };
-const safeFn = (s: string): string =>
-  s.replace(/[\\/:*?"<>|]/g, '_').slice(0, 60) || 'untitled';
-
 export function ExportDialog({
   defaultTab,
   defaultCaseId,
@@ -115,7 +113,8 @@ export function ExportDialog({
     if (includeSettings) return `genogram-backup-${todayString()}.json`;
     if (count === 1) {
       const c = caseList.find((x) => selectedIds.has(x.id));
-      return c ? `${safeFn(c.caseName)}.genogram.json` : 'genogram.json';
+      // 與實際下載共用同一個函式 —— 預覽跟檔案不一致是舊病,不要再犯
+      return c ? singleExportFilename(c) : 'genogram.json';
     }
     return `genogram-${count}-cases-${todayString()}.json`;
   })();
@@ -167,7 +166,7 @@ export function ExportDialog({
           hideDotGrid: imgHideDotGrid,
           simplifyLines: imgSimplifyLines,
         });
-        downloadBlob(blob, suggestImageFilename(currentCase.caseName, imgFormat));
+        downloadBlob(blob, suggestImageFilename(currentCase, imgFormat));
       } catch (e) {
         setImgError(e instanceof Error ? e.message : String(e));
         setImgBusy(false);
@@ -326,8 +325,14 @@ export function ExportDialog({
                   onChange={() => setImgFormat('jpg')}
                   label={t('export.jpg')}
                 />
+                <Radio
+                  checked={imgFormat === 'svg'}
+                  onChange={() => setImgFormat('svg')}
+                  label={t('export.svg')}
+                />
               </ImgRow>
 
+              {imgFormat !== 'svg' && (
               <ImgRow label={t('export.resolution')}>
                 <Radio
                   checked={imgScale === 1}
@@ -345,6 +350,7 @@ export function ExportDialog({
                   label={t('export.print')}
                 />
               </ImgRow>
+              )}
 
               <ImgRow label={t('export.range')}>
                 <Radio

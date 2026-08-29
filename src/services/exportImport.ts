@@ -21,8 +21,11 @@ const todayString = (): string => {
   return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
 };
 
-const safeFilename = (s: string): string =>
-  s.replace(/[\\/:*?"<>|]/g, '_').slice(0, 60) || 'untitled';
+/** 單一個案的預設匯出檔名 —— 去識別化(2026-08-27 決議):
+ *  檔案會活在下載資料夾、信箱、隨身碟裡,檔名本身就是個資,
+ *  所以預設不含案主名;要可辨識的名字,使用者存檔時自己改。 */
+export const singleExportFilename = (g: Genogram): string =>
+  `家系圖_${todayString()}_${g.persons.length}人.genogram.json`;
 
 export function buildSingleExport(c: Genogram): ExportBundle {
   return {
@@ -77,7 +80,7 @@ export async function buildBackupExport(): Promise<ExportBundle> {
 
 export function suggestFilename(bundle: ExportBundle): string {
   if (bundle.exportType === 'single' && bundle.cases.length === 1) {
-    return `${safeFilename(bundle.cases[0].caseName)}.genogram.json`;
+    return singleExportFilename(bundle.cases[0]);
   }
   if (bundle.exportType === 'multi') {
     return `genogram-${bundle.cases.length}-cases-${todayString()}.json`;
@@ -111,9 +114,13 @@ export function parseImport(text: string): ExportBundle {
   }
   if (!obj || typeof obj !== 'object') throw new Error('檔案格式錯誤');
   const bundle = obj as Partial<ExportBundle>;
-  if (bundle.schemaVersion !== '1.0') {
+  // 版本規則(2026-08-27 決議,docs/VERSIONING.md):1.x 一律試讀 ——
+  // 小版號只會「新增選填欄位」,未知欄位在匯入→編輯→回寫全程都會原樣保留(已實測);
+  // 只有大版號改變(2.x)才代表不相容,拒收。寫出端維持 '1.0' 不變。
+  const ver = String(bundle.schemaVersion ?? '');
+  if (!/^1\.\d+$/.test(ver)) {
     throw new Error(
-      `不支援的版本 (${bundle.schemaVersion ?? 'unknown'}); 此版本只能讀 1.0`,
+      `不支援的檔案版本 (${ver || 'unknown'});此版本可讀 1.x 系列的檔案`,
     );
   }
   if (!Array.isArray(bundle.cases)) throw new Error('檔案缺少 cases');

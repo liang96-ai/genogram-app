@@ -1,7 +1,7 @@
 import type { Genogram } from '../types/genogram';
 import { useGenogramStore } from '../store/genogramStore';
 
-export type ImageFormat = 'png' | 'jpg';
+export type ImageFormat = 'png' | 'jpg' | 'svg';
 export type ImageRange = 'auto' | 'view';
 
 export interface ImageExportOptions {
@@ -13,9 +13,10 @@ export interface ImageExportOptions {
   simplifyLines: boolean;
 }
 
-function safeFilename(s: string): string {
-  return s.replace(/[\\/:*?"<>|]/g, '_').slice(0, 60) || 'untitled';
-}
+const todayString = (): string => {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+};
 
 /**
  * Wait two animation frames for React to re-render
@@ -183,6 +184,13 @@ export async function exportCanvasImage(
           '<svg',
           '<svg xmlns="http://www.w3.org/2000/svg"',
         );
+    if (opts.format === 'svg') {
+      // SVG 向量匯出(2026-08-27 決議):序列化到這裡就是完成品,不再點陣化。
+      // 補一塊白底 —— SVG 預設透明,貼進 Word 深色模式或深色檢視器會看不清。
+      const bgRect = `<rect x="${vbX}" y="${vbY}" width="${vbW}" height="${vbH}" fill="#ffffff"/>`;
+      const withBg = xmlWithNS.replace(/(<svg[^>]*>)/, `$1${bgRect}`);
+      return new Blob([withBg], { type: 'image/svg+xml;charset=utf-8' });
+    }
     const svgBlob = new Blob([xmlWithNS], {
       type: 'image/svg+xml;charset=utf-8',
     });
@@ -239,9 +247,10 @@ export function downloadBlob(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
+/** 圖片預設檔名 —— 同樣去識別化,不含案主名(理由見 exportImport.singleExportFilename)*/
 export function suggestImageFilename(
-  caseName: string,
+  g: Genogram,
   format: ImageFormat,
 ): string {
-  return `${safeFilename(caseName)}.${format}`;
+  return `家系圖_${todayString()}_${g.persons.length}人.${format}`;
 }
