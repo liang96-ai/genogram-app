@@ -145,6 +145,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'confirm.deletePerson': '確定要刪除這個人物嗎?相關線條也會一併刪除。',
     'confirm.deletePersons': '確定要刪除 {n} 個人物嗎?相關線條也會一併刪除。',
     'confirm.deletePersonsUnits': '確定要刪除 {n} 個人物與 {m} 個網絡單位嗎?相關線條也會一併刪除。',
+    'confirm.deleteHousehold': '要解除這個同住圈嗎?成員不會被刪除。',
     'confirm.deleteLine': '確定要刪除這條線條嗎?',
     'confirm.deleteLines': '確定要刪除 {n} 條線條嗎?',
     'confirm.deleteUnit': '確定要刪除這個網絡單位嗎?',
@@ -168,6 +169,7 @@ const dict: Record<Lang, Record<string, string>> = {
 
     'household.create': '圈成同住({n} 人)',
     'household.createTip': '把選取的人圈進一個同住圈(虛線圓,表示實際住在一起)',
+    'household.deleteTooltip': '解除同住圈(不會刪除成員)',
     'backupRemind.text': '你已經 {days} 天沒有完整備份了,而這台裝置沒有資料夾備份 — 個案只存在瀏覽器裡,建議現在備份一份。',
     'backupRemind.textNever': '你還沒有做過完整備份,而這台裝置沒有資料夾備份 — 個案只存在瀏覽器裡,建議現在備份一份。',
     'backupRemind.doIt': '立即備份',
@@ -858,6 +860,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'confirm.deletePerson': 'Delete this person? Connected lines will also be removed.',
     'confirm.deletePersons': 'Delete {n} people? Connected lines will also be removed.',
     'confirm.deletePersonsUnits': 'Delete {n} people and {m} network units? Connected lines will also be removed.',
+    'confirm.deleteHousehold': 'Remove this household circle? Members will not be deleted.',
     'confirm.deleteLine': 'Delete this line?',
     'confirm.deleteLines': 'Delete {n} lines?',
     'confirm.deleteUnit': 'Delete this network unit?',
@@ -881,6 +884,7 @@ const dict: Record<Lang, Record<string, string>> = {
 
     'household.create': 'Circle as household ({n})',
     'household.createTip': 'Group the selected people into a household circle (dashed — living together)',
+    'household.deleteTooltip': 'Remove household circle (members are kept)',
     'backupRemind.text': "It's been {days} days since your last full backup, and this device has no folder backup — cases live only in this browser. A backup now is a good idea.",
     'backupRemind.textNever': "You haven't made a full backup yet, and this device has no folder backup — cases live only in this browser. A backup now is a good idea.",
     'backupRemind.doIt': 'Back up now',

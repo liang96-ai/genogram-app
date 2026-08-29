@@ -830,6 +830,9 @@ type GenogramStore = {
   drawMode: boolean;
   setDrawMode: (v: boolean) => void;
   selectedEcosystemId: string | null;
+  /** 同住圈選取(2026-08-29:點圈邊線→紅×刪除)*/
+  selectedHouseholdId: string | null;
+  selectHousehold: (id: string | null) => void;
   selectEcosystem: (id: string | null) => void;
   editingEcosystemId: string | null;
   setEditingEcosystem: (id: string | null) => void;
@@ -941,6 +944,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
         selectedLineIds: [],
         selectedUnitIds: [],
         selectedEcosystemId: null,
+        selectedHouseholdId: null,
         editingEcosystemId: null,
         inspectorTarget:
           migrated.persons.length > 0
@@ -973,6 +977,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
         selectedLineIds: [],
         selectedUnitIds: [],
         selectedEcosystemId: null,
+        selectedHouseholdId: null,
         editingEcosystemId: null,
         inspectorTarget: { type: 'person', id: fresh.persons[0].id },
         history: { past: [], future: [] },
@@ -1038,6 +1043,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
           selectedLineIds: [],
           selectedUnitIds: [],
           selectedEcosystemId: null,
+          selectedHouseholdId: null,
           editingEcosystemId: null,
           inspectorTarget: null,
           history: { past: [], future: [] },
@@ -1060,6 +1066,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   selectedLineIds: [],
   selectedUnitIds: [],
   selectedEcosystemId: null,
+  selectedHouseholdId: null,
   editingEcosystemId: null,
   pendingRelation: null,
   // v1.1 婚姻線 pending mode:點 Tab2 婚姻按鈕後等使用者點 2 個人物完成連線
@@ -1227,6 +1234,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       selectedLineIds: [],
       selectedUnitIds: [],
       selectedEcosystemId: null,
+      selectedHouseholdId: null,
       editingEcosystemId: null,
       inspectorTarget: id ? { type: 'person', id } : s.inspectorTarget,
     })),
@@ -1237,6 +1245,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       selectedPersonIds: [],
       selectedLineIds: [],
       selectedEcosystemId: null,
+      selectedHouseholdId: null,
     })),
 
   selectUnits: (ids) =>
@@ -1245,6 +1254,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       selectedPersonIds: [],
       selectedLineIds: [],
       selectedEcosystemId: null,
+      selectedHouseholdId: null,
     })),
 
   selectPersonsAndUnits: (personIds, unitIds) =>
@@ -1253,6 +1263,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       selectedUnitIds: unitIds,
       selectedLineIds: [],
       selectedEcosystemId: null,
+      selectedHouseholdId: null,
       editingEcosystemId: null,
       inspectorTarget:
         personIds.length === 1
@@ -1269,6 +1280,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       selectedPersonIds: next,
       selectedLineIds: [],
       selectedEcosystemId: null,
+      selectedHouseholdId: null,
       editingEcosystemId: null,
       inspectorTarget:
         next.length === 1
@@ -1277,9 +1289,20 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     }));
   },
 
+  selectHousehold: (id) =>
+    set(() => ({
+      selectedHouseholdId: id,
+      selectedPersonIds: [],
+      selectedLineIds: [],
+      selectedUnitIds: [],
+      selectedEcosystemId: null,
+      editingEcosystemId: null,
+    })),
+
   selectEcosystem: (id) =>
     set(() => ({
       selectedEcosystemId: id,
+      selectedHouseholdId: null,
       // 切換選取對象時,自動退出編輯
       editingEcosystemId: null,
       selectedPersonIds: [],
@@ -1292,6 +1315,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       editingEcosystemId: id,
       // 進編輯也順便保持選中
       selectedEcosystemId: id,
+      selectedHouseholdId: null,
       selectedPersonIds: [],
       selectedLineIds: [],
       selectedUnitIds: [],
@@ -1303,6 +1327,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       selectedLineIds: [],
       selectedUnitIds: [],
       selectedEcosystemId: null,
+      selectedHouseholdId: null,
       editingEcosystemId: null,
       inspectorTarget:
         ids.length === 1
@@ -1316,6 +1341,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       selectedPersonIds: [],
       selectedUnitIds: [],
       selectedEcosystemId: null,
+      selectedHouseholdId: null,
       editingEcosystemId: null,
       inspectorTarget: id ? { type: 'line', id } : s.inspectorTarget,
     })),
@@ -1326,6 +1352,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       selectedPersonIds: [],
       selectedUnitIds: [],
       selectedEcosystemId: null,
+      selectedHouseholdId: null,
       editingEcosystemId: null,
       inspectorTarget:
         ids.length === 1
@@ -1342,6 +1369,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       selectedPersonIds: [],
       selectedUnitIds: [],
       selectedEcosystemId: null,
+      selectedHouseholdId: null,
       editingEcosystemId: null,
       inspectorTarget:
         next.length === 1
@@ -1356,6 +1384,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       selectedLineIds: [],
       selectedUnitIds: [],
       selectedEcosystemId: null,
+      selectedHouseholdId: null,
       editingEcosystemId: null,
       // 清掉線條的 inspectorTarget(讓 Tab2 關係按鈕不會繼續「改剛畫好的那條」)
       //  但保留 person target,Tab1/3 還能看著同一個人物編輯
@@ -2482,6 +2511,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       selectedLineIds: [],
       selectedUnitIds: [],
       selectedEcosystemId: null,
+      selectedHouseholdId: null,
       editingEcosystemId: null,
       selectedConnector: null,
     });
@@ -2503,6 +2533,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       selectedLineIds: [],
       selectedUnitIds: [],
       selectedEcosystemId: null,
+      selectedHouseholdId: null,
       editingEcosystemId: null,
       selectedConnector: null,
     });
@@ -3142,7 +3173,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       ...c,
       households: (c.households ?? []).filter((h) => h.id !== id),
     });
-    set(pushHistory(c, history, next));
+    set({ ...pushHistory(c, history, next), selectedHouseholdId: null });
   },
 
   drawMode: false,

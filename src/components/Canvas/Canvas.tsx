@@ -17,6 +17,7 @@ import type {
   Person,
 } from '../../types/genogram';
 import PersonShape from './PersonShape';
+import DeleteButton from './DeleteButton';
 import Line from './Line';
 import { UNIT_HALF_H, UNIT_HALF_W } from './unitBox';
 import SmallArrows from './SmallArrows';
@@ -161,6 +162,9 @@ export default function Canvas() {
   const currentCase = useGenogramStore((s) => s.currentCase);
   const selectedPersonIds = useGenogramStore((s) => s.selectedPersonIds);
   const selectedLineIds = useGenogramStore((s) => s.selectedLineIds);
+  const selectedHouseholdId = useGenogramStore((s) => s.selectedHouseholdId);
+  const selectHousehold = useGenogramStore((s) => s.selectHousehold);
+  const removeHousehold = useGenogramStore((s) => s.removeHousehold);
   const selectPerson = useGenogramStore((s) => s.selectPerson);
   const togglePersonSelection = useGenogramStore(
     (s) => s.togglePersonSelection,
@@ -1472,8 +1476,10 @@ export default function Canvas() {
         const minY = Math.min(...ys) - PADDING;
         const maxX = Math.max(...xs) + PADDING;
         const maxY = Math.max(...ys) + PADDING;
+        const hhSelected = selectedHouseholdId === hh.id;
         return (
-          <g key={hh.id} style={{ pointerEvents: 'none' }}>
+          <g key={hh.id}>
+            {/* 視覺框:一律不吃事件(圈內的人物/背景照常可點) */}
             <rect
               x={minX}
               y={minY}
@@ -1482,9 +1488,27 @@ export default function Canvas() {
               rx={20}
               fill="rgba(255,149,0,0.04)"
               stroke="#ff9500"
-              strokeWidth={1.5}
-              strokeDasharray="6 4"
-              opacity={0.7}
+              strokeWidth={hhSelected ? 2.5 : 1.5}
+              strokeDasharray={hhSelected ? undefined : '6 4'}
+              opacity={hhSelected ? 1 : 0.7}
+              style={{ pointerEvents: 'none' }}
+            />
+            {/* 命中框:只有「邊線附近」吃點擊(pointerEvents:stroke),
+                圈內部維持穿透 —— 不跟成員人物搶點擊(2026-08-29 A 案) */}
+            <rect
+              x={minX}
+              y={minY}
+              width={maxX - minX}
+              height={maxY - minY}
+              rx={20}
+              fill="none"
+              stroke="transparent"
+              strokeWidth={14}
+              style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                selectHousehold(hhSelected ? null : hh.id);
+              }}
             />
             {hh.label && (
               <text
@@ -1493,10 +1517,18 @@ export default function Canvas() {
                 fontSize={11}
                 fill="#ff9500"
                 fontWeight={500}
-                style={{ userSelect: 'none' }}
+                style={{ userSelect: 'none', pointerEvents: 'none' }}
               >
                 🏠 {hh.label}
               </text>
+            )}
+            {hhSelected && (
+              <DeleteButton
+                cx={maxX}
+                cy={minY}
+                onClick={() => removeHousehold(hh.id)}
+                title={t('household.deleteTooltip')}
+              />
             )}
           </g>
         );

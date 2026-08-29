@@ -56,6 +56,7 @@ export default function App() {
   const selectedPersonIds = useGenogramStore((s) => s.selectedPersonIds);
   const selectedLineIds = useGenogramStore((s) => s.selectedLineIds);
   const selectedUnitIds = useGenogramStore((s) => s.selectedUnitIds);
+  const selectedHouseholdId = useGenogramStore((s) => s.selectedHouseholdId);
   const selectedEcosystemId = useGenogramStore((s) => s.selectedEcosystemId);
   const selectedConnector = useGenogramStore((s) => s.selectedConnector);
   const removePersons = useGenogramStore((s) => s.removePersons);
@@ -70,6 +71,7 @@ export default function App() {
   });
   const removeLine = useGenogramStore((s) => s.removeLine);
   const removeNetworkUnit = useGenogramStore((s) => s.removeNetworkUnit);
+  const removeHousehold = useGenogramStore((s) => s.removeHousehold);
   const removeConnector = useGenogramStore((s) => s.removeConnector);
   const removeEcosystem = useGenogramStore((s) => s.removeEcosystem);
   const showConfirm = useGenogramStore((s) => s.showConfirm);
@@ -393,7 +395,18 @@ export default function App() {
       // Delete — 單獨按:跳確認;Cmd/Ctrl + Delete:直接刪除
       if (e.key === 'Delete' || e.key === 'Backspace') {
         const skipConfirm = e.metaKey || e.ctrlKey;
-        if (selectedPersonIds.length > 0 && selectedUnitIds.length > 0) {
+        if (selectedHouseholdId) {
+          // 同住圈:只解除圈(標記),成員不動;selectHousehold 已保證與其他選取互斥
+          e.preventDefault();
+          if (skipConfirm) {
+            removeHousehold(selectedHouseholdId);
+          } else {
+            const ok = await showConfirm(
+              tRef.current('confirm.deleteHousehold'),
+            );
+            if (ok) removeHousehold(selectedHouseholdId);
+          }
+        } else if (selectedPersonIds.length > 0 && selectedUnitIds.length > 0) {
           // 框選同時圈到人物與網絡單位:一起刪、一步復原(2026-08-27 決議)——
           // 舊行為只刪人物,單位留在原地,使用者會以為沒刪成功
           e.preventDefault();
@@ -503,6 +516,8 @@ export default function App() {
     removePersonsAndUnits,
     removeLine,
     removeNetworkUnit,
+    removeHousehold,
+    selectedHouseholdId,
     removeConnector,
     removeEcosystem,
     undo,
