@@ -13,6 +13,7 @@ import {
 } from '../../services/fileSystem';
 import { db } from '../../services/database';
 import { rescueCasesFromFolder } from '../../services/folderRescue';
+import { daysSinceBackupIfShouldRemind } from '../../services/backupReminder';
 import FeedbackDialog from './FeedbackDialog';
 import PrivacyWelcomeDialog, {
   hasAcknowledgedPrivacy,
@@ -78,6 +79,8 @@ export default function CaseList() {
   // 點「新增個案」時若還沒設資料夾,先彈資料夾提醒;
   // 提醒關閉(選了或暫時不要)後再開 NewCaseDialog
   const [folderPromptForNew, setFolderPromptForNew] = useState(false);
+  // 備份提醒(2026-08-27 決議):單份資料使用者的安全網;每次啟動最多一次,關掉這個 session 不再出現
+  const [backupRemindDays, setBackupRemindDays] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 點外面關 menu
@@ -105,6 +108,11 @@ export default function CaseList() {
     // 讀現有 root folder 名稱(載入後可能 App.tsx 已經 loadRootDirHandle)
     setFolderName(getRootFolderName());
     // 教學觸發改到「首次按 + 新增個案 並進入編輯模式」時(見下方 NewCaseDialog onCreate)
+    if (!sessionStorage.getItem('backupRemindDismissed')) {
+      daysSinceBackupIfShouldRemind()
+        .then((d) => setBackupRemindDays(d))
+        .catch(() => {});
+    }
   }, [loadCaseList]);
 
   return (
@@ -557,6 +565,67 @@ export default function CaseList() {
           </div>
         )}
 
+        {/* 備份提醒橫幅 —— 只對「沒資料夾備份 + 久未全備份 + 有編輯」的使用者出現 */}
+        {backupRemindDays !== null && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '10px 14px',
+              background: '#fdf3e4',
+              border: '1px solid #ecd3a7',
+              borderRadius: 10,
+              marginBottom: 14,
+              fontSize: 13,
+              color: '#7a5200',
+              flexWrap: 'wrap',
+            }}
+          >
+            <span style={{ fontSize: 16 }}>⏰</span>
+            <span style={{ flex: 1, minWidth: 200 }}>
+              {t('backupRemind.text', { days: backupRemindDays })}
+            </span>
+            <button
+              onClick={() => {
+                sessionStorage.setItem('backupRemindDismissed', '1');
+                setBackupRemindDays(null);
+                setExportTarget('__backup__');
+              }}
+              style={{
+                padding: '5px 14px',
+                fontSize: 12.5,
+                background: '#007aff',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontWeight: 500,
+              }}
+            >
+              {t('backupRemind.doIt')}
+            </button>
+            <button
+              onClick={() => {
+                sessionStorage.setItem('backupRemindDismissed', '1');
+                setBackupRemindDays(null);
+              }}
+              style={{
+                padding: '5px 12px',
+                fontSize: 12.5,
+                background: 'transparent',
+                border: '1px solid #d9b97a',
+                borderRadius: 6,
+                cursor: 'pointer',
+                color: '#7a5200',
+                fontFamily: 'inherit',
+              }}
+            >
+              {t('backupRemind.later')}
+            </button>
+          </div>
+        )}
         {/* 搜尋(2026-08-27 決議)— caseload 50-150 案是台灣社工常態,肉眼掃卡片牆不現實 */}
         {caseList.length > 0 && (
           <input

@@ -1080,7 +1080,7 @@ export default function PersonShape({
             actualShape === 'institution' ? -INST_HALF_H - 8 : -HALF - 8
           }
           onClick={onDelete}
-          title="刪除此人物"
+          title={t('canvas.deletePersonTip')}
         />
       )}
     </g>

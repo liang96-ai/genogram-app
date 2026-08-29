@@ -44,7 +44,9 @@ export default function ScalePickerDialog({
   const visible = useMemo(() => {
     if (q) {
       return groups
-        .flatMap((g) => g.scales.map((s) => ({ ...s, groupLabel: g.label })))
+        .flatMap((g) =>
+          g.scales.map((s) => ({ ...s, groupLabel: t(`cat.${g.category}`) })),
+        )
         .filter(
           (s) =>
             s.name.toLowerCase().includes(q) ||
@@ -53,8 +55,11 @@ export default function ScalePickerDialog({
         );
     }
     const g = groups.find((x) => x.category === activeCat);
-    return (g?.scales ?? []).map((s) => ({ ...s, groupLabel: g?.label ?? '' }));
-  }, [groups, activeCat, q]);
+    return (g?.scales ?? []).map((s) => ({
+      ...s,
+      groupLabel: g ? t(`cat.${g.category}`) : '',
+    }));
+  }, [groups, activeCat, q, t]);
 
   return (
     <div
@@ -174,7 +179,7 @@ export default function ScalePickerDialog({
                   }}
                 >
                   <span style={{ width: 18, textAlign: 'center' }}>{g.icon}</span>
-                  <span style={{ flex: 1 }}>{g.label}</span>
+                  <span style={{ flex: 1 }}>{t(`cat.${g.category}`)}</span>
                   <span style={{ fontSize: 11, color: '#86868b' }}>
                     {g.scales.length}
                   </span>

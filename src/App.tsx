@@ -25,6 +25,7 @@ import { db } from './services/database';
 import type { Genogram } from './types/genogram';
 import { loadRootDirHandle, writeCaseJson } from './services/fileSystem';
 import { rescueCasesFromFolder } from './services/folderRescue';
+import { recordEdit } from './services/backupReminder';
 import { setupPwaInstallListener } from './services/pwaInstall';
 import {
   applyUpdate,
@@ -32,7 +33,7 @@ import {
   onNeedRefreshChange,
 } from './services/pwaUpdate';
 import { ensurePersistentStorage } from './services/storagePersist';
-import { useGenogramStore } from './store/genogramStore';
+import { GRID_SIZE, useGenogramStore } from './store/genogramStore';
 
 // 大塊且非常用的畫面 lazy 拆包(#127):教學手冊 / 符號圖例 開啟時才載入
 const Tutorial = lazy(() => import('./components/Tutorial/Tutorial'));
@@ -63,6 +64,14 @@ export default function App() {
   const selectedConnector = useGenogramStore((s) => s.selectedConnector);
   const removePersons = useGenogramStore((s) => s.removePersons);
   const removePersonsAndUnits = useGenogramStore((s) => s.removePersonsAndUnits);
+  const movePerson = useGenogramStore((s) => s.movePerson);
+  const commitMoveHistory = useGenogramStore((s) => s.commitMoveHistory);
+  const selectPersonsAndUnits = useGenogramStore((s) => s.selectPersonsAndUnits);
+  // 方向鍵 burst 的快照(一串連按 = 一格復原)
+  const nudgeRef = useRef<{ before: Genogram | null; timer: number | null }>({
+    before: null,
+    timer: null,
+  });
   const removeLine = useGenogramStore((s) => s.removeLine);
   const removeNetworkUnit = useGenogramStore((s) => s.removeNetworkUnit);
   const removeConnector = useGenogramStore((s) => s.removeConnector);
@@ -82,6 +91,11 @@ export default function App() {
   const loadProbandStyle = useGenogramStore((s) => s.loadProbandStyle);
 
   const t = useT();
+  // 鍵盤 handler(useEffect 內)要用翻譯:走 ref,避免語言切換把整個 listener 重掛
+  const tRef = useRef(t);
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
   const [loaded, setLoaded] = useState(false);
   const [showFolderSetup, setShowFolderSetup] = useState(false);
   // 儲存異常警示(#120):db = IndexedDB 失敗(紅)/ folder = 資料夾備份失效(黃)
@@ -107,7 +121,10 @@ export default function App() {
     pendingSave.current = null;
     // 主儲存(IndexedDB):回傳此 promise,讓「立即更新」能等寫完再重載(防掉資料)
     const dbWrite = db.cases.put(g).then(
-      () => setSaveIssue((prev) => (prev === 'db' ? null : prev)),
+      () => {
+        setSaveIssue((prev) => (prev === 'db' ? null : prev));
+        void recordEdit(); // 備份提醒的編輯計數(純本機)
+      },
       (err) => {
         console.error('Auto save (IndexedDB) failed:', err);
         setSaveIssue('db'); // 主儲存失敗 → 紅色警示(#120)
@@ -310,6 +327,52 @@ export default function App() {
         return;
       }
 
+      // Cmd/Ctrl+A 全選(2026-08-27 決議)—— 所有繪圖工具的標配
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+        if (appMode === 'edit' && currentCase) {
+          e.preventDefault();
+          selectPersonsAndUnits(
+            currentCase.persons.map((p) => p.id),
+            (currentCase.networkUnits ?? []).map((u) => u.id),
+          );
+        }
+        return;
+      }
+
+      // 方向鍵微調(2026-08-27 決議)—— 滑鼠手不穩的使用者也能精修排版。
+      // 連續按算一個手勢:第一下先存快照,停 600ms 後補記一格復原(照拖曳的 commitMoveHistory 模式)
+      if (
+        (e.key === 'ArrowUp' ||
+          e.key === 'ArrowDown' ||
+          e.key === 'ArrowLeft' ||
+          e.key === 'ArrowRight') &&
+        selectedPersonIds.length > 0 &&
+        currentCase
+      ) {
+        e.preventDefault();
+        const dx =
+          e.key === 'ArrowLeft' ? -GRID_SIZE : e.key === 'ArrowRight' ? GRID_SIZE : 0;
+        const dy =
+          e.key === 'ArrowUp' ? -GRID_SIZE : e.key === 'ArrowDown' ? GRID_SIZE : 0;
+        if (nudgeRef.current.before === null) {
+          nudgeRef.current.before = currentCase;
+        }
+        for (const id of selectedPersonIds) {
+          const p = useGenogramStore
+            .getState()
+            .currentCase?.persons.find((x) => x.id === id);
+          if (p) movePerson(id, p.position.x + dx, p.position.y + dy);
+        }
+        if (nudgeRef.current.timer !== null)
+          window.clearTimeout(nudgeRef.current.timer);
+        nudgeRef.current.timer = window.setTimeout(() => {
+          const before = nudgeRef.current.before;
+          nudgeRef.current = { before: null, timer: null };
+          if (before) commitMoveHistory(before);
+        }, 600);
+        return;
+      }
+
       // Undo / Redo
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
@@ -336,7 +399,10 @@ export default function App() {
             doIt();
           } else {
             const ok = await showConfirm(
-              `確定要刪除 ${selectedPersonIds.length} 個人物與 ${selectedUnitIds.length} 個網絡單位嗎?相關線條也會一併刪除。`,
+              tRef.current('confirm.deletePersonsUnits', {
+                n: selectedPersonIds.length,
+                m: selectedUnitIds.length,
+              }),
             );
             if (ok) doIt();
           }
@@ -347,8 +413,10 @@ export default function App() {
           } else {
             const msg =
               selectedPersonIds.length === 1
-                ? '確定要刪除這個人物嗎?相關線條也會一併刪除。'
-                : `確定要刪除 ${selectedPersonIds.length} 個人物嗎?相關線條也會一併刪除。`;
+                ? tRef.current('confirm.deletePerson')
+                : tRef.current('confirm.deletePersons', {
+                    n: selectedPersonIds.length,
+                  });
             const ok = await showConfirm(msg);
             if (ok) removePersons(selectedPersonIds);
           }
@@ -359,8 +427,10 @@ export default function App() {
           } else {
             const msg =
               selectedLineIds.length === 1
-                ? '確定要刪除這條線條嗎?'
-                : `確定要刪除 ${selectedLineIds.length} 條線條嗎?`;
+                ? tRef.current('confirm.deleteLine')
+                : tRef.current('confirm.deleteLines', {
+                    n: selectedLineIds.length,
+                  });
             const ok = await showConfirm(msg);
             if (ok) selectedLineIds.forEach((id) => removeLine(id));
           }
@@ -371,8 +441,10 @@ export default function App() {
           } else {
             const msg =
               selectedUnitIds.length === 1
-                ? '確定要刪除這個網絡單位嗎?'
-                : `確定要刪除 ${selectedUnitIds.length} 個網絡單位嗎?`;
+                ? tRef.current('confirm.deleteUnit')
+                : tRef.current('confirm.deleteUnits', {
+                    n: selectedUnitIds.length,
+                  });
             const ok = await showConfirm(msg);
             if (ok) selectedUnitIds.forEach((id) => removeNetworkUnit(id));
           }
@@ -381,11 +453,11 @@ export default function App() {
           const eco = currentCase?.ecosystems?.find(
             (x) => x.id === selectedEcosystemId,
           );
-          const name = eco?.label?.trim() || '生態圈';
+          const name = eco?.label?.trim() || tRef.current('canvas.ecosystemFallback');
           if (skipConfirm) {
             removeEcosystem(selectedEcosystemId);
           } else {
-            const ok = await showConfirm(`確定要刪除「${name}」嗎?`);
+            const ok = await showConfirm(tRef.current('confirm.deleteNamed', { name }));
             if (ok) removeEcosystem(selectedEcosystemId);
           }
         } else if (selectedConnector) {
@@ -398,7 +470,7 @@ export default function App() {
               selectedConnector.connectorId,
             );
           } else {
-            const ok = await showConfirm('確定要刪除這條連接線嗎?');
+            const ok = await showConfirm(tRef.current('confirm.deleteConnector'));
             if (ok) {
               removeConnector(
                 selectedConnector.unitId,
@@ -412,6 +484,10 @@ export default function App() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [
+    appMode,
+    commitMoveHistory,
+    movePerson,
+    selectPersonsAndUnits,
     selectedPersonIds,
     selectedLineIds,
     selectedUnitIds,
@@ -555,7 +631,7 @@ export default function App() {
           fontSize: 14,
         }}
       >
-        載入中…
+        {t('editor.loading')}
       </div>
     );
   }
@@ -614,6 +690,7 @@ export default function App() {
           <Toolbar onBack={() => goToList()} onRename={renameCase} />
           <ViewToolbar />
           <PrivacyMaskBadge />
+          <HouseholdQuickAction />
         </div>
         <Inspector />
       </div>
@@ -725,7 +802,7 @@ function Toolbar({
       >
         <button
           onClick={onBack}
-          title="返回個案清單"
+          title={t('editor.back')}
           style={{ ...hamburgerBtnStyle, marginRight: 2 }}
         >
           <svg width="14" height="14" viewBox="0 0 14 14">
@@ -741,7 +818,7 @@ function Toolbar({
         </button>
         <button
           onClick={() => setOpen((v) => !v)}
-          title="選單"
+          title={t('editor.menu')}
           style={hamburgerBtnStyle}
         >
           <svg width="18" height="14" viewBox="0 0 18 14">
@@ -791,7 +868,7 @@ function Toolbar({
               setDraftName(currentCase.caseName);
               setRenaming(true);
             }}
-            title="雙擊改名"
+            title={t('editor.renameTip')}
             style={{
               cursor: 'text',
               overflow: 'hidden',
@@ -800,7 +877,8 @@ function Toolbar({
               minWidth: 0,
             }}
           >
-            {currentCase?.caseName ?? '家系圖'} · {currentCase?.persons.length ?? 0} 人
+            {currentCase?.caseName ?? t('editor.untitled')} ·{' '}
+            {t('editor.personCount', { n: currentCase?.persons.length ?? 0 })}
           </span>
         )}
       </div>
@@ -820,7 +898,7 @@ function Toolbar({
         >
           <MenuItem
             icon="↺"
-            label="回上一步"
+            label={t('editor.undo')}
             shortcut={`${mod}Z`}
             disabled={!canUndo}
             onClick={() => {
@@ -830,7 +908,7 @@ function Toolbar({
           />
           <MenuItem
             icon="↻"
-            label="重做"
+            label={t('editor.redo')}
             shortcut={`${mod}⇧Z`}
             disabled={!canRedo}
             onClick={() => {
@@ -902,7 +980,7 @@ function Toolbar({
           {/* v1.2.2 拿掉「看基礎教學 / 語言 / 關於」— 三者都是全 app 級設定,首頁漢堡已有;
               個案內漢堡聚焦在「當前個案操作」。「💾 快照」佔位鈕也一併移除(功能未實作)。 */}
           <MenuDivider />
-          <MenuInfo>最後修改:{lastModified}</MenuInfo>
+          <MenuInfo>{t('editor.lastModified', { time: lastModified })}</MenuInfo>
         </div>
       )}
       {galleryOpen && (
@@ -1119,5 +1197,43 @@ function PrivacyMaskBadge() {
     >
       🔒 {t('privacyBadge.masking', { n })}
     </div>
+  );
+}
+
+
+/** 圈成同住(2026-08-27 決議)—— 同住圈符號在圖例上架很久,卻沒有任何建立入口。
+ *  框選 ≥2 人時浮出,一鍵接現成的 addHousehold。 */
+function HouseholdQuickAction() {
+  const t = useT();
+  const selectedPersonIds = useGenogramStore((s) => s.selectedPersonIds);
+  const addHousehold = useGenogramStore((s) => s.addHousehold);
+  if (selectedPersonIds.length < 2) return null;
+  return (
+    <button
+      onClick={() => addHousehold(selectedPersonIds)}
+      title={t('household.createTip')}
+      style={{
+        position: 'absolute',
+        top: 64,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 40,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '7px 16px',
+        background: '#ffffff',
+        border: '1px solid #d2d2d7',
+        borderRadius: 999,
+        boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
+        fontSize: 13,
+        fontWeight: 500,
+        color: '#1d1d1f',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+      }}
+    >
+      ⭕ {t('household.create', { n: selectedPersonIds.length })}
+    </button>
   );
 }

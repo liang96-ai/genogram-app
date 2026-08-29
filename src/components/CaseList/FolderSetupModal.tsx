@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { selectRootFolder } from '../../services/fileSystem';
+import { useT } from '../../i18n';
 
 /**
  * 「選資料夾」設定畫面
@@ -13,6 +14,7 @@ export default function FolderSetupModal({
   onClose: () => void;
   onSelected: () => void;
 }) {
+  const t = useT();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -57,7 +59,7 @@ export default function FolderSetupModal({
             marginBottom: 12,
           }}
         >
-          選一個資料夾,讓資料安全地存在你電腦
+          {t('folderSetup.title')}
         </div>
         <p
           style={{
@@ -67,9 +69,8 @@ export default function FolderSetupModal({
             margin: '0 0 12px',
           }}
         >
-          <strong style={{ color: '#007aff' }}>強烈建議現在設定。</strong>
-          設好後,你的所有個案會自動寫一份到資料夾備份。
-          就算瀏覽器資料被清掉,只要這個資料夾還在,個案就救得回來。
+          <strong style={{ color: '#007aff' }}>{t('folderSetup.lead1')}</strong>
+          {t('folderSetup.lead2')}
         </p>
         <ul
           style={{
@@ -80,10 +81,10 @@ export default function FolderSetupModal({
             paddingLeft: 18,
           }}
         >
-          <li>每個個案會在資料夾裡有獨立子資料夾(<code>case_xxx/</code>)</li>
-          <li>個案資料存 <code>case.json</code> · 附件存 <code>attachments/</code></li>
-          <li>換電腦時:複製資料夾 → 新電腦選同樣資料夾 → 個案全回來</li>
-          <li>之後想換資料夾:首頁 → 📁 切換資料夾 或 主選單 → 📁 設定資料夾</li>
+          <li>{t('folderSetup.point1')}</li>
+          <li>{t('folderSetup.point2')}</li>
+          <li>{t('folderSetup.point3')}</li>
+          <li>{t('folderSetup.point4')}</li>
         </ul>
         <div
           style={{
@@ -96,8 +97,7 @@ export default function FolderSetupModal({
             marginBottom: 16,
           }}
         >
-          ⚠️ 此功能需要桌面 Chrome / Edge。
-          手機 / Safari 不支援,只能用瀏覽器內建儲存(可手動匯出 .json 備份)。
+          {t('folderSetup.browserNote')}
         </div>
         <div
           style={{
@@ -119,7 +119,7 @@ export default function FolderSetupModal({
               fontFamily: 'inherit',
             }}
           >
-            暫時不要
+            {t('folderSetup.later')}
           </button>
           <button
             onClick={async () => {
@@ -138,7 +138,7 @@ export default function FolderSetupModal({
               fontWeight: 500,
             }}
           >
-            選資料夾
+            {t('folderSetup.pick')}
           </button>
         </div>
       </div>

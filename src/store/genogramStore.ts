@@ -863,7 +863,8 @@ type GenogramStore = {
 };
 
 export const MIN_ZOOM = 0.4;
-export const MAX_ZOOM = 1;
+// 200%(2026-08-27 決議):會談時放大給案家看、年長使用者看小字備註。全向量,放大不糊。
+export const MAX_ZOOM = 2;
 export const clampZoom = (z: number) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z));
 
 // 推進 history:把當前 currentCase 放入 past,設定 newCase 為當前,清空 future

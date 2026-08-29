@@ -24,6 +24,7 @@ import {
 } from '../../services/imageExport';
 // 匯出成功=抖內提示的「價值時刻」通知(#129,純本機計數)
 import { notifyExportSuccess } from '../About/supportPromptLogic';
+import { recordFullBackup } from '../../services/backupReminder';
 import {
   writeBackupToFolder,
   getRootFolderName,
@@ -160,8 +161,11 @@ export function ExportDialog({
           );
           if (filename) {
             alert(
-              `✓ 備份已存到「${folderName}/_backups/${filename}」\n\n下次要復原:首頁 → 匯入 → 選那個 .json`,
+              t('export.backupSaved', {
+                path: `${folderName}/_backups/${filename}`,
+              }),
             );
+            void recordFullBackup();
             notifyExportSuccess();
             onClose();
             return;
@@ -169,6 +173,7 @@ export function ExportDialog({
           // 寫資料夾失敗 → fallback 下載
         }
         downloadJSON(bundle, dataFilename);
+        void recordFullBackup();
       } else if (cases.length === 1) {
         downloadJSON(buildSingleExport(cases[0]));
       } else {

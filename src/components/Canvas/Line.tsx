@@ -730,7 +730,7 @@ export default function Line({
           cx={midX + 18}
           cy={midY - 18}
           onClick={onDelete}
-          title="刪除此線"
+          title={t('canvas.deleteLineTip')}
         />
       )}
     </g>
