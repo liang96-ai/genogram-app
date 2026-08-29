@@ -209,8 +209,9 @@ function EventCard({
                   : ''
             }
             onChange={(e) => {
-              if (e.target.value && e.target.value !== '__raw__')
-                onPatch({ type: e.target.value });
+              if (e.target.value === '__raw__') return;
+              // 選回「類型…」= 清空類型(審查觀察:設了不能清會卡死使用者)
+              onPatch({ type: e.target.value || undefined });
             }}
             style={{
               fontSize: 12,
