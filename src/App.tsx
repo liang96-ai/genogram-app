@@ -326,6 +326,10 @@ export default function App() {
       ) {
         return;
       }
+      // 全域鍵盤只在編輯模式作用(2026-08-29 審查線索)——
+      // goToList 不清 currentCase/選取,回首頁後方向鍵會無聲移動看不見的人、
+      // Delete 會對殘留選取跳確認。首頁沒有任何鍵盤操作對象,直接擋掉。
+      if (appMode !== 'edit') return;
 
       // Cmd/Ctrl+A 全選(2026-08-27 決議)—— 所有繪圖工具的標配
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
@@ -368,7 +372,11 @@ export default function App() {
         nudgeRef.current.timer = window.setTimeout(() => {
           const before = nudgeRef.current.before;
           nudgeRef.current = { before: null, timer: null };
-          if (before) commitMoveHistory(before);
+          // 結算前確認還在同一個個案 —— 按完立刻切個案的話,
+          // 把舊個案的快照推進新個案的 history 會讓 undo 跨案污染
+          const nowCase = useGenogramStore.getState().currentCase;
+          if (before && nowCase && nowCase.id === before.id)
+            commitMoveHistory(before);
         }, 600);
         return;
       }
