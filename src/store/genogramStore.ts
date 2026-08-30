@@ -425,6 +425,25 @@ const touch = (g: Genogram): Genogram => ({
   lastModifiedAt: new Date().toISOString(),
 });
 
+/** 刪人物時,把重大事件的「牽涉人物」裡指向已刪人物的 id 清掉(#126 同族)——
+ *  不清會留下幽靈 id:卡片顯示「牽涉人物 (3)」卻只看得到 2 個名字。
+ *  事件本身保留(事件是個案層級的紀錄,不隨某個人消失)。 */
+const cleanEventPersonRefs = (
+  events: Genogram['majorEvents'],
+  removed: Set<string>,
+): Genogram['majorEvents'] => {
+  if (!events) return events;
+  let changed = false;
+  const next = events.map((e) => {
+    if (!e.relatedPersonIds?.length) return e;
+    const kept = e.relatedPersonIds.filter((pid) => !removed.has(pid));
+    if (kept.length === e.relatedPersonIds.length) return e;
+    changed = true;
+    return { ...e, relatedPersonIds: kept };
+  });
+  return changed ? next : events;
+};
+
 type Dir = 'left' | 'right';
 
 type ConfirmState = {
@@ -1513,6 +1532,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
         (l) => !set2.has(l.fromPersonId) && !set2.has(l.toPersonId),
       ),
       networkUnits: c.networkUnits ? newUnits : c.networkUnits,
+      majorEvents: cleanEventPersonRefs(c.majorEvents, set2),
       households: c.households ? newHouseholds : c.households,
     });
     // 如果刪掉的是目前 Inspector 顯示的人 → fallback 到剩餘第一個
@@ -2880,6 +2900,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
         (l) => !pset.has(l.fromPersonId) && !pset.has(l.toPersonId),
       ),
       networkUnits: c.networkUnits ? keptUnits : c.networkUnits,
+      majorEvents: cleanEventPersonRefs(c.majorEvents, pset),
       households: c.households ? newHouseholds : c.households,
     });
     // InspectorTarget 只有 person/line 兩型(單位的檢視走 selectedUnitIds),
@@ -3128,11 +3149,21 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
         e.id === id ? { ...e, ...patch } : e,
       ),
     });
+    // 日期欄是 <input type="date">,每按一個數字鍵就發一次 change ——
+    // 實測連按 8 鍵 = 8 格歷史,20 格上限一次被吃掉四成(2026-08-30 審查)。
+    // 標題/描述雖然只在失焦寫入,一起走合併窗也無害(同一筆事件的連續調整 = 一格)。
+    if (shouldCoalesce('event', id)) {
+      set({ currentCase: next, history: { ...history, future: [] } });
+      return;
+    }
     set(pushHistory(c, history, next));
+    editWindowReopen('event', id);
   },
   removeMajorEvent: (id) => {
     const { currentCase: c, history } = get();
     if (!c) return;
+    // 不存在 → 不推空 history、不動 lastModifiedAt(#126 同款 guard)
+    if (!(c.majorEvents ?? []).some((e) => e.id === id)) return;
     const next = touch({
       ...c,
       majorEvents: (c.majorEvents ?? []).filter((e) => e.id !== id),

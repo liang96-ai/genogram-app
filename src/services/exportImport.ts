@@ -1,6 +1,7 @@
 import { db, removeDeletedCaseIds } from './database';
 import { writeCaseJson } from './fileSystem';
 import type { Genogram, Line, Person } from '../types/genogram';
+import { isRenderableEvent } from './majorEvents';
 
 export type ExportType = 'single' | 'multi' | 'backup';
 
@@ -173,6 +174,40 @@ export function isValidGenogram(g: unknown): g is Genogram {
   );
 }
 
+/**
+ * 匯入前的資料清洗(2026-08-30 審查:壞掉的 majorEvents 會讓整個 App 當掉,
+ * 而且重開個案再點附件分頁會「再當一次」= 使用者無法自救的毒藥丸)。
+ *
+ * 設計取捨:依 docs/VERSIONING.md 的寬容讀取原則,**不因為子集合壞掉就整案拒收** ——
+ * 只把「會讓程式炸掉」的元素丟掉,其餘原樣保留(未知欄位也保留)。
+ * 丟掉的筆數回報給呼叫端,由 UI 決定要不要告訴使用者。
+ */
+export function sanitizeCase(g: Genogram): { case: Genogram; dropped: number } {
+  let dropped = 0;
+  let next = g;
+
+  const raw = (g as { majorEvents?: unknown }).majorEvents;
+  if (raw !== undefined) {
+    if (!Array.isArray(raw)) {
+      // 整個欄位型別就錯(字串/數字/物件)→ 當作沒有
+      dropped += 1;
+      next = { ...next, majorEvents: undefined };
+    } else {
+      const kept = raw.filter((e) => {
+        // 判準與渲染層共用(services/majorEvents.ts)—— 兩邊寫法一旦分岐,
+        // 就會出現「匯入時放行、渲染時炸掉」的縫
+        const ok = isRenderableEvent(e);
+        if (!ok) dropped += 1;
+        return ok;
+      });
+      if (kept.length !== raw.length) {
+        next = { ...next, majorEvents: kept as Genogram['majorEvents'] };
+      }
+    }
+  }
+  return { case: next, dropped };
+}
+
 export type ConflictAction = 'overwrite' | 'duplicate' | 'skip';
 
 export interface CaseConflict {
@@ -189,6 +224,8 @@ export interface ImportResult {
   skipped: number;
   /** 結構損壞、被略過的筆數(#119)*/
   invalid: number;
+  /** 個案有收下,但裡面丟掉的壞紀錄筆數(2026-08-30)*/
+  repaired: number;
 }
 
 const uid = (prefix: string) =>
@@ -205,16 +242,23 @@ export async function applyImport(
   let overwritten = 0;
   let skipped = 0;
   let invalid = 0;
+  let repaired = 0;
   const importedIds: string[] = [];
   // 匯入成功的個案要立刻寫進備份資料夾(2026-08-27 決議)——
   // 不然「同事傳來的 10 筆」在資料夾裡不存在,清快取就是真丟失,而使用者以為有備份
   const written: Genogram[] = [];
   const now = new Date().toISOString();
-  for (const c of bundle.cases) {
+  for (const raw of bundle.cases) {
     // 壞資料直接寫進 DB 會讓首頁渲染炸掉(#119)→ 跳過並計數
-    if (!isValidGenogram(c)) {
+    if (!isValidGenogram(raw)) {
       invalid++;
       continue;
+    }
+    // 子集合(重大事件)壞掉不整案拒收,只丟掉會炸的那幾筆(2026-08-30)
+    const { case: c, dropped } = sanitizeCase(raw);
+    if (dropped > 0) {
+      repaired += dropped;
+      console.warn(`import: dropped ${dropped} malformed record(s) in case ${c.id}`);
     }
     importedIds.push(c.id);
     const existing = await db.cases.get(c.id);
@@ -279,7 +323,7 @@ export async function applyImport(
   }
   // 使用者明確匯入 = 解除墓碑(#125),之後資料夾救援不再跳過這些 id
   await removeDeletedCaseIds(importedIds);
-  return { added, overwritten, skipped, invalid };
+  return { added, overwritten, skipped, invalid, repaired };
 }
 
 export async function detectConflicts(

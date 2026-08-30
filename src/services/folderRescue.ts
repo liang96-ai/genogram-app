@@ -6,7 +6,7 @@
 // 獨立成檔的原因:它同時需要 db、isValidGenogram、loadAllCasesFromFolder,
 // 而 exportImport 已經 import fileSystem(匯入寫備份)—— 塞進任何一邊都會繞出循環引用。
 import { db, getDeletedCaseIds } from './database';
-import { isValidGenogram } from './exportImport';
+import { isValidGenogram, sanitizeCase } from './exportImport';
 import { loadAllCasesFromFolder } from './fileSystem';
 
 /**
@@ -29,7 +29,12 @@ export async function rescueCasesFromFolder(): Promise<number> {
     if (skip.has(g.id)) continue;
     const exists = await db.cases.get(g.id);
     if (!exists) {
-      await db.cases.put(g);
+      // 資料夾裡的檔案同樣可能被手動改壞 —— 與匯入走同一道清洗(2026-08-30)
+      const { case: clean, dropped } = sanitizeCase(g);
+      if (dropped > 0) {
+        console.warn(`rescue: dropped ${dropped} malformed record(s) in case ${clean.id}`);
+      }
+      await db.cases.put(clean);
       restored++;
     }
   }

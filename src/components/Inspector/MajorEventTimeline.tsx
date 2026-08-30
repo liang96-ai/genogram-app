@@ -1,13 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import type { MajorEvent } from '../../types/genogram';
+import { isRenderableEvent } from '../../services/majorEvents';
 
-// 重大事件時間軸(2026-08-27 決議 Q12-C)。
+// 重大事件時間軸(2026-08-27 決議 Q12-C;2026-08-30 依獨立審查補強)。
 //
-// 文字欄位(標題/描述)只在失焦時寫入 store:updateMajorEvent 每呼叫必推一格
-// 歷史,若跟著 onChange 打,每個鍵都吃一格復原 —— 這是批次三剛替人物欄位
-// 修掉的老毛病,新元件不准重新引進。日期/類型/人物勾選是離散選擇,直接寫。
+// 三個設計約束,改這個檔前先讀:
+//  1. 文字欄位(標題/描述)不逐鍵寫 store —— 失焦 / 停手 0.8 秒 / 卸載 / 分頁隱藏
+//     四個時機才 commit。逐鍵寫會把 20 格復原一次吃光(批次三修過的老毛病)。
+//     但「只靠失焦」會在 F5 或關分頁時把草稿蒸發掉,所以另外三個時機是保險。
+//  2. 日期欄是 <input type="date">,每按一個數字鍵就發一次 change —— store 的
+//     updateMajorEvent 已接打字合併窗('event' kind),這裡不必再防。
+//  3. 卡片要能擋住「畫布拖曳造成的全表重繪」:EventCard 用 memo,人物清單用
+//     簽章 memo(只有 id/姓名 變才重算),所以拖人物不會重畫 50 張卡。
 
 /** type 的固定選項;儲存穩定 key,顯示走 i18n(evType.*)。 */
 const EVENT_TYPES = [
@@ -37,16 +43,53 @@ const DOT_COLOR: Record<string, string> = {
   other: '#86868b',
 };
 
+/** 停手多久就把草稿寫進 store(關分頁 / F5 最多丟這麼久的字)*/
+const DRAFT_IDLE_MS = 800;
+
+type PersonLite = { id: string; name: string };
+
 export default function MajorEventTimeline() {
   const t = useT();
-  const currentCase = useGenogramStore((s) => s.currentCase);
+  // 只訂閱需要的兩塊:majorEvents / persons 的陣列身分只在它們真的變時才換,
+  // 訂閱整個 currentCase 會讓「拖曳人物」也重繪整條時間軸
+  const events = useGenogramStore((s) => s.currentCase?.majorEvents);
+  const persons = useGenogramStore((s) => s.currentCase?.persons);
   const updateMajorEvent = useGenogramStore((s) => s.updateMajorEvent);
   const removeMajorEvent = useGenogramStore((s) => s.removeMajorEvent);
 
-  if (!currentCase) return null;
-  const events = currentCase.majorEvents ?? [];
+  // 人物清單:只取 id 與姓名。拖曳只改 position,簽章不變 → 卡片不重繪
+  const personSig = (persons ?? [])
+    .map((p) => `${p.id}:${p.basicInfo?.name ?? ''}`)
+    .join('|');
+  const people: PersonLite[] = useMemo(
+    () =>
+      (persons ?? []).map((p) => ({
+        id: p.id,
+        name: p.basicInfo?.name?.trim() ?? '',
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [personSig],
+  );
 
-  if (events.length === 0) {
+  const patchEvent = useCallback(
+    (id: string, patch: Partial<MajorEvent>) => {
+      // 卸載 / 延遲結算可能在切換個案之後才跑:事件已不在當前個案就放棄,
+      // 否則 updateMajorEvent 的 no-op map 仍會 touch + 推歷史到錯的個案
+      const cc = useGenogramStore.getState().currentCase;
+      if (cc?.majorEvents?.some((e) => e.id === id)) updateMajorEvent(id, patch);
+    },
+    [updateMajorEvent],
+  );
+
+  const sorted = useMemo(() => {
+    const safe = (events ?? []).filter(isRenderableEvent);
+    // 時間軸由舊到新;同日維持建立順序(sort 穩定)
+    return safe
+      .slice()
+      .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  }, [events]);
+
+  if (sorted.length === 0) {
     return (
       <div style={{ fontSize: 12, color: '#86868b', padding: 4 }}>
         {t('tab4.eventsEmpty')}
@@ -54,86 +97,94 @@ export default function MajorEventTimeline() {
     );
   }
 
-  // 時間軸由舊到新;同日維持建立順序
-  const sorted = events
-    .slice()
-    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-
   return (
     <div>
       {sorted.map((ev, i) => (
         <EventCard
           key={ev.id}
           event={ev}
-          persons={currentCase.persons}
+          people={people}
           isLast={i === sorted.length - 1}
-          onPatch={(patch) => {
-            // 卸載結算可能在切換個案之後才跑:事件已不在當前個案就放棄,
-            // 否則 updateMajorEvent 的 no-op map 仍會 touch + 推歷史到錯的個案
-            const cc = useGenogramStore.getState().currentCase;
-            if (cc?.majorEvents?.some((e) => e.id === ev.id)) {
-              updateMajorEvent(ev.id, patch);
-            }
-          }}
-          onDelete={() => removeMajorEvent(ev.id)}
+          onPatch={patchEvent}
+          onDelete={removeMajorEvent}
         />
       ))}
     </div>
   );
 }
 
-function EventCard({
+const EventCard = memo(function EventCard({
   event,
-  persons,
+  people,
   isLast,
   onPatch,
   onDelete,
 }: {
   event: MajorEvent;
-  persons: { id: string; basicInfo?: { name?: string } }[];
+  people: PersonLite[];
   isLast: boolean;
-  onPatch: (patch: Partial<MajorEvent>) => void;
-  onDelete: () => void;
+  onPatch: (id: string, patch: Partial<MajorEvent>) => void;
+  onDelete: (id: string) => void;
 }) {
   const t = useT();
-  // 文字欄位的本機草稿:onChange 進草稿,onBlur 才 commit(見檔頭)
   const [title, setTitle] = useState(event.title);
   const [desc, setDesc] = useState(event.description ?? '');
   const [peopleOpen, setPeopleOpen] = useState(false);
   // undo/redo 或匯入把 store 改回去時,草稿要跟上(render 期間調整,不走 effect)
-  const [seen, setSeen] = useState({ title: event.title, desc: event.description ?? '' });
+  const [seen, setSeen] = useState({
+    title: event.title,
+    desc: event.description ?? '',
+  });
   if (seen.title !== event.title || seen.desc !== (event.description ?? '')) {
     setSeen({ title: event.title, desc: event.description ?? '' });
     if (seen.title !== event.title) setTitle(event.title);
     if (seen.desc !== (event.description ?? '')) setDesc(event.description ?? '');
   }
 
-  // 破口:打完字直接切分頁/關 Inspector → 元件卸載,onBlur 永遠不發,草稿丟失。
-  // 卸載時結算一次;ref 保最新值,effect 只在 mount/unmount 跑一次。
+  // 草稿結算:四個時機共用同一段邏輯,值從 ref 取(才拿得到最新的)
   const draftRef = useRef({ title, desc, event, onPatch });
   useEffect(() => {
     draftRef.current = { title, desc, event, onPatch };
-  });
-  useEffect(
-    () => () => {
-      const d = draftRef.current;
-      const patch: Partial<MajorEvent> = {};
-      if (d.title !== d.event.title) patch.title = d.title;
-      if (d.desc !== (d.event.description ?? ''))
-        patch.description = d.desc || undefined;
-      if (Object.keys(patch).length > 0) d.onPatch(patch);
-    },
-    [],
-  );
+  }, [title, desc, event, onPatch]);
+
+  const commitDraft = useCallback(() => {
+    const d = draftRef.current;
+    const patch: Partial<MajorEvent> = {};
+    if (d.title !== d.event.title) patch.title = d.title;
+    if (d.desc !== (d.event.description ?? ''))
+      patch.description = d.desc || undefined;
+    if (Object.keys(patch).length > 0) d.onPatch(d.event.id, patch);
+  }, []);
+
+  // ① 停手 0.8 秒就結算 —— F5 / 關分頁最多丟 0.8 秒的字
+  //    (store 的合併窗是 0.9 秒,所以連續打字仍然只吃一格復原)
+  useEffect(() => {
+    const dirty =
+      title !== event.title || desc !== (event.description ?? '');
+    if (!dirty) return;
+    const id = window.setTimeout(commitDraft, DRAFT_IDLE_MS);
+    return () => window.clearTimeout(id);
+  }, [title, desc, event.title, event.description, commitDraft]);
+
+  // ② 分頁被隱藏(切換分頁 / 關閉 / 手機切到背景)—— 比 pagehide 早發,
+  //    結算後 App 的 pagehide 存檔才抓得到這筆
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') commitDraft();
+    };
+    document.addEventListener('visibilitychange', onHide);
+    return () => document.removeEventListener('visibilitychange', onHide);
+  }, [commitDraft]);
+
+  // ③ 元件卸載(切分頁 / 收 Inspector / 換個案)
+  useEffect(() => () => commitDraft(), [commitDraft]);
 
   const related = event.relatedPersonIds ?? [];
   const dot = DOT_COLOR[event.type ?? ''] ?? '#86868b';
   const typeLabel = (v: string) =>
     (EVENT_TYPES as readonly string[]).includes(v) ? t(`evType.${v}`) : v;
-  const nameOf = (p: { basicInfo?: { name?: string } }) =>
-    p.basicInfo?.name?.trim() || t('unit.unnamed');
   const togglePerson = (pid: string) =>
-    onPatch({
+    onPatch(event.id, {
       relatedPersonIds: related.includes(pid)
         ? related.filter((x) => x !== pid)
         : [...related, pid],
@@ -190,7 +241,7 @@ function EventCard({
             type="date"
             value={event.date}
             onChange={(e) => {
-              if (e.target.value) onPatch({ date: e.target.value });
+              if (e.target.value) onPatch(event.id, { date: e.target.value });
             }}
             style={{
               fontSize: 12,
@@ -211,7 +262,7 @@ function EventCard({
             onChange={(e) => {
               if (e.target.value === '__raw__') return;
               // 選回「類型…」= 清空類型(審查觀察:設了不能清會卡死使用者)
-              onPatch({ type: e.target.value || undefined });
+              onPatch(event.id, { type: e.target.value || undefined });
             }}
             style={{
               fontSize: 12,
@@ -235,7 +286,7 @@ function EventCard({
           </select>
           <div style={{ flex: 1 }} />
           <button
-            onClick={onDelete}
+            onClick={() => onDelete(event.id)}
             style={{
               background: 'transparent',
               border: 'none',
@@ -254,9 +305,7 @@ function EventCard({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          onBlur={() => {
-            if (title !== event.title) onPatch({ title });
-          }}
+          onBlur={commitDraft}
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.currentTarget.blur();
           }}
@@ -277,10 +326,7 @@ function EventCard({
         <textarea
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
-          onBlur={() => {
-            if (desc !== (event.description ?? ''))
-              onPatch({ description: desc || undefined });
-          }}
+          onBlur={commitDraft}
           placeholder={t('tab4.eventDescPlaceholder')}
           style={{
             width: '100%',
@@ -322,8 +368,8 @@ function EventCard({
             {related.length > 0 ? ` (${related.length})` : ''}
           </button>
           {(peopleOpen
-            ? persons
-            : persons.filter((p) => related.includes(p.id))
+            ? people
+            : people.filter((p) => related.includes(p.id))
           ).map((p) => {
             const on = related.includes(p.id);
             return (
@@ -341,7 +387,7 @@ function EventCard({
                   fontFamily: 'inherit',
                 }}
               >
-                {nameOf(p)}
+                {p.name || t('unit.unnamed')}
               </button>
             );
           })}
@@ -349,4 +395,4 @@ function EventCard({
       </div>
     </div>
   );
-}
+});

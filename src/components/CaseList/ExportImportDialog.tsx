@@ -724,6 +724,11 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
                   {t('import.invalid', { n: step.result.invalid })}
                 </li>
               )}
+              {step.result.repaired > 0 && (
+                <li style={{ color: '#b45309' }}>
+                  {t('import.repaired', { n: step.result.repaired })}
+                </li>
+              )}
             </ul>
           </div>
           <div style={{ marginTop: 18 }}>
