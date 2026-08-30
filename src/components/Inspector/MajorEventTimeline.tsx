@@ -2,14 +2,16 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import type { MajorEvent } from '../../types/genogram';
-import { isRenderableEvent } from '../../services/majorEvents';
+import { renderableEvents } from '../../services/majorEvents';
+import { registerDraftCommitter } from '../../services/draftFlush';
 
 // 重大事件時間軸(2026-08-27 決議 Q12-C;2026-08-30 依獨立審查補強)。
 //
 // 三個設計約束,改這個檔前先讀:
-//  1. 文字欄位(標題/描述)不逐鍵寫 store —— 失焦 / 停手 0.8 秒 / 卸載 / 分頁隱藏
-//     四個時機才 commit。逐鍵寫會把 20 格復原一次吃光(批次三修過的老毛病)。
-//     但「只靠失焦」會在 F5 或關分頁時把草稿蒸發掉,所以另外三個時機是保險。
+//  1. 文字欄位(標題/描述)不逐鍵寫 store —— 失焦 / 停手 0.8 秒 / 卸載 /
+//     App 存檔前的集中結算,四個時機才 commit。逐鍵寫會把 20 格復原一次吃光。
+//     復原格數由「一次輸入」界定(見 sessionPushed):第一次寫入開一格,
+//     之後的自動結算併回同一格,失焦才結束這一次。
 //  2. 日期欄是 <input type="date">,每按一個數字鍵就發一次 change —— store 的
 //     updateMajorEvent 已接打字合併窗('event' kind),這裡不必再防。
 //  3. 卡片要能擋住「畫布拖曳造成的全表重繪」:EventCard 用 memo,人物清單用
@@ -72,17 +74,18 @@ export default function MajorEventTimeline() {
   );
 
   const patchEvent = useCallback(
-    (id: string, patch: Partial<MajorEvent>) => {
+    (id: string, patch: Partial<MajorEvent>, opts?: { merge?: boolean }) => {
       // 卸載 / 延遲結算可能在切換個案之後才跑:事件已不在當前個案就放棄,
       // 否則 updateMajorEvent 的 no-op map 仍會 touch + 推歷史到錯的個案
       const cc = useGenogramStore.getState().currentCase;
-      if (cc?.majorEvents?.some((e) => e.id === id)) updateMajorEvent(id, patch);
+      if (renderableEvents(cc?.majorEvents).some((e) => e.id === id))
+        updateMajorEvent(id, patch, opts);
     },
     [updateMajorEvent],
   );
 
   const sorted = useMemo(() => {
-    const safe = (events ?? []).filter(isRenderableEvent);
+    const safe = renderableEvents(events);
     // 時間軸由舊到新;同日維持建立順序(sort 穩定)
     return safe
       .slice()
@@ -123,7 +126,11 @@ const EventCard = memo(function EventCard({
   event: MajorEvent;
   people: PersonLite[];
   isLast: boolean;
-  onPatch: (id: string, patch: Partial<MajorEvent>) => void;
+  onPatch: (
+    id: string,
+    patch: Partial<MajorEvent>,
+    opts?: { merge?: boolean },
+  ) => void;
   onDelete: (id: string) => void;
 }) {
   const t = useT();
@@ -147,17 +154,30 @@ const EventCard = memo(function EventCard({
     draftRef.current = { title, desc, event, onPatch };
   }, [title, desc, event, onPatch]);
 
-  const commitDraft = useCallback(() => {
+  // 「同一次輸入」= 從開始改到失焦為止。第一次寫入開一格復原,
+  // 之後的自動結算(停手 0.8 秒、切分頁、卸載)一律併回那一格 ——
+  // 不能靠時間窗:打一段有思考停頓的描述,每個停頓都超過 0.9 秒,
+  // 會變成每停頓一次吃一格,比「一次失焦一格」的舊行為更糟(複核抓到的迴歸)。
+  const sessionPushed = useRef(false);
+  const commitDraft = useCallback((): boolean => {
     const d = draftRef.current;
     const patch: Partial<MajorEvent> = {};
     if (d.title !== d.event.title) patch.title = d.title;
     if (d.desc !== (d.event.description ?? ''))
       patch.description = d.desc || undefined;
-    if (Object.keys(patch).length > 0) d.onPatch(d.event.id, patch);
+    if (Object.keys(patch).length === 0) return false;
+    d.onPatch(d.event.id, patch, { merge: sessionPushed.current });
+    sessionPushed.current = true;
+    return true;
   }, []);
+  /** 欄位失焦 = 這一次輸入結束,下次再改就是新的一格 */
+  const endSession = useCallback(() => {
+    commitDraft();
+    sessionPushed.current = false;
+  }, [commitDraft]);
 
-  // ① 停手 0.8 秒就結算 —— F5 / 關分頁最多丟 0.8 秒的字
-  //    (store 的合併窗是 0.9 秒,所以連續打字仍然只吃一格復原)
+  // ① 停手 0.8 秒就結算 —— 讓「打到一半被關掉」最多丟 0.8 秒的字。
+  //    這些續寫都帶 merge,不會多吃復原格。
   useEffect(() => {
     const dirty =
       title !== event.title || desc !== (event.description ?? '');
@@ -166,18 +186,18 @@ const EventCard = memo(function EventCard({
     return () => window.clearTimeout(id);
   }, [title, desc, event.title, event.description, commitDraft]);
 
-  // ② 分頁被隱藏(切換分頁 / 關閉 / 手機切到背景)—— 比 pagehide 早發,
-  //    結算後 App 的 pagehide 存檔才抓得到這筆
-  useEffect(() => {
-    const onHide = () => {
-      if (document.visibilityState === 'hidden') commitDraft();
-    };
-    document.addEventListener('visibilitychange', onHide);
-    return () => document.removeEventListener('visibilitychange', onHide);
-  }, [commitDraft]);
+  // ② 登記到集中結算:App 在「真的要寫進資料庫之前」會呼叫。
+  //    (原本各卡自己聽 visibilitychange 是錯的 —— App 的監聽器註冊得早、
+  //     所以先跑,會先寫出還不含草稿的快照,元件再結算就來不及了)
+  useEffect(() => registerDraftCommitter(commitDraft), [commitDraft]);
 
   // ③ 元件卸載(切分頁 / 收 Inspector / 換個案)
-  useEffect(() => () => commitDraft(), [commitDraft]);
+  useEffect(
+    () => () => {
+      commitDraft();
+    },
+    [commitDraft],
+  );
 
   const related = event.relatedPersonIds ?? [];
   const dot = DOT_COLOR[event.type ?? ''] ?? '#86868b';
@@ -305,7 +325,7 @@ const EventCard = memo(function EventCard({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          onBlur={commitDraft}
+          onBlur={endSession}
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.currentTarget.blur();
           }}
@@ -326,7 +346,7 @@ const EventCard = memo(function EventCard({
         <textarea
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
-          onBlur={commitDraft}
+          onBlur={endSession}
           placeholder={t('tab4.eventDescPlaceholder')}
           style={{
             width: '100%',

@@ -257,15 +257,24 @@ export async function applyImport(
     // 子集合(重大事件)壞掉不整案拒收,只丟掉會炸的那幾筆(2026-08-30)
     const { case: c, dropped } = sanitizeCase(raw);
     if (dropped > 0) {
-      repaired += dropped;
       console.warn(`import: dropped ${dropped} malformed record(s) in case ${c.id}`);
     }
+    // repaired 只算「真的收下的個案」—— 使用者選略過時不能說「個案已收下」(複核 ⑧)
+    const countRepaired = () => {
+      repaired += dropped;
+    };
+    // 修過的個案不回寫備份資料夾:那會用殘缺版覆蓋掉使用者原本的 case.json,
+    // 原始資料就再也救不回來了(複核 ④)。原檔留著,DB 用安全版。
+    const mirror = (g: Genogram) => {
+      if (dropped === 0) written.push(g);
+    };
     importedIds.push(c.id);
     const existing = await db.cases.get(c.id);
     if (!existing) {
       // 沒衝突 → 直接加
       await db.cases.put({ ...c, lastModifiedAt: c.lastModifiedAt || now });
-      written.push({ ...c, lastModifiedAt: c.lastModifiedAt || now });
+      mirror({ ...c, lastModifiedAt: c.lastModifiedAt || now });
+      countRepaired();
       added++;
       continue;
     }
@@ -274,7 +283,8 @@ export async function applyImport(
       skipped++;
     } else if (action === 'overwrite') {
       await db.cases.put({ ...c, lastModifiedAt: c.lastModifiedAt || now });
-      written.push({ ...c, lastModifiedAt: c.lastModifiedAt || now });
+      mirror({ ...c, lastModifiedAt: c.lastModifiedAt || now });
+      countRepaired();
       overwritten++;
     } else {
       // duplicate
@@ -285,7 +295,8 @@ export async function applyImport(
         lastModifiedAt: c.lastModifiedAt || now,
       };
       await db.cases.put(dup);
-      written.push(dup);
+      mirror(dup);
+      countRepaired();
       added++;
     }
   }

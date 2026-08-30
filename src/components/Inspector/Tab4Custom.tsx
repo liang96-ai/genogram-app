@@ -5,7 +5,7 @@ import { useT } from '../../i18n';
 import { rescueCasesFromFolder } from '../../services/folderRescue';
 import ScaleSummary from './ScaleSummary';
 import MajorEventTimeline from './MajorEventTimeline';
-import { isRenderableEvent } from '../../services/majorEvents';
+import { renderableEvents } from '../../services/majorEvents';
 import {
   isFileSystemAccessSupported,
   selectRootFolder,
@@ -68,7 +68,7 @@ export default function Tab4Custom() {
   const notes = currentCase.interviewNotes ?? [];
   const attachments = currentCase.attachments ?? [];
   // 只算「畫得出來的」—— 壞資料被渲染層擋掉時,標題數字不能跟卡片數對不上
-  const events = (currentCase.majorEvents ?? []).filter(isRenderableEvent);
+  const events = renderableEvents(currentCase.majorEvents);
 
   return (
     <div style={{ padding: 16, overflowY: 'auto', height: '100%' }}>

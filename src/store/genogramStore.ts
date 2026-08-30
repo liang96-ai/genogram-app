@@ -425,6 +425,12 @@ const touch = (g: Genogram): Genogram => ({
   lastModifiedAt: new Date().toISOString(),
 });
 
+/** majorEvents 若不是陣列(手改壞的舊資料)就當空的 —— 讓所有 CRUD 對壞資料免疫。
+ *  注意:這裡只是「不要炸」,不會去改寫使用者的資料。 */
+const safeEvents = (
+  ev: Genogram['majorEvents'],
+): NonNullable<Genogram['majorEvents']> => (Array.isArray(ev) ? ev : []);
+
 /** 刪人物時,把重大事件的「牽涉人物」裡指向已刪人物的 id 清掉(#126 同族)——
  *  不清會留下幽靈 id:卡片顯示「牽涉人物 (3)」卻只看得到 2 個名字。
  *  事件本身保留(事件是個案層級的紀錄,不隨某個人消失)。 */
@@ -432,9 +438,13 @@ const cleanEventPersonRefs = (
   events: Genogram['majorEvents'],
   removed: Set<string>,
 ): Genogram['majorEvents'] => {
-  if (!events) return events;
+  // 壞資料防護(2026-08-30 複核):DB 裡可能躺著 null 元素或整個不是陣列的
+  // majorEvents(此版之前匯入的)。少了這兩道,刪除人物會 throw ——
+  // 而且是在事件處理器裡拋、ErrorBoundary 接不到,症狀是「刪除永遠沒反應」的無聲死路。
+  if (!Array.isArray(events)) return events;
   let changed = false;
   const next = events.map((e) => {
+    if (!e || typeof e !== 'object') return e;
     if (!e.relatedPersonIds?.length) return e;
     const kept = e.relatedPersonIds.filter((pid) => !removed.has(pid));
     if (kept.length === e.relatedPersonIds.length) return e;
@@ -833,6 +843,8 @@ type GenogramStore = {
   updateMajorEvent: (
     id: string,
     patch: Partial<import('../types/genogram').MajorEvent>,
+    /** merge:這一次寫入屬於「同一次輸入的續寫」,併回上一格,不另開復原格 */
+    opts?: { merge?: boolean },
   ) => void;
   removeMajorEvent: (id: string) => void;
 
@@ -3136,23 +3148,28 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const id = `ev_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const next = touch({
       ...c,
-      majorEvents: [...(c.majorEvents ?? []), { ...ev, id }],
+      majorEvents: [...safeEvents(c.majorEvents), { ...ev, id }],
     });
     set(pushHistory(c, history, next));
   },
-  updateMajorEvent: (id, patch) => {
+  updateMajorEvent: (id, patch, opts) => {
     const { currentCase: c, history } = get();
     if (!c) return;
     const next = touch({
       ...c,
-      majorEvents: (c.majorEvents ?? []).map((e) =>
+      majorEvents: safeEvents(c.majorEvents).map((e) =>
         e.id === id ? { ...e, ...patch } : e,
       ),
     });
     // 日期欄是 <input type="date">,每按一個數字鍵就發一次 change ——
     // 實測連按 8 鍵 = 8 格歷史,20 格上限一次被吃掉四成(2026-08-30 審查)。
     // 標題/描述雖然只在失焦寫入,一起走合併窗也無害(同一筆事件的連續調整 = 一格)。
-    if (shouldCoalesce('event', id)) {
+    const inWindow = shouldCoalesce('event', id);
+    // merge = 同一次文字輸入的續寫(停手自動存檔的第 2、3… 次)。
+    // 不靠時間窗:打一段有思考停頓的描述,每個停頓都超過 900ms,
+    // 時間窗會讓每個停頓各吃一格復原 —— 那比改動前更糟(改動前是一次失焦一格)。
+    const merge = opts?.merge === true && history.past.length > 0;
+    if (merge || inWindow) {
       set({ currentCase: next, history: { ...history, future: [] } });
       return;
     }
@@ -3163,10 +3180,10 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const { currentCase: c, history } = get();
     if (!c) return;
     // 不存在 → 不推空 history、不動 lastModifiedAt(#126 同款 guard)
-    if (!(c.majorEvents ?? []).some((e) => e.id === id)) return;
+    if (!safeEvents(c.majorEvents).some((e) => e?.id === id)) return;
     const next = touch({
       ...c,
-      majorEvents: (c.majorEvents ?? []).filter((e) => e.id !== id),
+      majorEvents: safeEvents(c.majorEvents).filter((e) => e?.id !== id),
     });
     set(pushHistory(c, history, next));
   },

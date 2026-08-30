@@ -22,6 +22,7 @@ import type { Genogram } from './types/genogram';
 import { loadRootDirHandle, writeCaseJson } from './services/fileSystem';
 import { rescueCasesFromFolder } from './services/folderRescue';
 import { recordEdit } from './services/backupReminder';
+import { flushDrafts } from './services/draftFlush';
 import { setupPwaInstallListener } from './services/pwaInstall';
 import {
   applyUpdate,
@@ -112,6 +113,18 @@ export default function App() {
     if (saveTimer.current !== null) {
       window.clearTimeout(saveTimer.current);
       saveTimer.current = null;
+    }
+    // 先把「還沒寫進 store 的草稿」結算掉(2026-08-30 複核):
+    // 元件自己的 visibilitychange 監聽器一定比 App 的晚註冊、也就晚觸發,
+    // 靠元件自己來不及 —— 必須由這裡在寫出去之前主動收一次。
+    const draftChanged = flushDrafts();
+    if (draftChanged) {
+      const latest = useGenogramStore.getState().currentCase;
+      // 只在「本來就有東西要存」或「草稿剛寫進同一個個案」時更新排隊快照;
+      // pendingSave 為 null 且個案剛被刪除的情況不可補寫(見下方 effect 的註解)
+      if (latest && (!pendingSave.current || pendingSave.current.id === latest.id)) {
+        pendingSave.current = latest;
+      }
     }
     const g = pendingSave.current;
     if (!g) return Promise.resolve();

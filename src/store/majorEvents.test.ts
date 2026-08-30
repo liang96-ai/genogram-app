@@ -11,6 +11,7 @@ import {
   useGenogramStore,
 } from './genogramStore';
 import { isValidGenogram, sanitizeCase } from '../services/exportImport';
+import { renderableEvents } from '../services/majorEvents';
 import type { Genogram } from '../types/genogram';
 
 const S = () => useGenogramStore.getState();
@@ -177,5 +178,82 @@ describe('壞資料不得靜默入庫(毒藥丸防護)', () => {
     const { case: clean, dropped } = sanitizeCase(good);
     expect(dropped).toBe(0);
     expect(clean).toBe(good); // 沒動到就回傳同一個物件
+  });
+});
+
+describe('壞資料 × 其他操作的交集(複核指出的測試盲點)', () => {
+  it('DB 裡有 null 事件時,刪除人物不能 throw', () => {
+    const [a] = ids();
+    useGenogramStore.setState({
+      currentCase: {
+        ...S().currentCase!,
+        majorEvents: [
+          null as never,
+          { id: 'e1', date: '2020-01-01', title: '正常', relatedPersonIds: [a] },
+        ],
+      },
+    });
+    expect(() => S().removePersons([a])).not.toThrow();
+    // 好的那筆要被清乾淨,壞的那筆原樣留著(不擅自竄改使用者資料)
+    const ev = S().currentCase!.majorEvents!;
+    expect(ev[0]).toBeNull();
+    expect((ev[1] as { relatedPersonIds: string[] }).relatedPersonIds).toEqual([]);
+  });
+
+  it('majorEvents 整個不是陣列時,新增/刪除/讀取都不能 throw', () => {
+    useGenogramStore.setState({
+      currentCase: { ...S().currentCase!, majorEvents: 'abc' as never },
+    });
+    expect(() => S().addMajorEvent({ date: '2026-01-01', title: '新的' })).not.toThrow();
+    expect(S().currentCase!.majorEvents).toHaveLength(1); // 壞欄位當空的,不會被展開成 a/b/c
+    expect(() => S().removeMajorEvent('ev_ghost')).not.toThrow();
+    expect(() => renderableEvents('abc')).not.toThrow();
+    expect(renderableEvents('abc')).toEqual([]);
+  });
+
+  it('刪除人物時,壞資料不會讓幽靈 id 清理漏掉好資料', () => {
+    const [a, b] = ids();
+    useGenogramStore.setState({
+      currentCase: {
+        ...S().currentCase!,
+        majorEvents: [
+          { id: 'e1', date: '2020-01-01', title: '前', relatedPersonIds: [a, b] },
+          undefined as never,
+          { id: 'e2', date: '2021-01-01', title: '後', relatedPersonIds: [a] },
+        ],
+      },
+    });
+    S().removePersons([a]);
+    const ev = S().currentCase!.majorEvents!;
+    expect((ev[0] as { relatedPersonIds: string[] }).relatedPersonIds).toEqual([b]);
+    expect((ev[2] as { relatedPersonIds: string[] }).relatedPersonIds).toEqual([]);
+  });
+});
+
+describe('一次輸入 = 一格復原(merge 語意)', () => {
+  it('停手自動存檔的續寫併回同一格,不是每次停頓都吃一格', () => {
+    S().addMajorEvent({ date: '2026-08-30', title: '' });
+    const id = events()[0].id;
+    const before = past();
+    // 第一次結算:開一格
+    S().updateMajorEvent(id, { title: '父親於' }, { merge: false });
+    vi.advanceTimersByTime(3000); // 思考停頓遠超過 900ms 合併窗
+    // 續寫:雖然早就超出時間窗,但屬於同一次輸入 → 併回同一格
+    S().updateMajorEvent(id, { title: '父親於2024年' }, { merge: true });
+    vi.advanceTimersByTime(3000);
+    S().updateMajorEvent(id, { title: '父親於2024年因肝癌過世' }, { merge: true });
+    expect(past() - before).toBe(1);
+    S().undo();
+    expect(events()[0].title).toBe(''); // 一步回到打字前
+  });
+
+  it('失焦後再打字 = 新的一格', () => {
+    S().addMajorEvent({ date: '2026-08-30', title: '' });
+    const id = events()[0].id;
+    const before = past();
+    S().updateMajorEvent(id, { title: '第一段' }, { merge: false });
+    vi.advanceTimersByTime(3000);
+    S().updateMajorEvent(id, { title: '第二段' }, { merge: false }); // 失焦後的新 session
+    expect(past() - before).toBe(2);
   });
 });

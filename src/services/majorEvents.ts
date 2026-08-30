@@ -18,3 +18,13 @@ export const isRenderableEvent = (e: unknown): e is MajorEvent =>
   typeof (e as MajorEvent).id === 'string' &&
   typeof (e as MajorEvent).date === 'string' &&
   typeof (e as MajorEvent).title === 'string';
+
+/**
+ * 從「任何東西」安全取出可渲染的事件清單。
+ *
+ * 為什麼不是各處自己寫 `(x ?? []).filter(...)`:`??` 只擋 null/undefined,
+ * 欄位若是字串或物件(手改壞的檔、別的工具寫出來的),`.filter` 直接 TypeError,
+ * 在 render 期間拋 = 整個 App 當掉。所有讀 majorEvents 的地方都走這個函式。
+ */
+export const renderableEvents = (raw: unknown): MajorEvent[] =>
+  Array.isArray(raw) ? raw.filter(isRenderableEvent) : [];
