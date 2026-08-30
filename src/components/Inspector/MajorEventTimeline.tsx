@@ -76,10 +76,13 @@ export default function MajorEventTimeline() {
   const patchEvent = useCallback(
     (id: string, patch: Partial<MajorEvent>, opts?: { merge?: boolean }) => {
       // 卸載 / 延遲結算可能在切換個案之後才跑:事件已不在當前個案就放棄,
-      // 否則 updateMajorEvent 的 no-op map 仍會 touch + 推歷史到錯的個案
+      // 否則 updateMajorEvent 的 no-op map 仍會 touch + 推歷史到錯的個案。
+      // 回傳「有沒有真的寫進去」—— 集中結算靠這個判斷要不要重抓快照存檔,
+      // 謊報 true 會多一次沒必要的寫檔,還會灌水備份提醒的編輯計數。
       const cc = useGenogramStore.getState().currentCase;
-      if (renderableEvents(cc?.majorEvents).some((e) => e.id === id))
-        updateMajorEvent(id, patch, opts);
+      if (!renderableEvents(cc?.majorEvents).some((e) => e.id === id)) return false;
+      updateMajorEvent(id, patch, opts);
+      return true;
     },
     [updateMajorEvent],
   );
@@ -130,7 +133,7 @@ const EventCard = memo(function EventCard({
     id: string,
     patch: Partial<MajorEvent>,
     opts?: { merge?: boolean },
-  ) => void;
+  ) => boolean;
   onDelete: (id: string) => void;
 }) {
   const t = useT();
@@ -166,9 +169,9 @@ const EventCard = memo(function EventCard({
     if (d.desc !== (d.event.description ?? ''))
       patch.description = d.desc || undefined;
     if (Object.keys(patch).length === 0) return false;
-    d.onPatch(d.event.id, patch, { merge: sessionPushed.current });
-    sessionPushed.current = true;
-    return true;
+    const wrote = d.onPatch(d.event.id, patch, { merge: sessionPushed.current });
+    if (wrote) sessionPushed.current = true;
+    return wrote;
   }, []);
   /** 欄位失焦 = 這一次輸入結束,下次再改就是新的一格 */
   const endSession = useCallback(() => {
@@ -199,7 +202,12 @@ const EventCard = memo(function EventCard({
     [commitDraft],
   );
 
-  const related = event.relatedPersonIds ?? [];
+  // 正規化:手改壞的檔可能讓 relatedPersonIds 是字串/數字。
+  // 這裡不丟掉事件(日期標題仍然有用),只是當作沒有牽涉人物 ——
+  // 否則 togglePerson 的 filter 會炸,或 [...'p_abc'] 把字串展開成單字元存回去。
+  const related = Array.isArray(event.relatedPersonIds)
+    ? event.relatedPersonIds
+    : [];
   const dot = DOT_COLOR[event.type ?? ''] ?? '#86868b';
   const typeLabel = (v: string) =>
     (EVENT_TYPES as readonly string[]).includes(v) ? t(`evType.${v}`) : v;

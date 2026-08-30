@@ -257,3 +257,41 @@ describe('一次輸入 = 一格復原(merge 語意)', () => {
     expect(past() - before).toBe(2);
   });
 });
+
+describe('第二輪複核抓到的漏網形狀', () => {
+  const withEvents = (ev: unknown) =>
+    useGenogramStore.setState({
+      currentCase: { ...S().currentCase!, majorEvents: ev as never },
+    });
+
+  it('relatedPersonIds 是字串時,刪除人物不能 throw(舊 guard 擋不住:字串也有 length)', () => {
+    const [a] = ids();
+    withEvents([{ id: 'e1', date: '2020-01-01', title: 'x', relatedPersonIds: 'p_abc' }]);
+    expect(() => S().removePersons([a])).not.toThrow();
+    withEvents([{ id: 'e1', date: '2020-01-01', title: 'x', relatedPersonIds: { 0: 'a', length: 1 } }]);
+    expect(() => S().removePersonsAndUnits([a], [])).not.toThrow();
+  });
+
+  it('relatedPersonIds 是數字 / 物件也不能 throw', () => {
+    const [a] = ids();
+    for (const bad of [42, { a: 1 }, true]) {
+      withEvents([{ id: 'e1', date: '2020-01-01', title: 'x', relatedPersonIds: bad }]);
+      expect(() => S().removePersons([a])).not.toThrow();
+    }
+  });
+
+  it('undo 之後的續寫不得併進已被退掉的那格', () => {
+    S().addMajorEvent({ date: '2026-08-30', title: '' });
+    const id = events()[0].id;
+    S().updateMajorEvent(id, { title: '第一次輸入' }, { merge: false });
+    const afterFirst = past();
+    S().undo(); // 把那一格退掉
+    expect(past()).toBe(afterFirst - 1);
+    // 元件若還以為自己在同一次輸入中(sessionPushed 仍是 true),會送 merge:true
+    S().updateMajorEvent(id, { title: '退掉之後又打的' }, { merge: true });
+    // 憑證因 past 長度改變而失效 → 必須開新格,不能無聲併掉
+    expect(past()).toBe(afterFirst);
+    S().undo();
+    expect(events()[0].title).toBe(''); // 新編輯可以單獨退掉
+  });
+});

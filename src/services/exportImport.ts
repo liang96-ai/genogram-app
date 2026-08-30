@@ -263,10 +263,13 @@ export async function applyImport(
     const countRepaired = () => {
       repaired += dropped;
     };
-    // 修過的個案不回寫備份資料夾:那會用殘缺版覆蓋掉使用者原本的 case.json,
-    // 原始資料就再也救不回來了(複核 ④)。原檔留著,DB 用安全版。
-    const mirror = (g: Genogram) => {
-      if (dropped === 0) written.push(g);
+    // 回寫備份資料夾的規則(2026-08-30 第二輪複核修正):
+    //   - 覆蓋既有個案 + 有清洗掉東西 → **不回寫**,免得用殘缺版蓋掉使用者原本的
+    //     case.json,原始資料就再也救不回來。
+    //   - 新增 / 複本 → **照常回寫**。這兩種在資料夾裡根本沒有對應原檔可保護,
+    //     不寫只會讓剛匯入的個案沒有備份 —— 那違反 2026-08-27「匯入即備份」決議。
+    const mirror = (g: Genogram, isOverwrite = false) => {
+      if (!(isOverwrite && dropped > 0)) written.push(g);
     };
     importedIds.push(c.id);
     const existing = await db.cases.get(c.id);
@@ -283,7 +286,7 @@ export async function applyImport(
       skipped++;
     } else if (action === 'overwrite') {
       await db.cases.put({ ...c, lastModifiedAt: c.lastModifiedAt || now });
-      mirror({ ...c, lastModifiedAt: c.lastModifiedAt || now });
+      mirror({ ...c, lastModifiedAt: c.lastModifiedAt || now }, true);
       countRepaired();
       overwritten++;
     } else {

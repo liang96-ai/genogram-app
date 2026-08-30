@@ -445,7 +445,10 @@ const cleanEventPersonRefs = (
   let changed = false;
   const next = events.map((e) => {
     if (!e || typeof e !== 'object') return e;
-    if (!e.relatedPersonIds?.length) return e;
+    // 必須是 Array.isArray:'x'.length === 1 為真,舊的 ?.length 守衛擋不住字串
+    // → 下一行 .filter 直接 TypeError(第二輪複核實測到的漏網形狀)
+    if (!Array.isArray(e.relatedPersonIds) || e.relatedPersonIds.length === 0)
+      return e;
     const kept = e.relatedPersonIds.filter((pid) => !removed.has(pid));
     if (kept.length === e.relatedPersonIds.length) return e;
     changed = true;
@@ -927,11 +930,17 @@ function shouldCoalesce(kind: string, id: string): boolean {
   return hit;
 }
 
+/** 「續寫要併回哪一格」的所有權憑證:只有 id 與當時的 past 長度都吻合,
+ *  才代表那一格還是這次輸入開的。undo 會把 past 彈掉一格 → 長度不符 → 自動失效,
+ *  不會把 undo 之後的新編輯偷偷併進已經被退掉的那格(第二輪複核抓到的地雷)。 */
+let eventMergeSlot: { id: string; pastLen: number } | null = null;
+
 /** 任何非文字編輯的歷史事件都要關窗 —— 之後的打字必須開新格。
  *  export 給不走 pushHistory 的兩個直推 history 者(commitMoveHistory 由本檔自用、
  *  quickBuildExecutor 批次收斂)與測試隔離用。 */
 export function breakEditWindow(): void {
   editWindow = null;
+  eventMergeSlot = null;
 }
 
 /** 文字動作推完自己的第一格後重開窗(pushHistory 內的 breakEditWindow 會把它關掉) */
@@ -3168,13 +3177,19 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     // merge = 同一次文字輸入的續寫(停手自動存檔的第 2、3… 次)。
     // 不靠時間窗:打一段有思考停頓的描述,每個停頓都超過 900ms,
     // 時間窗會讓每個停頓各吃一格復原 —— 那比改動前更糟(改動前是一次失焦一格)。
-    const merge = opts?.merge === true && history.past.length > 0;
+    // 但要驗證那一格還在、而且是這次輸入開的(見 eventMergeSlot)。
+    const merge =
+      opts?.merge === true &&
+      eventMergeSlot !== null &&
+      eventMergeSlot.id === id &&
+      eventMergeSlot.pastLen === history.past.length;
     if (merge || inWindow) {
       set({ currentCase: next, history: { ...history, future: [] } });
       return;
     }
     set(pushHistory(c, history, next));
     editWindowReopen('event', id);
+    eventMergeSlot = { id, pastLen: get().history.past.length };
   },
   removeMajorEvent: (id) => {
     const { currentCase: c, history } = get();
