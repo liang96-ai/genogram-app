@@ -3209,6 +3209,26 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const { currentCase: c, history } = get();
     if (!c) return;
     if (memberIds.length === 0) return;
+    // 同一群人不重複圈(2026-08-31 實測 bug):兩個成員完全相同的圈會 100% 重疊,
+    // 畫面上看起來只有一個,刪掉一個像是「刪除沒反應」。
+    // 已經圈過就改成「選取那個既有的圈」—— 使用者立刻看到紅 ×,知道它本來就在。
+    const want = new Set(memberIds);
+    const dup = (c.households ?? []).find(
+      (h) =>
+        h.memberIds.length === want.size &&
+        h.memberIds.every((m) => want.has(m)),
+    );
+    if (dup) {
+      set({
+        selectedHouseholdId: dup.id,
+        selectedPersonIds: [],
+        selectedLineIds: [],
+        selectedUnitIds: [],
+        selectedEcosystemId: null,
+        editingEcosystemId: null,
+      });
+      return;
+    }
     const id = `hh_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const next = touch({
       ...c,

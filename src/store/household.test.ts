@@ -95,3 +95,46 @@ describe('空圈解散時的殘留選取', () => {
     expect(st.selectedHouseholdId).toBeNull();
   });
 });
+
+describe('同一群人不重複圈(2026-08-31 實測 bug)', () => {
+  it('連按兩次「圈成同住」只會有一個圈', () => {
+    S().addHousehold(ids());
+    expect(households()).toHaveLength(1);
+    S().addHousehold(ids());
+    expect(households()).toHaveLength(1); // ← 核心主張
+  });
+
+  it('第二次改成選取既有的圈(使用者才看得到它本來就在)', () => {
+    S().addHousehold(ids());
+    const hh = households()[0];
+    S().selectPersons(ids());
+    expect(useGenogramStore.getState().selectedHouseholdId).toBeNull();
+    S().addHousehold(ids());
+    expect(useGenogramStore.getState().selectedHouseholdId).toBe(hh.id);
+  });
+
+  it('重複呼叫不推歷史、不動 lastModifiedAt', () => {
+    S().addHousehold(ids());
+    const before = S().history.past.length;
+    const lm = S().currentCase!.lastModifiedAt;
+    S().addHousehold(ids());
+    expect(S().history.past.length).toBe(before);
+    expect(S().currentCase!.lastModifiedAt).toBe(lm);
+  });
+
+  it('成員順序不同但同一群人 → 仍視為重複', () => {
+    const [a, b] = ids();
+    S().addHousehold([a, b]);
+    S().addHousehold([b, a]);
+    expect(households()).toHaveLength(1);
+  });
+
+  it('不同的成員組合仍可各自成圈', () => {
+    const [a, b] = ids();
+    S().addPersonAtCenter(900, 400);
+    const c = S().currentCase!.persons[2].id;
+    S().addHousehold([a, b]);
+    S().addHousehold([b, c]);
+    expect(households()).toHaveLength(2);
+  });
+});

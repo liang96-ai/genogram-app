@@ -337,6 +337,12 @@ export default function App() {
       ) {
         return;
       }
+      // 有彈窗開著就完全退開(2026-08-31 實測 bug):
+      // 教學手冊用左右鍵翻頁,而新個案的案主是自動選取狀態 ——
+      // 使用者以為在翻頁,畫布上的人已經被方向鍵移走了(實測 480,360 → 720,540)。
+      // Delete 同理會穿透。全 App 的彈窗都有 aria-modal="true",用它當唯一判準;
+      // 之後新增彈窗只要照樣標,這道防護自動生效。
+      if (document.querySelector('[aria-modal="true"]')) return;
       // 全域鍵盤只在編輯模式作用(2026-08-29 審查線索)——
       // goToList 不清 currentCase/選取,回首頁後方向鍵會無聲移動看不見的人、
       // Delete 會對殘留選取跳確認。首頁沒有任何鍵盤操作對象,直接擋掉。
