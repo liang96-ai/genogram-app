@@ -27,3 +27,8 @@ dist-ssr
 SESSION_PLAN.md
 *.xlsx
 .claude/
+
+# Playwright 產出(測試報告與失敗時的截圖/追蹤檔,不進版控)
+/test-results/
+/playwright-report/
+/blob-report/
