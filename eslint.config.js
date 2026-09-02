@@ -35,6 +35,16 @@ export default defineConfig([
       'react-hooks/purity': 'warn',
     },
   },
+  // Playwright 測試不是 React 程式:fixture 的 `use(page)` 會被 rules-of-hooks
+  // 誤判成 React hook(2026-09-01 健檢抓到的假紅燈)。e2e/ 整個目錄關掉 React 規則。
+  {
+    files: ['e2e/**/*.ts', 'playwright.config.ts'],
+    rules: {
+      'react-hooks/rules-of-hooks': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+      'react-refresh/only-export-components': 'off',
+    },
+  },
   // 資料 + 小型渲染元件混合檔:fast refresh 提醒只影響 dev HMR,不影響使用者
   {
     files: [

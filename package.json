@@ -10,7 +10,7 @@
     "test": "vitest run",
     "preview": "vite preview",
     "e2e": "playwright test",
-    "verify": "npm run build && vitest run && playwright test"
+    "verify": "npm run lint && npm run build && vitest run && playwright test"
   },
   "dependencies": {
     "dexie": "^4.4.2",
