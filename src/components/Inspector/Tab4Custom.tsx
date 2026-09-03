@@ -4,6 +4,7 @@ import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import { rescueCasesFromFolder } from '../../services/folderRescue';
 import { requestScalePicker } from '../../services/uiEvents';
+import { useDraftField } from '../../hooks/useDraftField';
 import ScaleSummary from './ScaleSummary';
 import MajorEventTimeline from './MajorEventTimeline';
 import { renderableEvents } from '../../services/majorEvents';
@@ -127,12 +128,17 @@ export default function Tab4Custom() {
           .map((n) => (
             <NoteCard
               key={n.id}
+              id={n.id}
               date={n.date}
               content={n.content}
               onChangeDate={(date) => updateInterviewNote(n.id, { date })}
-              onChangeContent={(content) =>
-                updateInterviewNote(n.id, { content })
-              }
+              onChangeContent={(content, merge) => {
+                // 延遲結算可能在切換個案後才跑:筆記已不在當前個案就放棄,免得把歷史推到錯的個案
+                const cc = useGenogramStore.getState().currentCase;
+                if (!(cc?.interviewNotes ?? []).some((x) => x.id === n.id)) return false;
+                updateInterviewNote(n.id, { content }, { merge });
+                return true;
+              }}
               onDelete={() => removeInterviewNote(n.id)}
             />
           ))
@@ -282,19 +288,24 @@ function SectionTitle({
 }
 
 function NoteCard({
+  id,
   date,
   content,
   onChangeDate,
   onChangeContent,
   onDelete,
 }: {
+  id: string;
   date: string;
   content: string;
   onChangeDate: (v: string) => void;
-  onChangeContent: (v: string) => void;
+  /** 回 true = 有寫進 store;merge = 同一次輸入的續寫 */
+  onChangeContent: (v: string, merge: boolean) => boolean;
   onDelete: () => void;
 }) {
   const t = useT();
+  // 筆記內容:草稿型文字欄位(hooks/useDraftField),一次輸入 = 一格復原
+  const contentField = useDraftField({ key: id, value: content, write: onChangeContent });
   // ISO datetime → datetime-local input 格式 YYYY-MM-DDTHH:mm
   const toLocal = (iso: string) => {
     const d = new Date(iso);
@@ -353,8 +364,7 @@ function NoteCard({
         </button>
       </div>
       <textarea
-        value={content}
-        onChange={(e) => onChangeContent(e.target.value)}
+        {...contentField.inputProps}
         placeholder={t('tab4.notePlaceholder')}
         style={{
           ...inputStyle,

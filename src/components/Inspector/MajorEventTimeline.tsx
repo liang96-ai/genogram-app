@@ -1,9 +1,9 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import type { MajorEvent } from '../../types/genogram';
 import { renderableEvents } from '../../services/majorEvents';
-import { registerDraftCommitter } from '../../services/draftFlush';
+import { useDraftField } from '../../hooks/useDraftField';
 
 // 重大事件時間軸(2026-08-27 決議 Q12-C;2026-08-30 審查後補強)。
 //
@@ -46,7 +46,6 @@ const DOT_COLOR: Record<string, string> = {
 };
 
 /** 停手多久就把草稿寫進 store(關分頁 / F5 最多丟這麼久的字)*/
-const DRAFT_IDLE_MS = 800;
 
 type PersonLite = { id: string; name: string };
 
@@ -137,70 +136,19 @@ const EventCard = memo(function EventCard({
   onDelete: (id: string) => void;
 }) {
   const t = useT();
-  const [title, setTitle] = useState(event.title);
-  const [desc, setDesc] = useState(event.description ?? '');
   const [peopleOpen, setPeopleOpen] = useState(false);
-  // undo/redo 或匯入把 store 改回去時,草稿要跟上(render 期間調整,不走 effect)
-  const [seen, setSeen] = useState({
-    title: event.title,
-    desc: event.description ?? '',
+  // 標題 / 描述:草稿型文字欄位(hooks/useDraftField)——
+  // 停手 0.8 秒 / 失焦 / App 寫檔前 / 卸載 四個時機結算;一次輸入 = 一格復原(store 規則 2)
+  const titleField = useDraftField({
+    key: event.id,
+    value: event.title,
+    write: (v, merge) => onPatch(event.id, { title: v }, { merge }),
   });
-  if (seen.title !== event.title || seen.desc !== (event.description ?? '')) {
-    setSeen({ title: event.title, desc: event.description ?? '' });
-    if (seen.title !== event.title) setTitle(event.title);
-    if (seen.desc !== (event.description ?? '')) setDesc(event.description ?? '');
-  }
-
-  // 草稿結算:四個時機共用同一段邏輯,值從 ref 取(才拿得到最新的)
-  const draftRef = useRef({ title, desc, event, onPatch });
-  useEffect(() => {
-    draftRef.current = { title, desc, event, onPatch };
-  }, [title, desc, event, onPatch]);
-
-  // 「同一次輸入」= 從開始改到失焦為止。第一次寫入開一格復原,
-  // 之後的自動結算(停手 0.8 秒、切分頁、卸載)一律併回那一格 ——
-  // 不能靠時間窗:打一段有思考停頓的描述,每個停頓都超過 0.9 秒,
-  // 會變成每停頓一次吃一格,比「一次失焦一格」的舊行為更糟(複核抓到的迴歸)。
-  const sessionPushed = useRef(false);
-  const commitDraft = useCallback((): boolean => {
-    const d = draftRef.current;
-    const patch: Partial<MajorEvent> = {};
-    if (d.title !== d.event.title) patch.title = d.title;
-    if (d.desc !== (d.event.description ?? ''))
-      patch.description = d.desc || undefined;
-    if (Object.keys(patch).length === 0) return false;
-    const wrote = d.onPatch(d.event.id, patch, { merge: sessionPushed.current });
-    if (wrote) sessionPushed.current = true;
-    return wrote;
-  }, []);
-  /** 欄位失焦 = 這一次輸入結束,下次再改就是新的一格 */
-  const endSession = useCallback(() => {
-    commitDraft();
-    sessionPushed.current = false;
-  }, [commitDraft]);
-
-  // ① 停手 0.8 秒就結算 —— 讓「打到一半被關掉」最多丟 0.8 秒的字。
-  //    這些續寫都帶 merge,不會多吃復原格。
-  useEffect(() => {
-    const dirty =
-      title !== event.title || desc !== (event.description ?? '');
-    if (!dirty) return;
-    const id = window.setTimeout(commitDraft, DRAFT_IDLE_MS);
-    return () => window.clearTimeout(id);
-  }, [title, desc, event.title, event.description, commitDraft]);
-
-  // ② 登記到集中結算:App 在「真的要寫進資料庫之前」會呼叫。
-  //    (原本各卡自己聽 visibilitychange 是錯的 —— App 的監聽器註冊得早、
-  //     所以先跑,會先寫出還不含草稿的快照,元件再結算就來不及了)
-  useEffect(() => registerDraftCommitter(commitDraft), [commitDraft]);
-
-  // ③ 元件卸載(切分頁 / 收 Inspector / 換個案)
-  useEffect(
-    () => () => {
-      commitDraft();
-    },
-    [commitDraft],
-  );
+  const descField = useDraftField({
+    key: event.id,
+    value: event.description ?? '',
+    write: (v, merge) => onPatch(event.id, { description: v || undefined }, { merge }),
+  });
 
   // 正規化:手改壞的檔可能讓 relatedPersonIds 是字串/數字。
   // 這裡不丟掉事件(日期標題仍然有用),只是當作沒有牽涉人物 ——
@@ -331,9 +279,7 @@ const EventCard = memo(function EventCard({
 
         <input
           type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onBlur={endSession}
+          {...titleField.inputProps}
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.currentTarget.blur();
           }}
@@ -352,9 +298,7 @@ const EventCard = memo(function EventCard({
           }}
         />
         <textarea
-          value={desc}
-          onChange={(e) => setDesc(e.target.value)}
-          onBlur={endSession}
+          {...descField.inputProps}
           placeholder={t('tab4.eventDescPlaceholder')}
           style={{
             width: '100%',

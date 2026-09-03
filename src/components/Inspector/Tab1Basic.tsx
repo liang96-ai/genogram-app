@@ -14,6 +14,7 @@ import {
   type PrivacySection,
 } from '../../store/genogramStore';
 import { useT } from '../../i18n';
+import { useDraftField } from '../../hooks/useDraftField';
 import { SYMBOLS } from '../Gallery/symbolData';
 import EditableSelect from './EditableSelect';
 
@@ -274,6 +275,29 @@ export default function Tab1Basic({ person }: Props) {
   const probandStyle = useGenogramStore((s) => s.probandStyle);
   const setProbandStyle = useGenogramStore((s) => s.setProbandStyle);
 
+  // 姓名 / 備註:草稿型文字欄位(hooks/useDraftField)—— 停手 0.8 秒 / 失焦 / 寫檔前 / 卸載結算,
+  // 一次輸入 = 一格復原。延遲結算可能在人物已被刪除或切換個案後才跑:人物不在了就放棄。
+  const personStillHere = (id: string) =>
+    !!useGenogramStore.getState().currentCase?.persons.some((p) => p.id === id);
+  const nameField = useDraftField({
+    key: person.id,
+    value: person.basicInfo?.name ?? '',
+    write: (v, merge) => {
+      if (!personStillHere(person.id)) return false;
+      updatePerson(person.id, { basicInfo: { name: v } }, { merge });
+      return true;
+    },
+  });
+  const noteField = useDraftField({
+    key: person.id,
+    value: person.basicInfo?.freeNote ?? '',
+    write: (v, merge) => {
+      if (!personStillHere(person.id)) return false;
+      updatePerson(person.id, { basicInfo: { freeNote: v } }, { merge });
+      return true;
+    },
+  });
+
   const hasVariant =
     !!person.genderVariant && person.genderVariant !== 'cisgender';
   // v1.1: 對齊 Tab1 新 4 群結構(常用永遠顯示 + 醫務/擴充選項/遺傳 可勾)
@@ -504,10 +528,7 @@ export default function Tab1Basic({ person }: Props) {
             </div>
             <input
               type="text"
-              value={person.basicInfo?.name ?? ''}
-              onChange={(e) =>
-                updatePerson(person.id, { basicInfo: { name: e.target.value } })
-              }
+              {...nameField.inputProps}
               placeholder={t('tab1.namePlaceholder')}
               style={inputStyle}
             />
@@ -695,12 +716,7 @@ export default function Tab1Basic({ person }: Props) {
 
       <Section title={t('tab1.note')} right={<SectionPrivacyToggle section="note" />}>
         <textarea
-          value={person.basicInfo?.freeNote ?? ''}
-          onChange={(e) =>
-            updatePerson(person.id, {
-              basicInfo: { freeNote: e.target.value },
-            })
-          }
+          {...noteField.inputProps}
           placeholder={t('tab1.notePlaceholder')}
           style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }}
         />

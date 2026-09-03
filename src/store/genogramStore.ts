@@ -664,11 +664,12 @@ type GenogramStore = {
   selectLines: (ids: string[]) => void;
   toggleLineSelection: (id: string) => void;
   clearSelection: () => void;
+  /** 刪掉目前選取的東西(每一種都是一步復原);回 true = 有刪 */
   setInspectorTarget: (target: InspectorTarget) => void;
 
   addPerson: (p: Person) => void;
   addPersonAtCenter: (centerX: number, centerY: number) => void;
-  updatePerson: (id: string, patch: Partial<Person>) => void;
+  updatePerson: (id: string, patch: Partial<Person>, opts?: EditOpts) => void;
   movePerson: (id: string, x: number, y: number) => void;
   /** 拖曳結束時補記一格復原(#123)— 傳入「拖曳開始前」的快照 */
   commitMoveHistory: (before: Genogram) => void;
@@ -714,7 +715,7 @@ type GenogramStore = {
     toPersonId: string,
   ) => void;
 
-  updateLine: (id: string, patch: Partial<Line>) => void;
+  updateLine: (id: string, patch: Partial<Line>, opts?: EditOpts) => void;
   removeLine: (id: string) => void;
   updateLineEndpoint: (lineId: string, end: 'from' | 'to', newPersonId: string) => void;
   cycleLineSubType: (lineId: string) => void;
@@ -790,7 +791,7 @@ type GenogramStore = {
 
   // NetworkUnit(新系統,取代舊 institution-Person)
   addNetworkUnit: (name: string, anchorPersonId?: string) => void;
-  updateNetworkUnit: (id: string, patch: Partial<NetworkUnit>) => void;
+  updateNetworkUnit: (id: string, patch: Partial<NetworkUnit>, opts?: EditOpts) => void;
   removeNetworkUnit: (id: string) => void;
   toggleNetworkUnitActive: (id: string) => void;
   moveNetworkUnit: (id: string, x: number, y: number) => void;
@@ -834,6 +835,7 @@ type GenogramStore = {
   updateInterviewNote: (
     id: string,
     patch: Partial<import('../types/genogram').InterviewNote>,
+    opts?: EditOpts,
   ) => void;
   removeInterviewNote: (id: string) => void;
 
@@ -850,8 +852,8 @@ type GenogramStore = {
   updateMajorEvent: (
     id: string,
     patch: Partial<import('../types/genogram').MajorEvent>,
-    /** merge:這一次寫入屬於「同一次輸入的續寫」,併回上一格,不另開復原格 */
-    opts?: { merge?: boolean },
+    /** merge:這一次寫入屬於「同一次輸入的續寫」,併回上一格(store 規則 2) */
+    opts?: EditOpts,
   ) => void;
   removeMajorEvent: (id: string) => void;
 
@@ -901,7 +903,7 @@ function pushHistory(
   newCase: Genogram,
 ) {
   // 任何推格都是「新的歷史事件」→ 關掉文字合併窗;
-  // 文字動作推完自己的第一格後會用 editWindowReopen 把窗開回來
+  // 文字動作推完自己的第一格後會用 openEditStep 把窗開回來
   breakEditWindow();
   const newPast = currentCase
     ? [...history.past, currentCase].slice(-MAX_HISTORY)
@@ -912,17 +914,29 @@ function pushHistory(
   };
 }
 
-// ==================== 復原合併窗(2026-08-27 決議)====================
-// 病灶:updatePerson/updateNetworkUnit/updateLine 逐鍵 pushHistory —
-// 在右欄打 5 個字就吃掉 5 格復原,把畫布排版的復原歷史全洗掉。
-// 解法:同一個目標在 900ms 內的連續更新「共用第一格」——
-// 第一次更新照常推快照(= 打字前的狀態),之後的連續更新只改 currentCase 不推格,
-// 停手超過 900ms、或動了別的東西(任何其他 pushHistory / undo / redo),窗就關閉。
-// 中文輸入法組字期間 onChange 連續觸發,天然落在同一窗內,組字中不會多吃格。
+// ==================== 「一格復原是什麼」的唯一定義(2026-09-03 統一)====================
+// 兩條規則,全 App 的文字/欄位編輯都只走這裡(updatePerson / updateLine / updateNetworkUnit /
+// updateInterviewNote / updateMajorEvent):
+//
+// 規則 1・時間窗:同一個目標 900ms 內的連續直寫共用第一格。
+//   給「逐鍵直寫 store」的控制項用(下拉、日期、數字、勾選、快速連按)。
+//   停手超過 900ms、或動了別的東西(任何其他 pushHistory / undo / redo),窗就關。
+//   中文輸入法組字期間 onChange 連續觸發,天然落在同一窗內。
+//
+// 規則 2・輸入 session:呼叫端帶 { merge: true } 代表「同一次輸入的續寫」,
+//   併回這次輸入開的那一格,不看時間。給草稿型文字欄位用(hooks/useDraftField):
+//   打一段有思考停頓的描述,每個停頓都超過 900ms,靠時間窗會每停頓一次吃一格。
+//   續寫要通過所有權憑證(kind + id + 當時的 past 長度)才准併:undo 會把 past 彈掉一格
+//   → 長度不符 → 憑證失效,不會把 undo 之後的新編輯偷偷併進已經被退掉的那格。
+//
+// 一次輸入 = 從開始改到失焦(或切換目標)為止。第一次寫入推一格,之後的續寫併回同一格。
+export type EditOpts = { merge?: boolean };
+
 const EDIT_COALESCE_MS = 900;
 let editWindow: { kind: string; id: string; at: number } | null = null;
+let mergeSlot: { kind: string; id: string; pastLen: number } | null = null;
 
-/** 這次更新要不要「併入上一格」?(true = 不推新快照) */
+/** 規則 1:這次更新在同一目標的時間窗內?(有副作用:重設窗的時間) */
 function shouldCoalesce(kind: string, id: string): boolean {
   const now = Date.now();
   const hit =
@@ -934,22 +948,30 @@ function shouldCoalesce(kind: string, id: string): boolean {
   return hit;
 }
 
-/** 「續寫要併回哪一格」的所有權憑證:只有 id 與當時的 past 長度都吻合,
- *  才代表那一格還是這次輸入開的。undo 會把 past 彈掉一格 → 長度不符 → 自動失效,
- *  不會把 undo 之後的新編輯偷偷併進已經被退掉的那格(第二輪複核抓到的地雷)。 */
-let eventMergeSlot: { id: string; pastLen: number } | null = null;
+/** 規則 1 + 規則 2:這次更新要不要「併入上一格」(true = 不推新快照) */
+function joinsPreviousStep(kind: string, id: string, pastLen: number, opts?: EditOpts): boolean {
+  const inWindow = shouldCoalesce(kind, id);
+  const merge =
+    opts?.merge === true &&
+    mergeSlot !== null &&
+    mergeSlot.kind === kind &&
+    mergeSlot.id === id &&
+    mergeSlot.pastLen === pastLen;
+  return merge || inWindow;
+}
+
+/** 推完自己的第一格之後呼叫:重開時間窗 + 登記這次輸入的所有權憑證 */
+function openEditStep(kind: string, id: string, pastLen: number): void {
+  editWindow = { kind, id, at: Date.now() };
+  mergeSlot = { kind, id, pastLen };
+}
 
 /** 任何非文字編輯的歷史事件都要關窗 —— 之後的打字必須開新格。
  *  export 給不走 pushHistory 的兩個直推 history 者(commitMoveHistory 由本檔自用、
  *  quickBuildExecutor 批次收斂)與測試隔離用。 */
 export function breakEditWindow(): void {
   editWindow = null;
-  eventMergeSlot = null;
-}
-
-/** 文字動作推完自己的第一格後重開窗(pushHistory 內的 breakEditWindow 會把它關掉) */
-function editWindowReopen(kind: string, id: string): void {
-  editWindow = { kind, id, at: Date.now() };
+  mergeSlot = null;
 }
 
 function savePrivateFields(fields: Record<PrivacyField, boolean>): void {
@@ -1490,14 +1512,13 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
           : p,
       ),
     });
-    if (shouldCoalesce('person', id)) {
+    if (joinsPreviousStep('person', id, history.past.length, opts)) {
       // 併入上一格:只更新現況,不推快照(上一格已存著這串編輯開始前的狀態)
       set({ currentCase: newCase, history: { ...history, future: [] } });
       return;
     }
     set({ ...pushHistory(c, history, newCase) });
-    // pushHistory 會關窗(對其他動作正確);文字動作推完第一格要重開窗
-    editWindowReopen('person', id);
+    openEditStep('person', id, get().history.past.length);
   },
 
   // 拖移不記 history(避免每個 pointer move 都 push)
@@ -1732,19 +1753,18 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
           : l,
       ),
     });
-    if (shouldCoalesce('line', id)) {
+    if (joinsPreviousStep('line', id, history.past.length, opts)) {
       set({ currentCase: newCase, history: { ...history, future: [] } });
       return;
     }
     set({ ...pushHistory(c, history, newCase) });
-    editWindowReopen('line', id);
+    openEditStep('line', id, get().history.past.length);
   },
 
-  removeLine: (id) => {
     const { currentCase: c, history, inspectorTarget } = get();
     if (!c) return;
-    const target = c.lines.find((l) => l.id === id);
-    if (!target) return;
+    const wanted = ids.filter((id) => c.lines.some((l) => l.id === id));
+    if (wanted.length === 0) return;
 
     // 找配對線:同 child + 另一配偶 + 同 bio-like subType → 一起刪
     // (處理「拖小孩到婚姻線」會建立兩條配對線,刪一條另一條應該也消失)
@@ -2883,18 +2903,18 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     set({ ...pushHistory(c, history, newCase) });
     get().addInstitutionToHistory(trimmed);
   },
-  updateNetworkUnit: (id, patch) => {
+  updateNetworkUnit: (id, patch, opts) => {
     const { currentCase: c, history } = get();
     if (!c) return;
     const units = c.networkUnits ?? [];
     const newUnits = units.map((u) => (u.id === id ? { ...u, ...patch } : u));
     const newCase = touch({ ...c, networkUnits: newUnits });
-    if (shouldCoalesce('unit', id)) {
+    if (joinsPreviousStep('unit', id, history.past.length, opts)) {
       set({ currentCase: newCase, history: { ...history, future: [] } });
       return;
     }
     set({ ...pushHistory(c, history, newCase) });
-    editWindowReopen('unit', id);
+    openEditStep('unit', id, get().history.past.length);
   },
   removePersonsAndUnits: (personIds, unitIds) => {
     const { currentCase: c, history, inspectorTarget } = get();
@@ -3107,7 +3127,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     });
     set(pushHistory(c, history, next));
   },
-  updateInterviewNote: (id, patch) => {
+  updateInterviewNote: (id, patch, opts) => {
     const { currentCase: c, history } = get();
     if (!c) return;
     const next = touch({
@@ -3116,14 +3136,12 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
         n.id === id ? { ...n, ...patch } : n,
       ),
     });
-    // 筆記 textarea 逐鍵直寫 —— 跟人物/單位/線一樣走打字合併窗,
-    // 不然打一段筆記就把 20 格復原全沖光(批次三同病的最後一處)
-    if (shouldCoalesce('note', id)) {
+    if (joinsPreviousStep('note', id, history.past.length, opts)) {
       set({ currentCase: next, history: { ...history, future: [] } });
       return;
     }
     set(pushHistory(c, history, next));
-    editWindowReopen('note', id);
+    openEditStep('note', id, get().history.past.length);
   },
   removeInterviewNote: (id) => {
     const { currentCase: c, history } = get();
@@ -3179,26 +3197,14 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
         e.id === id ? { ...e, ...patch } : e,
       ),
     });
-    // 日期欄是 <input type="date">,每按一個數字鍵就發一次 change ——
-    // 實測連按 8 鍵 = 8 格歷史,20 格上限一次被吃掉四成(2026-08-30 審查)。
-    // 標題/描述雖然只在失焦寫入,一起走合併窗也無害(同一筆事件的連續調整 = 一格)。
-    const inWindow = shouldCoalesce('event', id);
-    // merge = 同一次文字輸入的續寫(停手自動存檔的第 2、3… 次)。
-    // 不靠時間窗:打一段有思考停頓的描述,每個停頓都超過 900ms,
-    // 時間窗會讓每個停頓各吃一格復原 —— 那比改動前更糟(改動前是一次失焦一格)。
-    // 但要驗證那一格還在、而且是這次輸入開的(見 eventMergeSlot)。
-    const merge =
-      opts?.merge === true &&
-      eventMergeSlot !== null &&
-      eventMergeSlot.id === id &&
-      eventMergeSlot.pastLen === history.past.length;
-    if (merge || inWindow) {
+    // 日期欄是 <input type="date">,每按一個數字鍵就發一次 change → 走規則 1;
+    // 標題/描述是草稿欄位,續寫帶 merge → 走規則 2。
+    if (joinsPreviousStep('event', id, history.past.length, opts)) {
       set({ currentCase: next, history: { ...history, future: [] } });
       return;
     }
     set(pushHistory(c, history, next));
-    editWindowReopen('event', id);
-    eventMergeSlot = { id, pastLen: get().history.past.length };
+    openEditStep('event', id, get().history.past.length);
   },
   removeMajorEvent: (id) => {
     const { currentCase: c, history } = get();
