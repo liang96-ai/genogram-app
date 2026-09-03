@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "1.0",
+  "exportType": "single",
+  "exportedAt": "2026-01-02T00:00:00.000Z",
+  "cases": [
+    {
+      "schemaVersion": "1.0",
+      "id": "ref_case_v1_0",
+      "caseName": "參考個案(合約測試用)",
+      "createdAt": "2026-09-03T02:12:28.554Z",
+      "lastModifiedAt": "2026-01-02T00:00:00.000Z",
+      "persons": [
+        {
+          "id": "p_mtkw3uh6_ntsk9",
+          "position": {
+            "x": 480,
+            "y": 360
+          },
+          "shape": "square",
+          "isProband": true,
+          "basicInfo": {
+            "name": ""
+          },
+          "extra_person_field": "unknown-person-level"
+        },
+        {
+          "id": "p_mtkw3uh6_13n06",
+          "position": {
+            "x": 600,
+            "y": 420
+          },
+          "shape": "square",
+          "basicInfo": {}
+        }
+      ],
+      "lines": [
+        {
+          "id": "l_mtkw3uh7_rstpy",
+          "fromPersonId": "p_mtkw3uh6_ntsk9",
+          "toPersonId": "p_mtkw3uh6_13n06",
+          "category": "relation",
+          "subType": "close",
+          "visual": {
+            "lineStyle": "solid"
+          }
+        }
+      ],
+      "households": [
+        {
+          "id": "hh_1788401548555_9v9nwq",
+          "memberIds": [
+            "p_mtkw3uh6_ntsk9",
+            "p_mtkw3uh6_13n06"
+          ],
+          "visual": {
+            "style": "dashed-circle"
+          }
+        }
+      ],
+      "networkUnits": [],
+      "ecosystems": [],
+      "canvas": {
+        "gridSize": 60,
+        "snapToGrid": true
+      },
+      "majorEvents": [
+        {
+          "date": "2020-05-01",
+          "title": "結婚",
+          "type": "marriage",
+          "relatedPersonIds": [
+            "p_mtkw3uh6_ntsk9",
+            "p_mtkw3uh6_13n06"
+          ],
+          "id": "ev_1788401548555_v1qp9e",
+          "extra_event_field": [
+            "unknown",
+            "event",
+            "level"
+          ]
+        }
+      ],
+      "extra_case_field": {
+        "note": "未知欄位:個案層",
+        "n": 1
+      }
+    }
+  ],
+  "extra_top_field": "unknown-top-level"
+}
