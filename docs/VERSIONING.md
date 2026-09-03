@@ -18,3 +18,16 @@
 | schemaVersion | 說明 |
 |---|---|
 | 1.0 | 現行格式(建立於 v1.0,欄位定義見 `src/types/genogram.ts`)|
+| 1.0(App v1.3.x) | schema 不變。新增的都是選填欄位:`households`、`majorEvents[].type` 改存穩定 key、全備份 `settings` 多四種輸入歷史。照規則 3 不升版 |
+
+## 各端落實狀態(2026-09-03 盤點)
+
+| 規則 | 網頁匯入 | 網頁資料夾救援 | iOS |
+|---|---|---|---|
+| 1. 1.x 一律試讀 | ✅ `isSupportedSchemaVersion` | ✅ 同一函式(缺版本視為 1.0) | ❌ 精確比對 `"1.0"` |
+| 2. 未知欄位原樣保留 | ✅ 參考個案往返測試每次跑 | ✅ 同路徑 | ❌ Codable 預設丟棄未知鍵 |
+| 3. 選填欄位不升版 | ✅ | ✅ | — |
+| 4. 只有 2.x 才拒收 | ✅ | ✅(2026-09-03 起) | ⚠️ 1.1 也拒收 |
+
+iOS 端的對齊排在網頁版 v1.4 之後;合約測試用的參考個案:`e2e/fixtures/reference-case.genogram.json`。
+

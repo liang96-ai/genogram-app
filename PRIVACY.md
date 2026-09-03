@@ -27,8 +27,8 @@
 1. **瀏覽器內建 IndexedDB**(你裝置上的本地儲存)
    Browser's built-in IndexedDB (local storage on your device)
 
-2. **可選的「資料夾同步」**：存到你選擇的本地資料夾(File System Access API)
-   Optional "folder sync": files stored in a local folder you choose
+2. **可選的「資料夾備份」**：存到你選擇的本地資料夾(File System Access API)
+   Optional "folder backup": files stored in a local folder you choose
 
 3. 我們**永遠看不到、拿不到、也無法復原**這些資料
    We can never see, access, or recover this data

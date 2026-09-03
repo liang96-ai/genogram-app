@@ -35,7 +35,7 @@ cross-professional collaboration. This tool aims to be:
 - ✅ 完整醫療資料庫(13 個衛福部官方量表)
 - ✅ 中英雙語介面
 - ✅ PWA 可安裝到桌面/手機，離線可用
-- ✅ 資料夾同步(File System Access API)
+- ✅ 資料夾備份(File System Access API)
 
 ---
 
@@ -52,7 +52,7 @@ cross-professional collaboration. This tool aims to be:
 ## 你的資料在哪 Where Your Data Lives
 
 - **瀏覽器內建 IndexedDB**(裝置本地)
-- **可選的「資料夾同步」**(存到你選擇的本地資料夾)
+- **可選的「資料夾備份」**(存到你選擇的本地資料夾)
 - **永遠不會上傳到任何雲端**
 
 詳見 [PRIVACY.md](./PRIVACY.md)。
