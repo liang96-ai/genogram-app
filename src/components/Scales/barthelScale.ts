@@ -148,17 +148,19 @@ export const barthelScale: Scale = {
     }
     let level: string;
     let levelColor: 'green' | 'yellow' | 'red';
-    if (total >= 91) {
-      level = '完全獨立 (91-100)';
+    // 分級依衛福部長照 / Shah 1989:100 完全獨立、91-99 輕度、61-90 中度、21-60 嚴重、0-20 完全依賴
+    // (2026-09-03 對答案測試抓到舊分級把 21-60 拆成 41-60 中度 / 21-40 嚴重,與官方不符)
+    if (total >= 100) {
+      level = '完全獨立 (100)';
+      levelColor = 'green';
+    } else if (total >= 91) {
+      level = '輕度依賴 (91-99)';
       levelColor = 'green';
     } else if (total >= 61) {
-      level = '輕度依賴 (61-90)';
-      levelColor = 'green';
-    } else if (total >= 41) {
-      level = '中度依賴 (41-60)';
+      level = '中度依賴 (61-90)';
       levelColor = 'yellow';
     } else if (total >= 21) {
-      level = '嚴重依賴 (21-40)';
+      level = '嚴重依賴 (21-60)';
       levelColor = 'red';
     } else {
       level = '完全依賴 (0-20)';
