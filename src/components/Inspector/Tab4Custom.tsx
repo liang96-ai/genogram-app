@@ -3,6 +3,7 @@ import { PlusGlyph } from '../PlusGlyph';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import { rescueCasesFromFolder } from '../../services/folderRescue';
+import { requestScalePicker } from '../../services/uiEvents';
 import ScaleSummary from './ScaleSummary';
 import MajorEventTimeline from './MajorEventTimeline';
 import { renderableEvents } from '../../services/majorEvents';
@@ -73,7 +74,28 @@ export default function Tab4Custom() {
   return (
     <div style={{ padding: 16, overflowY: 'auto', height: '100%' }}>
       {/* === 量表分數 === */}
-      <SectionTitle title={t('tab4.scaleScores')} />
+      <SectionTitle
+        title={t('tab4.scaleScores')}
+        action={
+          <button
+            type="button"
+            onClick={requestScalePicker}
+            title={t('menu.assessmentTools')}
+            style={{
+              marginLeft: 'auto',
+              fontSize: 12,
+              padding: '2px 10px',
+              borderRadius: 6,
+              border: '1px solid #c7c7cc',
+              background: '#fff',
+              color: '#1d1d1f',
+              cursor: 'pointer',
+            }}
+          >
+            {t('tab4.runScale')}
+          </button>
+        }
+      />
       <ScaleSummary />
 
       {/* === 訪談筆記 === */}

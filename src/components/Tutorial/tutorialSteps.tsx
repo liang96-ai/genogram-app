@@ -1340,7 +1340,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
           <br />
           • <Strong>醫療</Strong>:疾病、用藥
           <br />
-          • <Strong>附件存放</Strong>:個案備注 / 附件 / 量表紀錄(量表從 <Code>☰</Code> →「評估工具」開始施測)
+          • <Strong>個案紀錄</Strong>:量表分數(按「施測」直接開始)/ 訪談筆記 / 重大事件時間軸 / 附件
         </P>
         <InspectorMockup lang="zh" />
         <P>
@@ -1496,7 +1496,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         <P>
           除了人物與線,還可以用 <Strong>多邊形</Strong> 框起一群人,
           表達<Strong>子系統</Strong>(原生家庭、學校、職場、親屬圈等),
-          也可圈出<Strong>同住家戶</Strong>(目前住在一起的人)。
+          同住的人不用畫多邊形:框選 2 人以上,畫布上方會浮出「<Strong>圈成同住</Strong>」;點圈的邊線可以選取它,按紅 × 或 Delete 解除。
         </P>
         <EcosystemMockup lang="zh" />
         <P>
@@ -1555,6 +1555,10 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         <p style={{ margin: '10px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
           ⚡ 趕時間?<Code>☰</Code> →「<Strong>快速建立家庭</Strong>」:一行打一個人
           (例:<Code>爸爸 58歲 高血壓</Code>),按建立就自動長出家系圖。
+        </p>
+        <p style={{ margin: '10px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
+          🔍 首頁有<Strong>個案搜尋框</Strong>;復原(<Code>⌘Z</Code> / <Code>Ctrl+Z</Code>)一次退一個編輯、最多 20 步;
+          沒有備份資料夾的裝置(iPad、Firefox)超過 14 天沒做全備份,會溫和提醒一次。
         </p>
         <P>
           有任何問題,回到首頁點頂列 <Code>✉️</Code> 直接寫信給開發者;
@@ -1632,7 +1636,7 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           <br />
           • <Strong>Medical</Strong>: Diseases, medications
           <br />
-          • <Strong>Attachments</Strong>: Case notes / attachments / scale records (start assessments from <Code>☰</Code> → "Assessment Tools")
+          • <Strong>Case records</Strong>: Scale scores (tap "Assess" to start) / interview notes / major-event timeline / attachments
         </P>
         <InspectorMockup lang="en" />
         <P>
@@ -1788,6 +1792,8 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           Beyond people and lines, you can also draw a <Strong>polygon</Strong>
           around a group to express a <Strong>subsystem</Strong>
           (family of origin, school, workplace, kinship, etc.).
+          For people living together, select 2+ people and tap the <Strong>household</Strong> button above the canvas;
+          click the circle's edge to select it, then the red × or Delete dissolves it.
         </P>
         <EcosystemMockup lang="en" />
         <P>
@@ -1848,6 +1854,10 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
         <p style={{ margin: '10px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
           ⚡ In a hurry? <Code>☰</Code> → "<Strong>Quick Build Family</Strong>": one person per line
           (e.g. <Code>father 58 hypertension</Code>) and the genogram draws itself.
+        </p>
+        <p style={{ margin: '10px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
+          🔍 The home page has a <Strong>case search box</Strong>; Undo (<Code>⌘Z</Code> / <Code>Ctrl+Z</Code>) steps back one edit at a time, up to 20;
+          devices without a backup folder (iPad, Firefox) get a gentle reminder once after 14 days without a full backup.
         </p>
         <P>
           For questions, use the <Code>✉️</Code> button on the home page top bar to email the developer;

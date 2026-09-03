@@ -179,6 +179,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'caseList.searchPlaceholder': '搜尋個案名稱⋯',
     'caseList.searchNoResult': '找不到「{q}」— 檢查一下有沒有錯字,或它可能已被刪除',
     'caseList.folderRescued': '✓ 已從資料夾救回 {n} 筆個案',
+    'rescue.newerInFolder': '備份資料夾裡的「{name}」比這台電腦的版本新(資料夾:{folderAt};這台電腦:{localAt})。「用資料夾的版本」會覆蓋這台的版本;「保留這台的版本」則資料夾裡那份會在你下次編輯時被覆蓋。不確定的話,先把資料夾裡的 case.json 另存一份。',
+    'rescue.useFolder': '用資料夾的版本',
+    'rescue.keepLocal': '保留這台的版本',
     'quickBuild.discardConfirm': '你打的內容還沒建立,關掉就會消失。要放棄嗎?',
     'quickBuild.discardYes': '放棄輸入',
     'quickBuild.discardNo': '繼續編輯',
@@ -187,7 +190,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'scaleDialog.discardNo': '繼續填寫',
     'scaleDialog.targetPerson': '受測者',
     'scaleDialog.targetPersonNone': '(未指定 — 整個家庭/未綁人)',
-    'scaleDialog.savedTo': '✓ 已儲存到「{name}」的附件存放分頁(量表紀錄)',
+    'scaleDialog.savedTo': '✓ 已儲存到「{name}」的個案紀錄分頁(量表紀錄)',
     'scaleSummary.deleteConfirm': '確定要刪除 {date} 這筆施測紀錄嗎?這是臨床紀錄,刪了就沒有了。',
     'scalePicker.doneTimes': '已測 {n} 次',
     'import.sideFile': '檔案裡',
@@ -227,7 +230,8 @@ const dict: Record<Lang, Record<string, string>> = {
     'tab.basic': '基本資料',
     'tab.network': '網絡關係',
     'tab.medical': '醫療',
-    'tab.custom': '附件存放',
+    'tab.custom': '個案紀錄',
+    'tab4.runScale': '施測',
 
     // ===== 量表分類 =====
     'cat.family': '家庭功能',
@@ -318,7 +322,7 @@ const dict: Record<Lang, Record<string, string>> = {
       '這個工具的架構就是為了高度敏感資訊自己保留,讓你完全不用擔心資料外流到網路上。',
     'privacy.welcomePoint1Title': '✅ 沒有伺服器、沒有資料庫',
     'privacy.welcomePoint1Body':
-      '所有家系圖只存在你的瀏覽器(IndexedDB)。如果你選了同步資料夾,也只寫到你自己選的本機資料夾。',
+      '所有家系圖只存在你的瀏覽器(IndexedDB)。如果你選了備份資料夾,也只寫到你自己選的本機資料夾。',
     'privacy.welcomePoint2Title': '✅ 開發者看不到任何案主資料',
     'privacy.welcomePoint2Body':
       '工具是純前端 PWA,網站主機只負責把網頁程式碼送到你的瀏覽器執行,不收任何使用者輸入的內容。',
@@ -433,7 +437,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'scaleDialog.haveCondition': '有此狀況',
 
     // ===== Scale Summary =====
-    'scaleSummary.empty': '尚無施測紀錄。主選單 ☰ → 評估工具 開始',
+    'scaleSummary.empty': '尚無施測紀錄。按右上角「施測」開始。',
     'scaleSummary.latest': '最新',
     'scaleSummary.points': '分',
     'scaleSummary.times': '次',
@@ -895,6 +899,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'caseList.searchPlaceholder': 'Search case names…',
     'caseList.searchNoResult': 'No case matching "{q}" — check for typos, or it may have been deleted',
     'caseList.folderRescued': '✓ Restored {n} case(s) from the backup folder',
+    'rescue.newerInFolder': 'The backup folder has a newer version of "{name}" (folder: {folderAt}; this computer: {localAt}). "Use the folder version" replaces the copy on this computer; "Keep this computer\'s version" means the folder copy will be overwritten the next time you edit here. If unsure, save a copy of that case.json first.',
+    'rescue.useFolder': 'Use the folder version',
+    'rescue.keepLocal': "Keep this computer's version",
     'quickBuild.discardConfirm': 'Your text has not been built yet and will be lost. Discard it?',
     'quickBuild.discardYes': 'Discard',
     'quickBuild.discardNo': 'Keep editing',
@@ -903,7 +910,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'scaleDialog.discardNo': 'Keep filling',
     'scaleDialog.targetPerson': 'Assessed person',
     'scaleDialog.targetPersonNone': '(not specified — whole family)',
-    'scaleDialog.savedTo': '✓ Saved to "{name}" under the Attachments tab (scale records)',
+    'scaleDialog.savedTo': '✓ Saved to "{name}" under the Case records tab (scale records)',
     'scaleSummary.deleteConfirm': 'Delete the assessment record dated {date}? This is a clinical record and cannot be recovered.',
     'scalePicker.doneTimes': 'done ×{n}',
     'import.sideFile': 'In file',
@@ -944,7 +951,8 @@ const dict: Record<Lang, Record<string, string>> = {
     'tab.basic': 'Basic',
     'tab.network': 'Network',
     'tab.medical': 'Medical',
-    'tab.custom': 'Attachments',
+    'tab.custom': 'Case records',
+    'tab4.runScale': 'Assess',
 
     // ===== Scale Categories =====
     'cat.family': 'Family Function',
@@ -1035,7 +1043,7 @@ const dict: Record<Lang, Record<string, string>> = {
       'This tool is built so highly sensitive information stays on your own device — you never need to worry about data leaking onto the network.',
     'privacy.welcomePoint1Title': '✅ No server, no database',
     'privacy.welcomePoint1Body':
-      'All genograms live only in your browser (IndexedDB). If you opt into folder sync, files are written only to the local folder you pick.',
+      'All genograms live only in your browser (IndexedDB). If you opt into folder backup, files are written only to the local folder you pick.',
     'privacy.welcomePoint2Title': '✅ The developer cannot see any client data',
     'privacy.welcomePoint2Body':
       'This is a pure-frontend PWA. The host only delivers the app code to your browser to run locally; no user input ever leaves the device.',
@@ -1150,7 +1158,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'scaleDialog.haveCondition': 'Yes, applies',
 
     // ===== Scale Summary =====
-    'scaleSummary.empty': 'No scale results yet. Menu ☰ → Assessment Tools',
+    'scaleSummary.empty': 'No assessments yet. Tap "Assess" above to start.',
     'scaleSummary.latest': 'Latest',
     'scaleSummary.points': 'pts',
     'scaleSummary.times': 'times',
@@ -1439,6 +1447,9 @@ const dict: Record<Lang, Record<string, string>> = {
 };
 
 /** 取得當前語言的翻譯函式 — 也支援 {key} 變數插值 */
+/** 給 i18n.test.ts 做中英 key 對稱檢查用 */
+export const i18nKeySets = (): Record<Lang, string[]> => ({ zh: Object.keys(dict.zh), en: Object.keys(dict.en) });
+
 export function useT(): (key: string, vars?: Record<string, string | number>) => string {
   const lang = useGenogramStore((s) => s.language);
   return (key, vars) => {

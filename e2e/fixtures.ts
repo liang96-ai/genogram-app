@@ -24,13 +24,14 @@ export const UI = {
   tabBasic: '基本資料',
   tabNetwork: '網絡關係',
   tabMedical: '醫療',
-  tabAttach: '附件存放',
+  tabAttach: '個案紀錄',
   namePlaceholder: '例:王小明',
   agePlaceholder: '45',
   exportFile: '輸出檔案',
   download: '下載',
   cancel: '取消',
   household: '圈成同住',
+  assess: '施測',
 } as const;
 
 /** 讀 IndexedDB 的個案 —— 驗收一律看這裡,不看畫面 */
