@@ -677,6 +677,7 @@ export default function App() {
               onClick={async () => {
                 // 先把進行中的編輯寫進 IndexedDB,再讓 SW 重載 → 不會掉最後幾秒
                 await flushPendingSave();
+                setUpdateReady(false); // 按下就收起;重載後若真的還有新版,橫幅會再出現
                 applyUpdate();
               }}
               style={{

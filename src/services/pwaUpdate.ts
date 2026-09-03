@@ -34,9 +34,27 @@ export function getNeedRefresh(): boolean {
   return needRefresh;
 }
 
-/** 使用者按「立即更新」:true = skipWaiting + 重載(plugin 內建處理 controllerchange) */
-export function applyUpdate(): void {
-  void updateSWFn?.(true);
+/** 按「立即更新」後,等 plugin 的 controllerchange 重載;超過這個時間沒重載就自己重載 */
+export const RELOAD_FALLBACK_MS = 2500;
+
+/**
+ * 使用者按「立即更新」:skipWaiting + 重載(plugin 內建處理 controllerchange)。
+ *
+ * 1.3.1 上線時實測:橫幅按下去頁面已是新版、橫幅卻留著 —— plugin 只在「等待中的 SW 接管」
+ * 那一刻重載;若接管早已發生(另一個視窗先套用、或等待中的版本已換掉),就永遠等不到,
+ * 使用者看到的是「按了沒反應」。所以這裡加保底:一段時間內沒重載,自己重載一次。
+ * 重載後若真的還有新版等待,橫幅會再出現,那就是真的。
+ */
+export function applyUpdate(
+  reload: () => void = () => window.location.reload(),
+  fallbackMs: number = RELOAD_FALLBACK_MS,
+): void {
+  const timer = setTimeout(reload, fallbackMs);
+  const p = updateSWFn ? updateSWFn(true) : Promise.resolve();
+  void p.catch(() => {
+    clearTimeout(timer);
+    reload(); // skipWaiting 失敗也直接重載,不讓使用者卡在橫幅上
+  });
 }
 
 const CHECK_THROTTLE_MS = 6 * 60 * 60 * 1000; // 回分頁時最多每 6 小時檢查一次
