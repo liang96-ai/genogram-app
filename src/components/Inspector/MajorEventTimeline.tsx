@@ -5,7 +5,7 @@ import type { MajorEvent } from '../../types/genogram';
 import { renderableEvents } from '../../services/majorEvents';
 import { registerDraftCommitter } from '../../services/draftFlush';
 
-// 重大事件時間軸(2026-08-27 決議 Q12-C;2026-08-30 依獨立審查補強)。
+// 重大事件時間軸(2026-08-27 決議 Q12-C;2026-08-30 審查後補強)。
 //
 // 三個設計約束,改這個檔前先讀:
 //  1. 文字欄位(標題/描述)不逐鍵寫 store —— 失焦 / 停手 0.8 秒 / 卸載 /

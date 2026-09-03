@@ -355,11 +355,11 @@ describe('buildPlan', () => {
   });
 
   it('整段社工筆記貼進來 → 擋下,不會默默建出一堆人', () => {
-    // 真實案例(使用者回報):整段沒有空白的社工筆記,只有剛好被空白包住的
+    // 使用者回報的形態(資料為合成):整段沒有空白的社工筆記,只有剛好被空白包住的
     // 「爺爺」會命中字典 → 舊版會建出爸媽爺奶 4 人並把整段塞進爺爺備註
-    const REAL_NOTE =
-      'case的爸爸42歲電話是09-8722-2252  跟個案關係不好 媽媽38 宜蘭大學 圖書館管理員 寵溺個案 爺爺 107年往生 重男輕女 奶奶中風在家裡面長照照顧 瑪麗亞 菲律賓籍 最近跟19歲的哥哥關係很好';
-    const plan = planOf(REAL_NOTE);
+    const PROSE_NOTE =
+      'case的爸爸45歲電話是09-1234-5678  跟個案關係不好 媽媽40 某某大學 圖書館管理員 寵溺個案 爺爺 100年往生 重男輕女 奶奶中風在家裡面長照照顧 阿蒂 印尼籍 最近跟17歲的哥哥關係很好';
+    const plan = planOf(PROSE_NOTE);
     expect(plan.plans).toHaveLength(1);
     expect(plan.plans[0].status).toBe('skip');
     expect(plan.plans[0].skipReason).toBe('prose-like');

@@ -34,7 +34,7 @@ type Props = {
   onMarriageDownArrow: () => void;
   onMarriageDownArrowLongPress?: () => void;
   onDeleteLine?: (lineId: string) => void;
-  /** 此婚姻的 fork 與另一段婚姻的 fork 重疊、且已錯無可錯 → 上色警示(健檢 Fix6) */
+  /** 此婚姻的 fork 與另一段婚姻的 fork 重疊、且已錯無可錯 → 上色警示(重疊修正) */
   colliding?: boolean;
   /** 自動錯層(Fix6):Canvas 算出的橫桿高度覆寫 — 同側多段婚姻各自成層 */
   trunkYOverride?: number;

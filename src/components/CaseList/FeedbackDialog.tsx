@@ -4,7 +4,7 @@ import { useT } from '../../i18n';
 // 收件信箱(專案專屬,不用個人 gmail)
 const FEEDBACK_EMAIL = 'genogram.feedback@gmail.com';
 // 版本號單一來源:vite define 從 package.json 注入(與首頁右下、關於頁同一個值)。
-// 先前寫死 '1.0',使用者寄回的每封回報信都標錯版本(2026-09-01 健檢抓到)。
+// 先前寫死 '1.0',使用者寄回的每封回報信都標錯版本(2026-09-01 修正)。
 const APP_VERSION = __APP_VERSION__;
 
 type FeedbackType = 'bug' | 'suggestion' | 'question';

@@ -2,43 +2,43 @@ import { describe, expect, it } from 'vitest';
 import { segmentProse } from './proseSegment';
 import { parseQuickText } from './quickBuild';
 
-describe('段落切分:專案主人給的真實訪視敘述', () => {
-  const REAL =
-    'case的爸爸42歲電話是09-8722-2252 跟個案關係不好 媽媽38 宜蘭大學 圖書館管理員 寵溺個案 ' +
-    '爺爺 107年往生 重男輕女 奶奶中風在家裡面長照照顧 瑪麗亞 菲律賓籍 最近跟19歲的哥哥關係很好';
+describe('段落切分:一段合成的訪視敘述', () => {
+  const SAMPLE =
+    'case的爸爸45歲電話是09-1234-5678 跟個案關係不好 媽媽40 某某大學 圖書館管理員 寵溺個案 ' +
+    '爺爺 100年往生 重男輕女 奶奶中風在家裡面長照照顧 阿蒂 印尼籍 最近跟17歲的哥哥關係很好';
 
   it('切出五個人,順序與稱謂正確', () => {
-    const r = segmentProse(REAL);
+    const r = segmentProse(SAMPLE);
     expect(r.segments.map((s) => s.relation)).toEqual([
       '爸爸', '媽媽', '爺爺', '奶奶', '哥哥',
     ]);
   });
 
   it('欄位抽對:年齡 / 電話 / 往生 / 疾病 / 職業', () => {
-    const r = segmentProse(REAL);
+    const r = segmentProse(SAMPLE);
     const by = (rel: string) => r.segments.find((s) => s.relation === rel)!;
-    expect(by('爸爸').picked.age).toBe('42');
-    expect(by('爸爸').picked.phone).toBe('09-8722-2252');
-    expect(by('媽媽').picked.age).toBe('38');
+    expect(by('爸爸').picked.age).toBe('45');
+    expect(by('爸爸').picked.phone).toBe('09-1234-5678');
+    expect(by('媽媽').picked.age).toBe('40');
     expect(by('媽媽').picked.job).toBe('圖書館管理員');
     expect(by('爺爺').picked.deceased).toBe(true);
-    expect(by('爺爺').picked.deathYear).toBe('2018'); // 民國 107 → 西元 2018
+    expect(by('爺爺').picked.deathYear).toBe('2011'); // 民國 100 → 西元 2011
     expect(by('奶奶').picked.disease).toContain('中風');
   });
 
-  it('「19歲的哥哥」的年齡要歸給哥哥,不能被奶奶偷走', () => {
-    const r = segmentProse(REAL);
+  it('「17歲的哥哥」的年齡要歸給哥哥,不能被奶奶偷走', () => {
+    const r = segmentProse(SAMPLE);
     expect(r.segments.find((s) => s.relation === '奶奶')!.picked.age).toBeUndefined();
-    expect(r.segments.find((s) => s.relation === '哥哥')!.picked.age).toBe('19');
+    expect(r.segments.find((s) => s.relation === '哥哥')!.picked.age).toBe('17');
   });
 
   it('往生年份不可被吃掉 —— 解析器沒有這個欄位,必須留在備註', () => {
-    const r = segmentProse(REAL);
-    expect(r.segments.find((s) => s.relation === '爺爺')!.leftover).toContain('107年');
+    const r = segmentProse(SAMPLE);
+    expect(r.segments.find((s) => s.relation === '爺爺')!.leftover).toContain('100年');
   });
 
   it('切出來的行,既有解析器五行全部認得出稱謂', () => {
-    const r = segmentProse(REAL);
+    const r = segmentProse(SAMPLE);
     const parsed = parseQuickText(r.text);
     expect(parsed).toHaveLength(5);
     expect(parsed.every((l) => l.relation !== null)).toBe(true);
@@ -48,10 +48,10 @@ describe('段落切分:專案主人給的真實訪視敘述', () => {
   });
 
   it('沒有稱謂的片段留在「無法歸類」,不亂猜', () => {
-    const r = segmentProse(REAL);
+    const r = segmentProse(SAMPLE);
     expect(r.unassigned.join('')).toContain('case的');
-    // 「瑪麗亞 菲律賓籍」是外籍看護,字典裡沒有這個稱謂 —— 留在備註而不是硬塞給某個人
-    expect(r.segments.some((s) => s.leftover.includes('瑪麗亞'))).toBe(true);
+    // 「阿蒂 印尼籍」是外籍看護,字典裡沒有這個稱謂 —— 留在備註而不是硬塞給某個人
+    expect(r.segments.some((s) => s.leftover.includes('阿蒂'))).toBe(true);
   });
 });
 

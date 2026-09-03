@@ -47,7 +47,7 @@ export type Segment = {
 
 export type SegmentResult = {
   segments: Segment[];
-  /** 完全沒有稱謂、無法歸給任何人的片段(例:「瑪麗亞 菲律賓籍」) */
+  /** 完全沒有稱謂、無法歸給任何人的片段(例:「阿蒂 印尼籍」) */
   unassigned: string[];
   /** 產生的完整文字,可直接丟進 parseQuickText */
   text: string;
