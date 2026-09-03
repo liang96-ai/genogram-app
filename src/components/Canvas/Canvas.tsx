@@ -188,7 +188,9 @@ export default function Canvas() {
   const cycleShape = useGenogramStore((s) => s.cycleShape);
   const removePersons = useGenogramStore((s) => s.removePersons);
   const removeLine = useGenogramStore((s) => s.removeLine);
+  const removeLines = useGenogramStore((s) => s.removeLines);
   const removeNetworkUnit = useGenogramStore((s) => s.removeNetworkUnit);
+  const removeNetworkUnits = useGenogramStore((s) => s.removeNetworkUnits);
   const expandChildFromMarriage = useGenogramStore(
     (s) => s.expandChildFromMarriage,
   );
@@ -1730,7 +1732,7 @@ export default function Canvas() {
                 selectedUnitIds.includes(unit.id) &&
                 selectedUnitIds.length > 1
               ) {
-                selectedUnitIds.forEach((id) => removeNetworkUnit(id));
+                removeNetworkUnits(selectedUnitIds);
               } else {
                 removeNetworkUnit(unit.id);
               }
@@ -1824,8 +1826,7 @@ export default function Canvas() {
                 setConnectorDrag(null);
                 if (!dragging) {
                   // 短按 = 選中此 connector(顯示 × 刪除按鈕)
-                  setSelectedConnector({ unitId, connectorId });
-                  clearSelection();
+                  setSelectedConnector({ unitId, connectorId }); // 互斥由 selectOnly 保證
                   return;
                 }
                 const local = toSvgPoint(ev.clientX, ev.clientY);
@@ -2085,7 +2086,7 @@ export default function Canvas() {
                 selectedLineIds.includes(line.id) &&
                 selectedLineIds.length > 1
               ) {
-                selectedLineIds.forEach((id) => removeLine(id));
+                removeLines(selectedLineIds);
               } else {
                 removeLine(line.id);
               }
@@ -2178,7 +2179,7 @@ export default function Canvas() {
               selectedLineIds.includes(lineId) &&
               selectedLineIds.length > 1
             ) {
-              selectedLineIds.forEach((id) => removeLine(id));
+              removeLines(selectedLineIds);
             } else {
               removeLine(lineId);
             }

@@ -27,6 +27,7 @@ import { promptNewerInFolder } from './services/folderConflictPrompt';
 import { OPEN_SCALE_PICKER_EVENT } from './services/uiEvents';
 import { modalCount } from './components/ui/modalStack';
 import { createPortal } from 'react-dom';
+import { deleteConfirmSpec } from './services/deleteSelection';
 import { shouldSkipMirror } from './services/saveSemantics';
 import { recordEdit } from './services/backupReminder';
 import { flushDrafts } from './services/draftFlush';
@@ -62,13 +63,6 @@ export default function App() {
   const setShowTutorial = useGenogramStore((s) => s.setShowTutorial);
   const currentCase = useGenogramStore((s) => s.currentCase);
   const selectedPersonIds = useGenogramStore((s) => s.selectedPersonIds);
-  const selectedLineIds = useGenogramStore((s) => s.selectedLineIds);
-  const selectedUnitIds = useGenogramStore((s) => s.selectedUnitIds);
-  const selectedHouseholdId = useGenogramStore((s) => s.selectedHouseholdId);
-  const selectedEcosystemId = useGenogramStore((s) => s.selectedEcosystemId);
-  const selectedConnector = useGenogramStore((s) => s.selectedConnector);
-  const removePersons = useGenogramStore((s) => s.removePersons);
-  const removePersonsAndUnits = useGenogramStore((s) => s.removePersonsAndUnits);
   const movePerson = useGenogramStore((s) => s.movePerson);
   const commitMoveHistory = useGenogramStore((s) => s.commitMoveHistory);
   const selectPersonsAndUnits = useGenogramStore((s) => s.selectPersonsAndUnits);
@@ -77,12 +71,9 @@ export default function App() {
     before: null,
     timer: null,
   });
-  const removeLine = useGenogramStore((s) => s.removeLine);
-  const removeNetworkUnit = useGenogramStore((s) => s.removeNetworkUnit);
-  const removeHousehold = useGenogramStore((s) => s.removeHousehold);
-  const removeConnector = useGenogramStore((s) => s.removeConnector);
-  const removeEcosystem = useGenogramStore((s) => s.removeEcosystem);
   const showConfirm = useGenogramStore((s) => s.showConfirm);
+  const describeDeletable = useGenogramStore((s) => s.describeDeletable);
+  const deleteSelected = useGenogramStore((s) => s.deleteSelected);
   const undo = useGenogramStore((s) => s.undo);
   const redo = useGenogramStore((s) => s.redo);
   const loadInstitutionHistory = useGenogramStore(
@@ -456,108 +447,19 @@ export default function App() {
 
       // Delete — 單獨按:跳確認;Cmd/Ctrl + Delete:直接刪除
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        const skipConfirm = e.metaKey || e.ctrlKey;
-        if (selectedHouseholdId) {
-          // 同住圈:只解除圈(標記),成員不動;selectHousehold 已保證與其他選取互斥
-          e.preventDefault();
-          if (skipConfirm) {
-            removeHousehold(selectedHouseholdId);
-          } else {
-            const ok = await showConfirm(
-              tRef.current('confirm.deleteHousehold'),
-            );
-            if (ok) removeHousehold(selectedHouseholdId);
-          }
-        } else if (selectedPersonIds.length > 0 && selectedUnitIds.length > 0) {
-          // 框選同時圈到人物與網絡單位:一起刪、一步復原(2026-08-27 決議)——
-          // 舊行為只刪人物,單位留在原地,使用者會以為沒刪成功
-          e.preventDefault();
-          const doIt = () =>
-            removePersonsAndUnits(selectedPersonIds, selectedUnitIds);
-          if (skipConfirm) {
-            doIt();
-          } else {
-            const ok = await showConfirm(
-              tRef.current('confirm.deletePersonsUnits', {
-                n: selectedPersonIds.length,
-                m: selectedUnitIds.length,
-              }),
-            );
-            if (ok) doIt();
-          }
-        } else if (selectedPersonIds.length > 0) {
-          e.preventDefault();
-          if (skipConfirm) {
-            removePersons(selectedPersonIds);
-          } else {
-            const msg =
-              selectedPersonIds.length === 1
-                ? tRef.current('confirm.deletePerson')
-                : tRef.current('confirm.deletePersons', {
-                    n: selectedPersonIds.length,
-                  });
-            const ok = await showConfirm(msg);
-            if (ok) removePersons(selectedPersonIds);
-          }
-        } else if (selectedLineIds.length > 0) {
-          e.preventDefault();
-          if (skipConfirm) {
-            selectedLineIds.forEach((id) => removeLine(id));
-          } else {
-            const msg =
-              selectedLineIds.length === 1
-                ? tRef.current('confirm.deleteLine')
-                : tRef.current('confirm.deleteLines', {
-                    n: selectedLineIds.length,
-                  });
-            const ok = await showConfirm(msg);
-            if (ok) selectedLineIds.forEach((id) => removeLine(id));
-          }
-        } else if (selectedUnitIds.length > 0) {
-          e.preventDefault();
-          if (skipConfirm) {
-            selectedUnitIds.forEach((id) => removeNetworkUnit(id));
-          } else {
-            const msg =
-              selectedUnitIds.length === 1
-                ? tRef.current('confirm.deleteUnit')
-                : tRef.current('confirm.deleteUnits', {
-                    n: selectedUnitIds.length,
-                  });
-            const ok = await showConfirm(msg);
-            if (ok) selectedUnitIds.forEach((id) => removeNetworkUnit(id));
-          }
-        } else if (selectedEcosystemId) {
-          e.preventDefault();
-          const eco = currentCase?.ecosystems?.find(
-            (x) => x.id === selectedEcosystemId,
-          );
-          const name = eco?.label?.trim() || tRef.current('canvas.ecosystemFallback');
-          if (skipConfirm) {
-            removeEcosystem(selectedEcosystemId);
-          } else {
-            const ok = await showConfirm(tRef.current('confirm.deleteNamed', { name }));
-            if (ok) removeEcosystem(selectedEcosystemId);
-          }
-        } else if (selectedConnector) {
-          // v1.1 修:Delete 鍵也可刪 connector(單位 ↔ 人物/生態圈 的連線)
-          // — 過去只有 X 按鈕可刪,跟其他選取類型不一致
-          e.preventDefault();
-          if (skipConfirm) {
-            removeConnector(
-              selectedConnector.unitId,
-              selectedConnector.connectorId,
-            );
-          } else {
-            const ok = await showConfirm(tRef.current('confirm.deleteConnector'));
-            if (ok) {
-              removeConnector(
-                selectedConnector.unitId,
-                selectedConnector.connectorId,
-              );
-            }
-          }
+        // 刪什麼、問什麼、怎麼刪:store.describeDeletable / deleteSelected + services/deleteSelection
+        // 一處定義(1.4.0 統一);這裡只剩「要不要先問」。每一種刪除都是一步復原。
+        const d = describeDeletable();
+        if (!d) return;
+        e.preventDefault();
+        if (e.metaKey || e.ctrlKey) {
+          deleteSelected();
+          return;
         }
+        const spec = deleteConfirmSpec(d);
+        const ok = await showConfirm(tRef.current(spec.key, spec.vars));
+        if (ok) deleteSelected();
+        return;
       }
     };
     window.addEventListener('keydown', onKey);
@@ -568,25 +470,16 @@ export default function App() {
     movePerson,
     selectPersonsAndUnits,
     selectedPersonIds,
-    selectedLineIds,
-    selectedUnitIds,
-    selectedEcosystemId,
-    selectedConnector,
     currentCase,
     showConfirm,
-    removePersons,
-    removePersonsAndUnits,
-    removeLine,
-    removeNetworkUnit,
-    removeHousehold,
-    selectedHouseholdId,
-    removeConnector,
-    removeEcosystem,
     undo,
     redo,
+    describeDeletable,
+    deleteSelected,
   ]);
 
   // 系統警示橫幅(#120 / #124 / #131)— 清單與編輯模式都掛最上層
+  // 系統橫幅 portal 到 body:彈窗開著時 #root 是 inert,留在裡面會「看得到、按不到」(2026-09-03 審查)
   const banners =
     saveIssue || multiTabWarn || updateReady ? (
       <div

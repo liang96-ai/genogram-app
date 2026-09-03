@@ -664,7 +664,10 @@ type GenogramStore = {
   selectLines: (ids: string[]) => void;
   toggleLineSelection: (id: string) => void;
   clearSelection: () => void;
+  /** 目前選取的東西能不能刪、是哪一種、幾個(Delete 鍵與確認框文案共用;services/deleteSelection) */
+  describeDeletable: () => import('../services/deleteSelection').Deletable | null;
   /** 刪掉目前選取的東西(每一種都是一步復原);回 true = 有刪 */
+  deleteSelected: () => boolean;
   setInspectorTarget: (target: InspectorTarget) => void;
 
   addPerson: (p: Person) => void;
@@ -717,6 +720,8 @@ type GenogramStore = {
 
   updateLine: (id: string, patch: Partial<Line>, opts?: EditOpts) => void;
   removeLine: (id: string) => void;
+  /** 一次刪多條線 = 一格復原(配對的親子線一起刪,與 removeLine 同規) */
+  removeLines: (ids: string[]) => void;
   updateLineEndpoint: (lineId: string, end: 'from' | 'to', newPersonId: string) => void;
   cycleLineSubType: (lineId: string) => void;
   /** 拖小孩 A 到婚姻線 M:新增 A→M1 / A→M2 為 placed-out(虛線、父母縮小);
@@ -793,6 +798,8 @@ type GenogramStore = {
   addNetworkUnit: (name: string, anchorPersonId?: string) => void;
   updateNetworkUnit: (id: string, patch: Partial<NetworkUnit>, opts?: EditOpts) => void;
   removeNetworkUnit: (id: string) => void;
+  /** 一次刪多個單位 = 一格復原 */
+  removeNetworkUnits: (ids: string[]) => void;
   toggleNetworkUnitActive: (id: string) => void;
   moveNetworkUnit: (id: string, x: number, y: number) => void;
   // Connector (▲ 拉出的線)
@@ -912,6 +919,24 @@ function pushHistory(
     currentCase: newCase,
     history: { past: newPast, future: [] as Genogram[] },
   };
+}
+
+// ==================== 選取互斥的唯一定義(2026-09-03 統一)====================
+// 一次只能選一種東西:人物們 / 線們 / 單位們 / 人物+單位 / 同住圈 / 生態圈(含編輯中)/ 連接線。
+// 所有 select* 動作都用 selectOnly():只寫要選的那幾個欄位,其他一律清空,不靠人記得清。
+// (欄位形狀維持不變,讀取端 Canvas / Inspector 30 幾處不用動。)
+export const EMPTY_SELECTION = {
+  selectedPersonIds: [] as string[],
+  selectedLineIds: [] as string[],
+  selectedUnitIds: [] as string[],
+  selectedEcosystemId: null as string | null,
+  selectedHouseholdId: null as string | null,
+  editingEcosystemId: null as string | null,
+  selectedConnector: null as { unitId: string; connectorId: string } | null,
+};
+export type SelectionFields = typeof EMPTY_SELECTION;
+export function selectOnly(partial: Partial<SelectionFields>): SelectionFields {
+  return { ...EMPTY_SELECTION, ...partial };
 }
 
 // ==================== 「一格復原是什麼」的唯一定義(2026-09-03 統一)====================
@@ -1301,41 +1326,17 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
 
   selectPerson: (id) =>
     set((s) => ({
-      selectedPersonIds: id ? [id] : [],
-      selectedLineIds: [],
-      selectedUnitIds: [],
-      selectedEcosystemId: null,
-      selectedHouseholdId: null,
-      editingEcosystemId: null,
+      ...selectOnly({ selectedPersonIds: id ? [id] : [] }),
       inspectorTarget: id ? { type: 'person', id } : s.inspectorTarget,
     })),
 
-  selectUnit: (id) =>
-    set(() => ({
-      selectedUnitIds: id ? [id] : [],
-      selectedPersonIds: [],
-      selectedLineIds: [],
-      selectedEcosystemId: null,
-      selectedHouseholdId: null,
-    })),
+  selectUnit: (id) => set(() => selectOnly({ selectedUnitIds: id ? [id] : [] })),
 
-  selectUnits: (ids) =>
-    set(() => ({
-      selectedUnitIds: ids,
-      selectedPersonIds: [],
-      selectedLineIds: [],
-      selectedEcosystemId: null,
-      selectedHouseholdId: null,
-    })),
+  selectUnits: (ids) => set(() => selectOnly({ selectedUnitIds: ids })),
 
   selectPersonsAndUnits: (personIds, unitIds) =>
     set((s) => ({
-      selectedPersonIds: personIds,
-      selectedUnitIds: unitIds,
-      selectedLineIds: [],
-      selectedEcosystemId: null,
-      selectedHouseholdId: null,
-      editingEcosystemId: null,
+      ...selectOnly({ selectedPersonIds: personIds, selectedUnitIds: unitIds }),
       inspectorTarget:
         personIds.length === 1
           ? { type: 'person', id: personIds[0] }
@@ -1360,46 +1361,18 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     }));
   },
 
-  selectHousehold: (id) =>
-    set(() => ({
-      selectedHouseholdId: id,
-      selectedPersonIds: [],
-      selectedLineIds: [],
-      selectedUnitIds: [],
-      selectedEcosystemId: null,
-      editingEcosystemId: null,
-    })),
+  selectHousehold: (id) => set(() => selectOnly({ selectedHouseholdId: id })),
 
-  selectEcosystem: (id) =>
-    set(() => ({
-      selectedEcosystemId: id,
-      selectedHouseholdId: null,
-      // 切換選取對象時,自動退出編輯
-      editingEcosystemId: null,
-      selectedPersonIds: [],
-      selectedLineIds: [],
-      selectedUnitIds: [],
-    })),
+  // 切換選取對象時自動退出編輯(editingEcosystemId 由 selectOnly 清掉)
+  selectEcosystem: (id) => set(() => selectOnly({ selectedEcosystemId: id })),
 
+  // 進編輯也順便保持選中
   setEditingEcosystem: (id) =>
-    set(() => ({
-      editingEcosystemId: id,
-      // 進編輯也順便保持選中
-      selectedEcosystemId: id,
-      selectedHouseholdId: null,
-      selectedPersonIds: [],
-      selectedLineIds: [],
-      selectedUnitIds: [],
-    })),
+    set(() => selectOnly({ editingEcosystemId: id, selectedEcosystemId: id })),
 
   selectPersons: (ids) =>
     set((s) => ({
-      selectedPersonIds: ids,
-      selectedLineIds: [],
-      selectedUnitIds: [],
-      selectedEcosystemId: null,
-      selectedHouseholdId: null,
-      editingEcosystemId: null,
+      ...selectOnly({ selectedPersonIds: ids }),
       inspectorTarget:
         ids.length === 1
           ? { type: 'person', id: ids[0] }
@@ -1408,23 +1381,13 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
 
   selectLine: (id) =>
     set((s) => ({
-      selectedLineIds: id ? [id] : [],
-      selectedPersonIds: [],
-      selectedUnitIds: [],
-      selectedEcosystemId: null,
-      selectedHouseholdId: null,
-      editingEcosystemId: null,
+      ...selectOnly({ selectedLineIds: id ? [id] : [] }),
       inspectorTarget: id ? { type: 'line', id } : s.inspectorTarget,
     })),
 
   selectLines: (ids) =>
     set((s) => ({
-      selectedLineIds: ids,
-      selectedPersonIds: [],
-      selectedUnitIds: [],
-      selectedEcosystemId: null,
-      selectedHouseholdId: null,
-      editingEcosystemId: null,
+      ...selectOnly({ selectedLineIds: ids }),
       inspectorTarget:
         ids.length === 1
           ? { type: 'line', id: ids[0] }
@@ -1449,14 +1412,53 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     }));
   },
 
+  describeDeletable: () => {
+    const st = get();
+    if (st.selectedHouseholdId) return { kind: 'household', n: 1 };
+    if (st.selectedPersonIds.length > 0 && st.selectedUnitIds.length > 0)
+      return { kind: 'personsUnits', n: st.selectedPersonIds.length, m: st.selectedUnitIds.length };
+    if (st.selectedPersonIds.length > 0) return { kind: 'persons', n: st.selectedPersonIds.length };
+    if (st.selectedLineIds.length > 0) return { kind: 'lines', n: st.selectedLineIds.length };
+    if (st.selectedUnitIds.length > 0) return { kind: 'units', n: st.selectedUnitIds.length };
+    if (st.selectedEcosystemId) {
+      const eco = st.currentCase?.ecosystems?.find((x) => x.id === st.selectedEcosystemId);
+      return { kind: 'ecosystem', n: 1, name: eco?.label?.trim() || '' };
+    }
+    if (st.selectedConnector) return { kind: 'connector', n: 1 };
+    return null;
+  },
+  deleteSelected: () => {
+    const st = get();
+    const d = st.describeDeletable();
+    if (!d) return false;
+    switch (d.kind) {
+      case 'household':
+        st.removeHousehold(st.selectedHouseholdId!);
+        break;
+      case 'personsUnits':
+        st.removePersonsAndUnits(st.selectedPersonIds, st.selectedUnitIds);
+        break;
+      case 'persons':
+        st.removePersons(st.selectedPersonIds);
+        break;
+      case 'lines':
+        st.removeLines(st.selectedLineIds);
+        break;
+      case 'units':
+        st.removeNetworkUnits(st.selectedUnitIds);
+        break;
+      case 'ecosystem':
+        st.removeEcosystem(st.selectedEcosystemId!);
+        break;
+      case 'connector':
+        st.removeConnector(st.selectedConnector!.unitId, st.selectedConnector!.connectorId);
+        break;
+    }
+    return true;
+  },
   clearSelection: () =>
     set((s) => ({
-      selectedPersonIds: [],
-      selectedLineIds: [],
-      selectedUnitIds: [],
-      selectedEcosystemId: null,
-      selectedHouseholdId: null,
-      editingEcosystemId: null,
+      ...selectOnly({}),
       // 清掉線條的 inspectorTarget(讓 Tab2 關係按鈕不會繼續「改剛畫好的那條」)
       //  但保留 person target,Tab1/3 還能看著同一個人物編輯
       inspectorTarget:
@@ -1497,7 +1499,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     });
   },
 
-  updatePerson: (id, patch) => {
+  updatePerson: (id, patch, opts) => {
     const { currentCase: c, history } = get();
     if (!c) return;
     const newCase = touch({
@@ -1742,7 +1744,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   },
 
 
-  updateLine: (id, patch) => {
+  updateLine: (id, patch, opts) => {
     const { currentCase: c, history } = get();
     if (!c) return;
     const newCase = touch({
@@ -1761,6 +1763,8 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     openEditStep('line', id, get().history.past.length);
   },
 
+  removeLine: (id) => get().removeLines([id]),
+  removeLines: (ids) => {
     const { currentCase: c, history, inspectorTarget } = get();
     if (!c) return;
     const wanted = ids.filter((id) => c.lines.some((l) => l.id === id));
@@ -1775,8 +1779,10 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       'fostered',
       'sperm-donor',
     ]);
-    const idsToRemove = new Set<string>([id]);
-    if (BIO_LIKE.has(target.subType)) {
+    const idsToRemove = new Set<string>(wanted);
+    for (const id of wanted) {
+      const target = c.lines.find((l) => l.id === id)!;
+      if (!BIO_LIKE.has(target.subType)) continue;
       const childId = target.toPersonId;
       const parentId = target.fromPersonId;
       // 找這個 parent 的配偶(透過 marriage-like)— v1.1 用共用常數
@@ -1785,20 +1791,14 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
           MARRIAGE_SUBTYPE_SET.has(l.subType) &&
           (l.fromPersonId === parentId || l.toPersonId === parentId),
       );
-      if (spouseLine) {
-        const spouseId =
-          spouseLine.fromPersonId === parentId
-            ? spouseLine.toPersonId
-            : spouseLine.fromPersonId;
-        // 找配偶到同 child 的 bio-like 線(配對)
-        const pair = c.lines.find(
-          (l) =>
-            l.fromPersonId === spouseId &&
-            l.toPersonId === childId &&
-            BIO_LIKE.has(l.subType),
-        );
-        if (pair) idsToRemove.add(pair.id);
-      }
+      if (!spouseLine) continue;
+      const spouseId =
+        spouseLine.fromPersonId === parentId ? spouseLine.toPersonId : spouseLine.fromPersonId;
+      // 找配偶到同 child 的 bio-like 線(配對)
+      const pair = c.lines.find(
+        (l) => l.fromPersonId === spouseId && l.toPersonId === childId && BIO_LIKE.has(l.subType),
+      );
+      if (pair) idsToRemove.add(pair.id);
     }
 
     const newCase = touch({
@@ -2080,7 +2080,10 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   },
 
   selectedConnector: null,
-  setSelectedConnector: (sel) => set({ selectedConnector: sel }),
+  // 選 connector 也是一種選取:非 null 走 selectOnly(清掉其他);null 只清自己
+  // (Canvas 在選人物 / 單位之後會補呼叫 setSelectedConnector(null),不能把剛選的東西一起清掉)
+  setSelectedConnector: (sel) =>
+    set(() => (sel ? selectOnly({ selectedConnector: sel }) : { selectedConnector: null })),
 
   toggleAllRelationLinesPrivate: (value) => {
     const { currentCase: c, history } = get();
@@ -2969,15 +2972,19 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       inspectorTarget: nextInspector,
     });
   },
-  removeNetworkUnit: (id) => {
-    const { currentCase: c, history } = get();
+  removeNetworkUnit: (id) => get().removeNetworkUnits([id]),
+  removeNetworkUnits: (ids) => {
+    const { currentCase: c, history, selectedUnitIds } = get();
     if (!c) return;
     const units = c.networkUnits ?? [];
-    // 不存在(如 undo 後殘留的選取)→ 不動作,避免推一格空 history(#126)
-    if (!units.some((u) => u.id === id)) return;
-    const newUnits = units.filter((u) => u.id !== id);
-    const newCase = touch({ ...c, networkUnits: newUnits });
-    set({ ...pushHistory(c, history, newCase) });
+    // 不存在(如 undo 後殘留的選取)→ 不算,避免推一格空 history(#126)
+    const gone = new Set(ids.filter((id) => units.some((u) => u.id === id)));
+    if (gone.size === 0) return;
+    const newCase = touch({ ...c, networkUnits: units.filter((u) => !gone.has(u.id)) });
+    set({
+      ...pushHistory(c, history, newCase),
+      selectedUnitIds: selectedUnitIds.filter((x) => !gone.has(x)),
+    });
   },
   toggleNetworkUnitActive: (id) => {
     const { currentCase: c, history } = get();
