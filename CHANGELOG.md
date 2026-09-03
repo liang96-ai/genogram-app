@@ -3,6 +3,27 @@
 給使用者看的版本說明。技術細節請見 git 歷史。
 User-facing release notes; see git history for technical details.
 
+## 1.4.0 — 2026-09-03
+
+**English summary:** One modal shell for all 17 dialogs (stacking, Escape and background-lock guaranteed by a single stack), one text-input strategy (draft fields: 0.8 s idle / blur / before-save / unmount, one input session = one undo step), selection exclusivity defined in one place, every delete gesture is one undo step, the update banner now always reloads, unified wording on free use vs. voluntary support vs. commercial licensing, brochure updated.
+
+### 手感統一
+- **所有彈窗同一套外殼**:17 個視窗開、關、Esc 的行為一致;兩層疊著按 Esc 只關最上面那層;彈窗開著時底下的畫布與面板一律不接受鍵盤與點擊(用瀏覽器原生的 inert)。
+- **文字輸入同一套機制**:姓名、備註、訪談筆記、事件標題與描述都是「草稿欄位」:停手 0.8 秒、離開欄位、存檔前、切換分頁時結算;一次輸入不論停頓幾次都只吃一格復原;中文輸入法組字期間不寫入。
+- **選取同一套規則**:一次只能選一種東西,互斥由單一定義保證,不再靠每個動作各自清欄位。
+- **刪除同一套規則**:按 Delete 刪什麼、問什麼、怎麼刪,只定義在一處;多選線條或機構長條一起刪也是一步復原(以前刪 8 條線要按 8 次復原)。
+- **「立即更新」一定會刷新**:按下後橫幅立刻收起;背景更新機制沒在 2.5 秒內重整就自己重整一次。
+
+### 文案與文件
+- 使用本工具對個人與機構都免費;支持是自願的;只有把工具嵌進封閉產品、SaaS 或系統整合才需要商業授權。關於頁、README、贊助說明、推廣手冊改成同一種說法。
+- 隱私聲明新增「哪裡會出現姓名」分層表(檔名、匯出內容、圖片、備份資料夾、目錄檔、回報信、分享連結各自的規則)。
+- 推廣手冊補上 1.3 的功能(時間軸、同住圈、復原 20 步、搜尋、備份提醒)與「交接與備份」一節;量表數更新為 14。
+
+### 幕後
+- 復原的「一格是什麼」只定義在 store 一處(時間窗 + 輸入 session 兩條規則),五個更新動作都走同一個判斷。
+- 新增旅程測試:草稿欄位一次輸入一格復原、兩層彈窗 Esc 只關上層;單元測試新增草稿 session、彈窗堆疊、選取互斥、批次刪除、更新重載保底。
+- 彈窗外殼沒有採用原生 dialog 的 top layer:它會壓在護眼濾鏡與系統警示橫幅之上;改用 portal + 堆疊 + inert 達到同樣的三個保證。
+
 ## 1.3.1 — 2026-09-03
 
 **English summary:** Fourth tab renamed to "Case records" with an "Assess" button; Barthel Index bands corrected to the official scheme; opening a case no longer rewrites the backup folder or counts as an edit; a newer version found in the backup folder now asks before anything is overwritten; "folder sync" wording replaced by "folder backup"; tutorial updated; golden tests for all 14 scales and a frozen reference case for the file-format contract.
