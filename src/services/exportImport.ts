@@ -2,6 +2,7 @@ import { db, removeDeletedCaseIds } from './database';
 import { writeCaseJson } from './fileSystem';
 import type { Genogram, Line, Person } from '../types/genogram';
 import { isRenderableEvent } from './majorEvents';
+import { isSupportedSchemaVersion } from './schemaVersion';
 
 export type ExportType = 'single' | 'multi' | 'backup';
 
@@ -134,7 +135,7 @@ export function parseImport(text: string): ExportBundle {
   // 小版號只會「新增選填欄位」,未知欄位在匯入→編輯→回寫全程都會原樣保留(已實測);
   // 只有大版號改變(2.x)才代表不相容,拒收。寫出端維持 '1.0' 不變。
   const ver = String(bundle.schemaVersion ?? '');
-  if (!/^1\.\d+$/.test(ver)) {
+  if (!isSupportedSchemaVersion(bundle.schemaVersion)) {
     throw new Error(
       `不支援的檔案版本 (${ver || 'unknown'});此版本可讀 1.x 系列的檔案`,
     );
