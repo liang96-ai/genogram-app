@@ -19,8 +19,13 @@ import { useT } from './i18n';
 import { getScale } from './components/Scales/registry';
 import { db } from './services/database';
 import type { Genogram } from './types/genogram';
-import { loadRootDirHandle, writeCaseJson } from './services/fileSystem';
-import { rescueCasesFromFolder } from './services/folderRescue';
+import { loadRootDirHandle, writeCaseJson,
+  loadAllCasesFromFolder,
+} from './services/fileSystem';
+import { findNewerInFolder, rescueCasesFromFolder } from './services/folderRescue';
+import { promptNewerInFolder } from './services/folderConflictPrompt';
+import { OPEN_SCALE_PICKER_EVENT } from './services/uiEvents';
+import { shouldSkipMirror } from './services/saveSemantics';
 import { recordEdit } from './services/backupReminder';
 import { flushDrafts } from './services/draftFlush';
 import { setupPwaInstallListener } from './services/pwaInstall';
@@ -107,6 +112,18 @@ export default function App() {
   const pendingSave = useRef<Genogram | null>(null);
   // 使用者是否設定過備份資料夾(settings 有紀錄;權限休眠時 rootDirHandle 是 null)
   const folderConfiguredRef = useRef(false);
+  // 啟動時掃到的資料夾個案 —— 載入完成後才拿來問「資料夾有較新版本」
+  const newerCandidatesRef = useRef<Genogram[] | null>(null);
+  // 「開啟不算編輯」的判準資料(services/saveSemantics.ts):
+  //   openedAtRef:每個個案開檔當下的 lastModifiedAt;touchedRef:這次開啟後已寫過變動的個案
+  const openedAtRef = useRef<Map<string, string>>(new Map());
+  const touchedRef = useRef<Set<string>>(new Set());
+  const loadedSnapshot = useGenogramStore((s) => s.loadedSnapshot);
+  useEffect(() => {
+    if (!loadedSnapshot) return;
+    openedAtRef.current.set(loadedSnapshot.id, loadedSnapshot.lastModifiedAt);
+    touchedRef.current.delete(loadedSnapshot.id);
+  }, [loadedSnapshot]);
 
   // 立即寫出排隊中的儲存 — timer 到期 / 關閉分頁 / 切換個案 共用(#117)
   const flushPendingSave = useCallback((): Promise<void> => {
@@ -129,17 +146,22 @@ export default function App() {
     const g = pendingSave.current;
     if (!g) return Promise.resolve();
     pendingSave.current = null;
+    // 「開啟不算編輯」(docs/STORAGE.md):只是打開看一眼、內容沒變 → 資料庫照寫(便宜、冪等),
+    // 但不重寫備份資料夾(共用 iCloud 資料夾時會把別台的新版蓋掉)、也不算進備份提醒的編輯次數。
+    const untouched = shouldSkipMirror(g, openedAtRef.current, touchedRef.current);
+    if (!untouched) touchedRef.current.add(g.id);
     // 主儲存(IndexedDB):回傳此 promise,讓「立即更新」能等寫完再重載(防掉資料)
     const dbWrite = db.cases.put(g).then(
       () => {
         setSaveIssue((prev) => (prev === 'db' ? null : prev));
-        void recordEdit(); // 備份提醒的編輯計數(純本機)
+        if (!untouched) void recordEdit(); // 備份提醒的編輯計數(純本機)
       },
       (err) => {
         console.error('Auto save (IndexedDB) failed:', err);
         setSaveIssue('db'); // 主儲存失敗 → 紅色警示(#120)
       },
     );
+    if (untouched) return dbWrite;
     // 同時寫一份到資料夾:沒設定過 → 靜默;設定過但失敗 → 黃色警示(#120)
     writeCaseJson(g).then(
       (ok) => {
@@ -153,6 +175,22 @@ export default function App() {
     );
     return dbWrite;
   }, []);
+
+  // 載入完成(ConfirmDialog 已掛在 list / edit 兩個分支)→ 才問「資料夾有較新版本」
+  useEffect(() => {
+    if (!loaded) return;
+    const cases = newerCandidatesRef.current;
+    if (!cases) return;
+    newerCandidatesRef.current = null;
+    void (async () => {
+      try {
+        const adopted = await promptNewerInFolder(await findNewerInFolder(cases));
+        if (adopted > 0) await loadCaseList();
+      } catch (err) {
+        console.error('newer-in-folder prompt failed:', err);
+      }
+    })();
+  }, [loaded, loadCaseList]);
 
   // 初始化:
   //   1. 載歷史 + 個案清單(IndexedDB)
@@ -192,10 +230,13 @@ export default function App() {
           // 掃資料夾 → 找 IndexedDB 沒有的個案補進去(抽成共用 rescueCasesFromFolder,
           // 所有「選資料夾」入口也會呼叫同一份 —— 換電腦選完資料夾個案要立刻出現)
           try {
-            const restored = await rescueCasesFromFolder();
-            if (restored > 0) {
-              await loadCaseList();
-            }
+            // 整個資料夾只掃一次(iCloud 未下載的 placeholder 每讀一個檔都要等)
+            const folderCases = await loadAllCasesFromFolder();
+            const restored = await rescueCasesFromFolder(folderCases);
+            if (restored > 0) await loadCaseList();
+            // 資料夾裡比這台新的版本 → 留到首頁畫出來(ConfirmDialog 已掛上)再問。
+            // 在這裡 await 會永遠等不到按鈕,整個 App 卡在「載入中」(2026-09-03 審查抓到)
+            newerCandidatesRef.current = folderCases;
           } catch (err) {
             console.error('scan folder failed:', err);
           }
@@ -750,6 +791,12 @@ function Toolbar({
   const [quickBuildOpen, setQuickBuildOpen] = useState(false);
   const [kinshipOpen, setKinshipOpen] = useState(false);
   const [scalePickerOpen, setScalePickerOpen] = useState(false);
+  // 第四分頁「施測」按鈕 → 開同一個量表挑選器(services/uiEvents.ts)
+  useEffect(() => {
+    const onOpen = () => setScalePickerOpen(true);
+    window.addEventListener(OPEN_SCALE_PICKER_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_SCALE_PICKER_EVENT, onOpen);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -1167,7 +1214,7 @@ function PrivacyMaskBadge() {
   const t = useT();
   const privacyEnabled = useGenogramStore((s) => s.privacyEnabled);
   const privateFields = useGenogramStore((s) => s.privateFields);
-  // Inspector 拖到左側時,ViewToolbar 也會移到左下角 —— 徽章換邊,別疊在縮放鈕上(獨立審查抓到的)
+  // Inspector 拖到左側時,ViewToolbar 也會移到左下角 —— 徽章換邊,別疊在縮放鈕上(審查時發現的)
   const inspectorSide = useGenogramStore((s) => s.inspectorSide);
   const n = Object.values(privateFields).filter(Boolean).length;
   if (!privacyEnabled || n === 0) return null;

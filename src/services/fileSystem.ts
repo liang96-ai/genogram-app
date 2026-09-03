@@ -9,8 +9,11 @@
 
 import { db } from './database';
 import type { Genogram } from '../types/genogram';
+import { isSupportedSchemaVersion } from './schemaVersion';
 
 let rootDirHandle: FileSystemDirectoryHandle | null = null;
+/** 掃描時發現是新格式(2.x)的個案:這台的舊版 App 讀不懂,也不可以把 1.0 版寫回去覆蓋它 */
+const unsupportedInFolder = new Set<string>();
 
 export function isFileSystemAccessSupported(): boolean {
   return typeof window !== 'undefined' && 'showDirectoryPicker' in window;
@@ -41,6 +44,7 @@ export async function selectRootFolder(): Promise<
       options,
     )) as FileSystemDirectoryHandle;
     rootDirHandle = handle;
+    unsupportedInFolder.clear(); // 換了資料夾,舊資料夾掃到的「新格式檔」紀錄不再適用
     await db.settings.put({ key: 'rootDirHandle', value: handle });
     return handle;
   } catch (err) {
@@ -187,6 +191,10 @@ export async function deleteAttachmentFile(
 /** 寫入個案 JSON 到 case_<id>/case.json — write-through 用 */
 export async function writeCaseJson(g: Genogram): Promise<boolean> {
   if (!rootDirHandle) return false;
+  if (unsupportedInFolder.has(g.id)) {
+    console.warn(`refuse to overwrite newer-format case.json: ${g.id}`);
+    return false; // 回 false → 資料夾備份黃燈,使用者看得到這個個案沒被備份
+  }
   if (!(await ensureRootPermission())) return false;
   try {
     const caseDir = await rootDirHandle.getDirectoryHandle(`case_${g.id}`, {
@@ -247,7 +255,16 @@ export async function readCaseJson(caseId: string): Promise<Genogram | null> {
     const fileHandle = await caseDir.getFileHandle('case.json');
     const file = await fileHandle.getFile();
     const text = await file.text();
-    return JSON.parse(text) as Genogram;
+    const g = JSON.parse(text) as Genogram & { schemaVersion?: unknown };
+    // 與匯入端同一條版本規則(docs/VERSIONING.md):未來 2.x 的 case.json 不能被舊版靜默救進 DB。
+    // 現行 case.json 沒有 schemaVersion 欄位 → 視為 1.0。
+    if (!isSupportedSchemaVersion(g.schemaVersion, { allowMissing: true })) {
+      console.warn(`skip case.json with unsupported schemaVersion ${String(g.schemaVersion)}: ${caseId}`);
+      unsupportedInFolder.add(caseId); // 讀不進來的,也不准被本機舊格式寫回蓋掉
+      return null;
+    }
+    unsupportedInFolder.delete(caseId);
+    return g;
   } catch {
     return null;
   }

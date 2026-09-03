@@ -1,3 +1,5 @@
+import type { LoadedSnapshot } from '../services/saveSemantics';
+import { relevelScaleResults } from '../services/scaleResultMigration';
 import { create } from 'zustand';
 import type {
   BasicShape,
@@ -572,6 +574,8 @@ type GenogramStore = {
   goToList: () => Promise<void>;
 
   currentCase: Genogram | null;
+  /** 開檔當下的 (id, lastModifiedAt);新建個案為 null。App 用它判斷「開啟不算編輯」(services/saveSemantics.ts) */
+  loadedSnapshot: LoadedSnapshot | null;
   selectedPersonIds: string[];
   selectedLineIds: string[];
   selectedUnitIds: string[];
@@ -976,9 +980,11 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     try {
       const c = await db.cases.get(id);
       if (!c) return;
-      const migrated = migrateGenogram(c);
+      // 開檔遷移 + 量表舊紀錄依新分級重算(services/scaleResultMigration.ts)
+      const migrated = relevelScaleResults(migrateGenogram(c)).case;
       set({
         currentCase: migrated,
+        loadedSnapshot: { id: migrated.id, lastModifiedAt: migrated.lastModifiedAt },
         appMode: 'edit',
         selectedPersonIds: [],
         selectedLineIds: [],
@@ -1010,6 +1016,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       );
       set({
         currentCase: fresh,
+        loadedSnapshot: null,
         appMode: 'edit',
         // 新個案直接選取案主(2026-08-27 決議):教學說「選中人物會出現 4 個箭頭」,
         // 空白畫布沒選取的話,新手要自己悟出「先點一下人」
@@ -1078,6 +1085,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
         // 目前正在編這筆 → 切回列表
         set({
           currentCase: null,
+          loadedSnapshot: null,
           appMode: 'list',
           selectedPersonIds: [],
           selectedLineIds: [],
@@ -1102,6 +1110,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   },
 
   currentCase: null,
+  loadedSnapshot: null,
   selectedPersonIds: [],
   selectedLineIds: [],
   selectedUnitIds: [],
@@ -3392,3 +3401,6 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       });
     }),
 }));
+
+// 給參考個案往返測試用:開檔時的遷移必須保留未知欄位(docs/VERSIONING.md 規則 2)
+export { migrateGenogram };

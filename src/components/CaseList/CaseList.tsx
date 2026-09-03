@@ -10,9 +10,11 @@ import {
   getRootFolderName,
   isFileSystemAccessSupported,
   writeCaseJson,
+  loadAllCasesFromFolder,
 } from '../../services/fileSystem';
 import { db } from '../../services/database';
-import { rescueCasesFromFolder } from '../../services/folderRescue';
+import { findNewerInFolder, rescueCasesFromFolder } from '../../services/folderRescue';
+import { promptNewerInFolder } from '../../services/folderConflictPrompt';
 import { daysSinceBackupIfShouldRemind } from '../../services/backupReminder';
 import FeedbackDialog from './FeedbackDialog';
 import PrivacyWelcomeDialog, {
@@ -28,14 +30,27 @@ import EyeComfortButton from '../EyeComfort/EyeComfortButton';
  *  再把現有個案寫出去(push),缺一步都會有一邊資料看起來「消失」。回傳救回筆數。 */
 async function syncAfterFolderPick(): Promise<number> {
   let restored = 0;
+  let folderCases: Genogram[] = [];
   try {
-    restored = await rescueCasesFromFolder();
+    folderCases = await loadAllCasesFromFolder(); // 整個資料夾只掃一次
+    restored = await rescueCasesFromFolder(folderCases);
   } catch (err) {
     console.error('rescue from folder failed:', err);
   }
+  // 先處理「資料夾比這台新」的個案(問使用者),再把其餘個案寫出去 ——
+  // 順序反過來會在使用者還沒看到之前就把較新的版本蓋掉(2026-09-03)。
+  // 採用的筆數不算進「救回」(使用者剛剛已經親自決定過,不用再提示)
+  let hold = new Set<string>();
+  try {
+    const newer = await findNewerInFolder(folderCases);
+    hold = new Set(newer.map((p) => p.folder.id));
+    await promptNewerInFolder(newer);
+  } catch (err) {
+    console.error('check newer in folder failed:', err);
+  }
   try {
     const allCases = await db.cases.toArray();
-    for (const g of allCases) await writeCaseJson(g);
+    for (const g of allCases) if (!hold.has(g.id)) await writeCaseJson(g);
   } catch (err) {
     console.error('sync to folder failed:', err);
   }
