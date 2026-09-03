@@ -1,26 +1,10 @@
-import { useEffect } from 'react';
 import { useGenogramStore } from '../store/genogramStore';
+import Modal from './ui/Modal';
 import { useT } from '../i18n';
 
 export default function ConfirmDialog() {
   const confirmState = useGenogramStore((s) => s.confirmState);
   const t = useT();
-
-  useEffect(() => {
-    if (!confirmState) return;
-    const onKey = (e: KeyboardEvent) => {
-      // Enter 不再=直接確認(#128 防誤按刪除);取消鈕 autoFocus,Enter 觸發的是焦點按鈕
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        // capture + stopPropagation:確認框開著時,Esc 只歸它管 ——
-        // 不然底下的彈窗(匯出/量表)會一起被關掉,使用者勾好的東西全丟(2026-08-27 決議)
-        e.stopPropagation();
-        confirmState.onNo();
-      }
-    };
-    window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
-  }, [confirmState]);
 
   if (!confirmState) return null;
 
@@ -32,30 +16,22 @@ export default function ConfirmDialog() {
   const modKey = isMac ? '⌘' : 'Ctrl';
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.35)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
+    <Modal
+      onClose={onNo}
+      level="confirm"
+      closeOnBackdrop={false}
+      bare
+      ariaLabel="confirm"
+      overlayStyle={{ background: 'rgba(0,0,0,0.35)' }}
+      cardStyle={{
+        background: '#ffffff',
+        borderRadius: 12,
+        padding: 24,
+        minWidth: 320,
+        maxWidth: 440,
+        boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
       }}
-      onPointerDown={(e) => e.stopPropagation()}
     >
-      <div
-        style={{
-          background: '#ffffff',
-          borderRadius: 12,
-          padding: 24,
-          minWidth: 320,
-          maxWidth: 440,
-          boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-        }}
-      >
         <div
           style={{
             fontSize: 14,
@@ -120,7 +96,6 @@ export default function ConfirmDialog() {
             {yesLabel ?? t('common.yes')}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

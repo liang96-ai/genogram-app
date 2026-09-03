@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Modal from '../ui/Modal';
 import { PlusGlyph } from '../PlusGlyph';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
@@ -460,31 +461,18 @@ function AttachmentAdder({
         </div>
       )}
       {linkOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.4)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+        <Modal
+          onClose={() => setLinkOpen(false)}
+          bare
+          overlayStyle={{ padding: 16 }}
+          cardStyle={{
+            background: '#fff',
             padding: 16,
+            borderRadius: 8,
+            maxWidth: 400,
+            width: '100%',
           }}
-          onClick={() => setLinkOpen(false)}
         >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: '#fff',
-              padding: 16,
-              borderRadius: 8,
-              maxWidth: 400,
-              width: '100%',
-            }}
-          >
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>
               {t('tab4.linkDialogTitle')}
             </div>
@@ -530,8 +518,7 @@ function AttachmentAdder({
                 {t('tab4.addLinkBtn')}
               </button>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </>
   );

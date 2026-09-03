@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import Modal from '../ui/Modal';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import {
@@ -752,40 +753,20 @@ function DialogShell({
   onClose: () => void;
 }) {
   // Esc 關閉
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.4)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 100,
+    <Modal
+      onClose={onClose}
+      bare
+      cardStyle={{
+        background: '#ffffff',
+        padding: 24,
+        borderRadius: 12,
+        minWidth: 380,
+        maxWidth: 'calc(100vw - 40px)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
       }}
-      onClick={onClose}
+      overlayStyle={{ background: 'rgba(0,0,0,0.4)' }}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: '#ffffff',
-          padding: 24,
-          borderRadius: 12,
-          minWidth: 380,
-          maxWidth: 'calc(100vw - 40px)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-        }}
-      >
         <div
           style={{
             fontSize: 16,
@@ -797,8 +778,7 @@ function DialogShell({
           {title}
         </div>
         {children}
-      </div>
-    </div>
+    </Modal>
   );
 }
 

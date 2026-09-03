@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import Modal from '../ui/Modal';
 import { useT } from '../../i18n';
 import { checkForUpdate } from '../../services/pwaUpdate';
 
@@ -16,43 +17,22 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
   const [updateMsg, setUpdateMsg] = useState<string | null>(null);
   const t = useT();
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
   return (
-    <div
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 200,
-        padding: 20,
+    <Modal
+      onClose={onClose}
+      bare
+      overlayStyle={{ padding: 20 }}
+      cardStyle={{
+        background: '#ffffff',
+        padding: '28px 28px 24px',
+        borderRadius: 14,
+        maxWidth: 480,
+        width: '100%',
+        maxHeight: 'calc(100vh - 40px)',
+        overflowY: 'auto',
+        boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
       }}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: '#ffffff',
-          padding: '28px 28px 24px',
-          borderRadius: 14,
-          maxWidth: 480,
-          width: '100%',
-          maxHeight: 'calc(100vh - 40px)',
-          overflowY: 'auto',
-          boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
-        }}
-      >
         {/* Header */}
         <div
           style={{
@@ -256,8 +236,7 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
         >
           Made with care by 梁人人 / Liang RenRen — Taiwan
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import Modal from '../ui/Modal';
 import { selectRootFolder } from '../../services/fileSystem';
 import { useT } from '../../i18n';
 
@@ -15,41 +15,21 @@ export default function FolderSetupModal({
   onSelected: () => void;
 }) {
   const t = useT();
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
   return (
-    <div
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 250,
+    <Modal
+      onClose={onClose}
+      bare
+      cardStyle={{
+        width: 480,
+        maxWidth: 'calc(100vw - 40px)',
+        background: '#ffffff',
+        borderRadius: 14,
+        padding: 24,
+        boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
+        fontFamily: 'inherit',
       }}
+      overlayStyle={{ background: 'rgba(0,0,0,0.5)' }}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: 480,
-          maxWidth: 'calc(100vw - 40px)',
-          background: '#ffffff',
-          borderRadius: 14,
-          padding: 24,
-          boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
-          fontFamily: 'inherit',
-        }}
-      >
         <div style={{ fontSize: 28, marginBottom: 4 }}>📁</div>
         <div
           style={{
@@ -141,7 +121,6 @@ export default function FolderSetupModal({
             {t('folderSetup.pick')}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

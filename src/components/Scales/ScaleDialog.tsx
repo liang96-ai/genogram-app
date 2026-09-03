@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import Modal from '../ui/Modal';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import type { Scale, ScaleAnswer } from './types';
@@ -8,16 +9,6 @@ type Props = {
   onClose: () => void;
 };
 
-const overlay: React.CSSProperties = {
-  position: 'fixed',
-  inset: 0,
-  background: 'rgba(0,0,0,0.4)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 1000,
-  padding: 16,
-};
 const sheet: React.CSSProperties = {
   background: '#ffffff',
   borderRadius: 12,
@@ -104,14 +95,6 @@ export default function ScaleDialog({ scale, onClose }: Props) {
     if (ok) onClose();
   }, [dirty, onClose, showConfirm, t]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') void requestClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [requestClose]);
-
   // boolean 題視為「未勾 = 沒此狀況 = false」,不需要使用者主動點;只 likert/choice 需要選
   const allAnswered = scale.questions.every(
     (q) => q.type === 'boolean' || answers[q.id] !== undefined,
@@ -165,8 +148,12 @@ export default function ScaleDialog({ scale, onClose }: Props) {
   } as const;
 
   return (
-    <div style={overlay} onClick={() => void requestClose()} role="dialog" aria-modal="true">
-      <div style={sheet} onClick={(e) => e.stopPropagation()}>
+    <Modal
+      onClose={() => void requestClose()}
+      bare
+      overlayStyle={{ padding: 16 }}
+      cardStyle={sheet}
+    >
         <div style={header}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 600 }}>{scale.name}</div>
@@ -553,7 +540,6 @@ export default function ScaleDialog({ scale, onClose }: Props) {
             </button>
           </div>
         )}
-      </div>
-    </div>
+    </Modal>
   );
 }

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { SYMBOLS, type SymbolCategory, type SymbolEntry } from './symbolData';
 import { useT } from '../../i18n';
+import Modal from '../ui/Modal';
 import { useGenogramStore } from '../../store/genogramStore';
 import AcademicReferencesDialog from './AcademicReferencesDialog';
 
@@ -19,14 +20,6 @@ function groupByCategory(items: SymbolEntry[]): [SymbolCategory, SymbolEntry[]][
 }
 
 export default function SymbolGallery({ onClose }: Props) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
   const t = useT();
   const lang = useGenogramStore((s) => s.language);
   const [query, setQuery] = useState('');
@@ -51,33 +44,21 @@ export default function SymbolGallery({ onClose }: Props) {
   const grouped = groupByCategory(filtered);
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.4)',
-        zIndex: 1000,
+    <Modal
+      onClose={onClose}
+      bare
+      overlayStyle={{ background: 'rgba(0,0,0,0.4)' }}
+      cardStyle={{
+        width: 'min(900px, 94vw)',
+        height: '90vh',
+        background: '#ffffff',
+        borderRadius: 10,
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
+        flexDirection: 'column',
+        overflow: 'hidden',
       }}
-      onClick={onClose}
     >
-      <div
-        style={{
-          width: 'min(900px, 94vw)',
-          height: '90vh',
-          background: '#ffffff',
-          borderRadius: 10,
-          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
         {/* Header */}
         <div
           style={{
@@ -204,11 +185,10 @@ export default function SymbolGallery({ onClose }: Props) {
             {t('gallery.references')} →
           </button>
         </div>
-      </div>
       {showReferences && (
         <AcademicReferencesDialog onClose={() => setShowReferences(false)} />
       )}
-    </div>
+    </Modal>
   );
 }
 

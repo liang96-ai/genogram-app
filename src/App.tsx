@@ -25,6 +25,8 @@ import { loadRootDirHandle, writeCaseJson,
 import { findNewerInFolder, rescueCasesFromFolder } from './services/folderRescue';
 import { promptNewerInFolder } from './services/folderConflictPrompt';
 import { OPEN_SCALE_PICKER_EVENT } from './services/uiEvents';
+import { modalCount } from './components/ui/modalStack';
+import { createPortal } from 'react-dom';
 import { shouldSkipMirror } from './services/saveSemantics';
 import { recordEdit } from './services/backupReminder';
 import { flushDrafts } from './services/draftFlush';
@@ -383,7 +385,7 @@ export default function App() {
       // 使用者以為在翻頁,畫布上的人已經被方向鍵移走了(實測 480,360 → 720,540)。
       // Delete 同理會穿透。全 App 的彈窗都有 aria-modal="true",用它當唯一判準;
       // 之後新增彈窗只要照樣標,這道防護自動生效。
-      if (document.querySelector('[aria-modal="true"]')) return;
+      if (modalCount() > 0 || document.querySelector('[aria-modal="true"]')) return;
       // 全域鍵盤只在編輯模式作用(2026-08-29 審查線索)——
       // goToList 不清 currentCase/選取,回首頁後方向鍵會無聲移動看不見的人、
       // Delete 會對殘留選取跳確認。首頁沒有任何鍵盤操作對象,直接擋掉。
@@ -721,7 +723,7 @@ export default function App() {
     return (
       <>
         <CaseList />
-        {banners}
+        {banners && createPortal(banners, document.body)}
         <ConfirmDialog />
         {showTutorial && (
           <Suspense fallback={null}>
@@ -755,7 +757,7 @@ export default function App() {
         </div>
         <Inspector />
       </div>
-      {banners}
+      {banners && createPortal(banners, document.body)}
       <ConfirmDialog />
       <HoverTooltip />
       {showTutorial && (

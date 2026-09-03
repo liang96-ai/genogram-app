@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import Modal from '../ui/Modal';
 import QRCode from 'qrcode';
 import { useT } from '../../i18n';
 
@@ -39,14 +40,6 @@ export default function ShareDialog({ onClose }: { onClose: () => void }) {
   }, [url]);
 
   // Esc 關閉
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
   const copy = async (text: string, setFlag: (v: boolean) => void) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -78,33 +71,21 @@ export default function ShareDialog({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 250,
+    <Modal
+      onClose={onClose}
+      bare
+      cardStyle={{
+        width: 480,
+        maxWidth: 'calc(100vw - 40px)',
+        maxHeight: 'calc(100vh - 40px)',
+        background: '#ffffff',
+        borderRadius: 14,
+        boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
+        overflowY: 'auto',
+        fontFamily: 'inherit',
       }}
+      overlayStyle={{ background: 'rgba(0,0,0,0.5)' }}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: 480,
-          maxWidth: 'calc(100vw - 40px)',
-          maxHeight: 'calc(100vh - 40px)',
-          background: '#ffffff',
-          borderRadius: 14,
-          boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
-          overflowY: 'auto',
-          fontFamily: 'inherit',
-        }}
-      >
         {/* Header */}
         <div
           style={{
@@ -299,7 +280,6 @@ export default function ShareDialog({ onClose }: { onClose: () => void }) {
 
         {/* bottom padding */}
         <div style={{ height: 12 }} />
-      </div>
-    </div>
+    </Modal>
   );
 }

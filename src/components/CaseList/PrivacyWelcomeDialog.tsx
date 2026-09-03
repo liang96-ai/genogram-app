@@ -1,4 +1,5 @@
 import { useT } from '../../i18n';
+import Modal from '../ui/Modal';
 
 /**
  * 第一次開啟才彈出的隱私說明
@@ -39,33 +40,24 @@ export default function PrivacyWelcomeDialog({ onClose }: Props) {
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      // 不能點 backdrop 關閉 — 強制看完按按鈕
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 200,
-        padding: 20,
+    <Modal
+      onClose={() => {}}
+      closeOnBackdrop={false}
+      closeOnEsc={false}
+      bare
+      ariaLabel="privacy"
+      overlayStyle={{ background: 'rgba(0,0,0,0.5)', padding: 20 }}
+      cardStyle={{
+        background: '#ffffff',
+        padding: '28px 28px 24px',
+        borderRadius: 14,
+        maxWidth: 480,
+        width: '100%',
+        maxHeight: 'calc(100vh - 40px)',
+        overflowY: 'auto',
+        boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
       }}
     >
-      <div
-        style={{
-          background: '#ffffff',
-          padding: '28px 28px 24px',
-          borderRadius: 14,
-          maxWidth: 480,
-          width: '100%',
-          maxHeight: 'calc(100vh - 40px)',
-          overflowY: 'auto',
-          boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
-        }}
-      >
         <div
           style={{
             fontSize: 20,
@@ -127,8 +119,7 @@ export default function PrivacyWelcomeDialog({ onClose }: Props) {
         >
           {t('privacy.welcomeAck')}
         </button>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

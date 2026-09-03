@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Modal from '../ui/Modal';
 import { useT } from '../../i18n';
 import { useGenogramStore } from '../../store/genogramStore';
 import {
@@ -63,14 +64,6 @@ export default function QuickBuildDialog({ onClose }: { onClose: () => void }) {
     if (ok) onClose();
   }, [text, onClose, showConfirm, t]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') void requestClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [requestClose]);
-
   const plan = useMemo(
     () =>
       buildPlan({
@@ -112,34 +105,22 @@ export default function QuickBuildDialog({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div
-      onClick={() => void requestClose()}
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.5)',
+    <Modal
+      onClose={() => void requestClose()}
+      bare
+      cardStyle={{
+        width: 640,
+        maxWidth: 'calc(100vw - 40px)',
+        maxHeight: 'calc(100vh - 40px)',
+        background: '#ffffff',
+        borderRadius: 14,
+        boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 250,
+        flexDirection: 'column',
+        fontFamily: 'inherit',
       }}
+      overlayStyle={{ background: 'rgba(0,0,0,0.5)' }}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: 640,
-          maxWidth: 'calc(100vw - 40px)',
-          maxHeight: 'calc(100vh - 40px)',
-          background: '#ffffff',
-          borderRadius: 14,
-          boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
-          display: 'flex',
-          flexDirection: 'column',
-          fontFamily: 'inherit',
-        }}
-      >
         {/* ── Header ── */}
         <div
           style={{
@@ -349,8 +330,7 @@ export default function QuickBuildDialog({ onClose }: { onClose: () => void }) {
             {t('quickBuild.build', { n: buildable.length })}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

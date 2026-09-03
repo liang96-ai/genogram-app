@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import Modal from '../ui/Modal';
 import { useT } from '../../i18n';
 
 type Props = {
@@ -17,46 +17,22 @@ type Props = {
 // 學術引用屬 fair use,不需作者同意
 export default function AcademicReferencesDialog({ onClose }: Props) {
   const t = useT();
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        // capture + stop:此窗疊在符號圖例上,Esc 只關自己,不連坐下層
-        e.stopPropagation();
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
-  }, [onClose]);
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.4)',
-        zIndex: 1100,
+    <Modal
+      onClose={onClose}
+      bare
+      cardStyle={{
+        width: 'min(560px, 92vw)',
+        maxHeight: '85vh',
+        background: '#ffffff',
+        borderRadius: 10,
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
+        flexDirection: 'column',
+        overflow: 'hidden',
       }}
-      onClick={onClose}
+      overlayStyle={{ background: 'rgba(0,0,0,0.4)' }}
     >
-      <div
-        style={{
-          width: 'min(560px, 92vw)',
-          maxHeight: '85vh',
-          background: '#ffffff',
-          borderRadius: 10,
-          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
         {/* Header */}
         <div
           style={{
@@ -147,8 +123,7 @@ export default function AcademicReferencesDialog({ onClose }: Props) {
             {t('gallery.refDisclaimer')}
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

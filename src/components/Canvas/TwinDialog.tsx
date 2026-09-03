@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import Modal from '../ui/Modal';
 import { useT } from '../../i18n';
 
 type Props = {
@@ -13,40 +14,28 @@ export default function TwinDialog({ onConfirm, onCancel }: Props) {
     'fraternal',
   );
 
+  // Enter = 確認(Esc 由彈窗堆疊處理)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel();
-      if (e.key === 'Enter') onConfirm(count, zygosity);
+      if (e.key === 'Enter' && !e.isComposing) onConfirm(count, zygosity);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [count, zygosity, onCancel, onConfirm]);
+  }, [count, zygosity, onConfirm]);
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.4)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
+    <Modal
+      onClose={onCancel}
+      bare
+      cardStyle={{
+        background: '#fff',
+        borderRadius: 12,
+        padding: 20,
+        width: 280,
+        boxShadow: '0 10px 40px rgba(0,0,0,0.25)',
       }}
-      onClick={onCancel}
+      overlayStyle={{ background: 'rgba(0,0,0,0.4)' }}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: '#fff',
-          borderRadius: 12,
-          padding: 20,
-          width: 280,
-          boxShadow: '0 10px 40px rgba(0,0,0,0.25)',
-        }}
-      >
         <div
           style={{
             fontSize: 14,
@@ -201,7 +190,6 @@ export default function TwinDialog({ onConfirm, onCancel }: Props) {
             {t('common.confirm')}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

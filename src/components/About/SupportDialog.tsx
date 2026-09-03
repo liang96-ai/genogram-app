@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Modal from '../ui/Modal';
 import { createPortal } from 'react-dom';
 import { useT } from '../../i18n';
 
@@ -115,14 +116,6 @@ function DonateRow({
 export function SupportDialog({ onClose }: { onClose: () => void }) {
   const t = useT();
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
   const coffeeRow = {
     icon: '☕',
     iconBg: '#faeeda',
@@ -141,33 +134,20 @@ export function SupportDialog({ onClose }: { onClose: () => void }) {
   const rows = IS_TW ? [coffeeRow, kofiRow] : [kofiRow, coffeeRow];
 
   return (
-    <div
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 210,
-        padding: 20,
+    <Modal
+      onClose={onClose}
+      bare
+      overlayStyle={{ padding: 20 }}
+      cardStyle={{
+        background: '#ffffff',
+        padding: '24px 22px 20px',
+        borderRadius: 16,
+        maxWidth: 360,
+        width: '100%',
+        boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
+        textAlign: 'center',
       }}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: '#ffffff',
-          padding: '24px 22px 20px',
-          borderRadius: 16,
-          maxWidth: 360,
-          width: '100%',
-          boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
-          textAlign: 'center',
-        }}
-      >
         <div style={{ fontSize: 30, marginBottom: 10, lineHeight: 1 }}>☕</div>
         <div
           style={{
@@ -236,8 +216,7 @@ export function SupportDialog({ onClose }: { onClose: () => void }) {
         >
           {t('common.close')}
         </button>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import Modal from '../ui/Modal';
 import { getBasicSteps } from './tutorialSteps';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
@@ -17,22 +18,15 @@ export default function Tutorial({ onClose }: { onClose: () => void }) {
   const isLast = step === total - 1;
 
   // 鍵盤:Esc 關閉,左右鍵切換
+  // 左右鍵切換步驟(Esc 由彈窗堆疊處理;App 的全域方向鍵在彈窗開著時已退開)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        markTutorialSeen();
-        onClose();
-      }
-      if (e.key === 'ArrowRight' && !isLast) {
-        setStep((s) => s + 1);
-      }
-      if (e.key === 'ArrowLeft' && !isFirst) {
-        setStep((s) => s - 1);
-      }
+      if (e.key === 'ArrowRight' && !isLast) setStep((s) => s + 1);
+      if (e.key === 'ArrowLeft' && !isFirst) setStep((s) => s - 1);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isFirst, isLast, onClose]);
+  }, [isFirst, isLast]);
 
   const handleClose = () => {
     markTutorialSeen();
@@ -51,36 +45,24 @@ export default function Tutorial({ onClose }: { onClose: () => void }) {
   const accent = '#007aff';
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.5)',
+    <Modal
+      onClose={handleClose}
+      bare
+      cardStyle={{
+        width: 528,
+        maxWidth: 'calc(100vw - 40px)',
+        // 固定高 640px(寬鬆值,長步驟不需內部滾動;短步驟有少許留白)
+        // 小視窗(< 680 vh)就用 viewport 上限保護
+        height: 'min(640px, calc(100vh - 40px))',
+        background: '#ffffff',
+        borderRadius: 14,
+        boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
+        overflow: 'hidden',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 200,
+        flexDirection: 'column',
       }}
-      onClick={handleClose}
+      overlayStyle={{ background: 'rgba(0,0,0,0.5)' }}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: 528,
-          maxWidth: 'calc(100vw - 40px)',
-          // 固定高 640px(寬鬆值,長步驟不需內部滾動;短步驟有少許留白)
-          // 小視窗(< 680 vh)就用 viewport 上限保護
-          height: 'min(640px, calc(100vh - 40px))',
-          background: '#ffffff',
-          borderRadius: 14,
-          boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
         {/* Progress bar */}
         <div
           style={{
@@ -255,7 +237,6 @@ export default function Tutorial({ onClose }: { onClose: () => void }) {
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
