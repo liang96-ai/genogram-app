@@ -42,6 +42,12 @@ If your organization (social services, healthcare, schools, family
 centers, research institutes, etc.) uses this tool, we welcome your
 support to sustain long-term development.
 
+**先說清楚:使用本工具對任何機構都免費(AGPL-3.0),不需要付費才能用;贊助是自願的。**
+只有「把本工具嵌進封閉產品 / SaaS / 系統整合」才需要商業授權(見 COMMERCIAL_LICENSE.md)。
+
+**To be clear: using this tool is free for every organization (AGPL-3.0); sponsorship is voluntary.**
+Only embedding it in a closed product / SaaS / system integration requires a commercial license (see COMMERCIAL_LICENSE.md).
+
 ### 合作方式 / Forms of Support
 
 - **年度自願贊助**(銀行匯款 + 執行業務所得收據)

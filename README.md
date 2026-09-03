@@ -68,10 +68,13 @@ vite-plugin-pwa · File System Access API · Cloudflare Workers
 
 ## 支持本專案 Support
 
-維護開源工具是長期且無償的工作。如果本工具對你有幫助：
+**使用本工具一律免費**:個人、公益機構、營利機構,只要是「使用」都免費(AGPL-3.0)。
+支持是自願的;只有「把本工具嵌進封閉產品 / SaaS / 系統整合」才需要商業授權。
+Using this tool is always free — for individuals, non-profits and for-profits alike (AGPL-3.0). Support is voluntary; only embedding it in a closed product / SaaS / system integration requires a commercial license.
 
-- ☕ **個人贊助** — https://ko-fi.com/liang96
-- 📧 **機構合作** — genogram.feedback@gmail.com
+- ☕ **個人:隨喜支持** — https://ko-fi.com/liang96
+- 🏢 **機構:年度自願支持**(公益量力而為;營利機構參考金額見 App「關於」頁)— genogram.feedback@gmail.com
+- 🔌 **嵌入 / 整合:商業授權** — 見下方授權說明
 
 詳見 [SPONSORSHIP.md](./SPONSORSHIP.md)。
 
@@ -84,7 +87,8 @@ This project uses **dual licensing** — choose based on your use case:
 
 | 使用情境 Use Case | 授權 License | 費用 Cost |
 |---|---|---|
-| 👤 個人實務 / 學術教學 / 非營利機構<br>Personal practice / academia / non-profit | **AGPL-3.0** | 🆓 永遠免費<br>Always free |
+| 👤 個人實務 / 學術教學 / 公益機構<br>Personal practice / academia / non-profit | **AGPL-3.0** | 🆓 永遠免費<br>Always free |
+| 🏢 營利機構內部使用(不改程式、不嵌入產品)<br>For-profit internal use (unmodified, not embedded) | **AGPL-3.0** | 🆓 免費,歡迎年度支持<br>Free; annual support welcome |
 | 🏢 嵌入封閉商業產品 / 營利 SaaS<br>Embed in closed-source product / for-profit SaaS | **Commercial License** | 💼 付費洽詢<br>Paid (contact us) |
 | 🏥 EHR / CRM / 醫療系統廠商整合<br>EHR / CRM / healthcare vendor integration | **Commercial License** | 💼 付費洽詢<br>Paid (contact us) |
 

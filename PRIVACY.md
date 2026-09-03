@@ -6,7 +6,7 @@
 
 ## 簡要說明 / Summary
 
-**本工具不收集任何個人資料。** 所有資料都儲存在你自己的瀏覽器中。
+**本工具不收集任何個人資料。** 所有資料都儲存在你自己的瀏覽器中 —— **100% 在地儲存 · 永不上傳 · 離線可用**。
 
 **This tool collects no personal data.** All data stays in your own browser.
 
@@ -19,6 +19,24 @@
 - ❌ 不放廣告 / No ads
 - ❌ 沒有伺服器資料庫 / No server-side database
 - ❌ 不會把資料上傳到雲端 / Data never leaves your device
+
+---
+
+## 哪裡會出現姓名(去識別化分層)/ Where names can appear
+
+「永不上傳」是機器保證;「去識別化」則要看每一層各自的規則。下表是全部的地方:
+
+| 位置 | 含姓名等個資? | 誰控制 |
+|---|---|---|
+| 匯出檔名(JSON / 圖片) | ❌ 預設「家系圖_日期_N人」,不含案主名 | 存檔時可自行改名 |
+| 匯出的 JSON 內容 | ✅ 完整資料(這就是備份) | 傳給誰由你決定;交接建議見匯出前警語 |
+| 匯出的圖片內容 | ✅ 有姓名,除非勾「遮蔽保密欄位」/「隱藏關係細節」 | 匯出前的選項 |
+| 備份資料夾裡的 `case.json` | ✅ 完整資料 | 只寫到你選的本機資料夾 |
+| 備份資料夾的 `_目錄.txt` | ✅ 個案名 → 資料夾名對照 | 同上;純輔助檔,App 不讀 |
+| 回報問題的信 | ❌ 只有平台、版本、你打的文字 | 寄出前你看得到全文 |
+| 分享連結 | ❌ 只有網址與功能介紹 | — |
+
+Names never leave the device by themselves; the table above lists every place a name can appear in something *you* export or back up, and who controls it.
 
 ---
 

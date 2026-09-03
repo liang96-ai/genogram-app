@@ -693,13 +693,11 @@ const dict: Record<Lang, Record<string, string>> = {
     'about.personalTitle': '個人實務 — 免費',
     'about.personalNote':
       '個人使用永久免費。想隨喜支持,點工具列的 ☕ 請我喝杯飲料。',
-    'about.orgTitle': '組織使用 — 邀請以年費表達支持',
-    'about.orgBody':
-      '無論您是公益組織或營利機構,都誠摯邀請您支持版權,讓這個工具能持續維護,並對個人保持永久免費。',
+    'about.orgTitle': '組織使用 — 免費,歡迎年度支持',
+    'about.orgBody': '無論公益或營利機構,使用本工具都免費(AGPL-3.0),不需要付費才能用。若它成為你們日常工作的一部分,誠摯邀請以年度支持讓它持續維護,並對個人永久免費。',
     'about.orgNonprofit': '公益組織:量力而為',
-    'about.orgForprofit':
-      '營利機構:1–10 人 NT$10,000 / 年 · 11–50 人 NT$30,000 / 年 · 51+ 人 來信討論',
-    'about.orgIntegration': '軟體商整合:請洽商業授權合約',
+    'about.orgForprofit': '營利機構參考金額:1–10 人 NT$10,000 / 年 · 11–50 人 NT$30,000 / 年 · 51+ 人 來信討論',
+    'about.orgIntegration': '把本工具嵌進封閉產品、SaaS 或系統整合:需商業授權,請來信',
     'about.supportFooter':
       '所有支持,全憑您對開源工具與版權勞動的尊重。若您的單位無法支持,工具仍然完全開放給您。',
     'about.emailLabel': '機構合作',
@@ -1414,13 +1412,11 @@ const dict: Record<Lang, Record<string, string>> = {
     'about.personalTitle': 'Personal use — Free',
     'about.personalNote':
       'Free forever for personal use. To chip in, tap ☕ in the toolbar to buy me a drink.',
-    'about.orgTitle': 'Organizations — invited to support via an annual fee',
-    'about.orgBody':
-      'Whether you are a non-profit or a for-profit organization, we sincerely invite you to support the project so it can keep being maintained — and stay free forever for individuals.',
+    'about.orgTitle': 'Organizations — free to use, annual support welcome',
+    'about.orgBody': 'Non-profit or for-profit, using this tool is free (AGPL-3.0); no payment is required to use it. If it becomes part of your daily work, we warmly invite annual support to keep it maintained and free for individuals.',
     'about.orgNonprofit': 'Non-profit: as you are able',
-    'about.orgForprofit':
-      'For-profit: 1–10 staff NT$10,000/yr · 11–50 NT$30,000/yr · 51+ contact us',
-    'about.orgIntegration': 'Software vendor integration: contact for a commercial license',
+    'about.orgForprofit': 'For-profit reference amounts: 1–10 staff NT$10,000 / yr · 11–50 NT$30,000 / yr · 51+ contact us',
+    'about.orgIntegration': 'Embedding this tool in a closed product, SaaS, or system integration: requires a commercial license — please email',
     'about.supportFooter':
       'All support rests on your respect for open-source tools and the labor behind them. If your organization cannot support, the tool stays fully open to you.',
     'about.emailLabel': 'Organizations',
