@@ -17,12 +17,11 @@ import type {
   Person,
 } from '../../types/genogram';
 import PersonShape from './PersonShape';
-import DeleteButton from './DeleteButton';
 import Line from './Line';
 import { UNIT_HALF_H, UNIT_HALF_W } from './unitBox';
 import SmallArrows from './SmallArrows';
 import MarriageGroup from './MarriageGroup';
-import { type ChildBundle, computeForkGeometry } from './forkGeometry';
+import { type ChildBundle, computeForkGeometry, computeMarriageRoute, type MarriageRoute, type Seg, topEdgeY, bandHitsZone, personZone, marriageBusBase } from './forkGeometry';
 import NetworkUnitShape from './NetworkUnitShape';
 import EcosystemPolygon from './EcosystemPolygon';
 import HouseholdPolygon from './HouseholdPolygon';
@@ -215,6 +214,7 @@ export default function Canvas() {
   const addEcosystem = useGenogramStore((s) => s.addEcosystem);
   const moveEcosystem = useGenogramStore((s) => s.moveEcosystem);
   const moveHousehold = useGenogramStore((s) => s.moveHousehold);
+  const updateLine = useGenogramStore((s) => s.updateLine);
   const setHouseholdPointsTransient = useGenogramStore((s) => s.setHouseholdPointsTransient);
   const commitHouseholdEdit = useGenogramStore((s) => s.commitHouseholdEdit);
 
@@ -381,6 +381,8 @@ export default function Canvas() {
     y: number;
   } | null>(null);
   // 人物 ▲ 拖曳預覽:從 fromPersonId 拉一條「未明家人」線
+  // 婚姻線橫桿把手拖曳(1.5.0):拖曳中的暫時偏移;放手寫進 visual.trunkOffset
+  const [busDrag, setBusDrag] = useState<{ lineId: string; dy: number; barStartY: number; busY0: number } | null>(null);
   const [unknownFamilyDrag, setUnknownFamilyDrag] = useState<{
     fromPersonId: string;
     fromX: number;
@@ -728,16 +730,7 @@ export default function Canvas() {
         }
       }
     }
-    // 人 vs 線(不允許壓到自己非端點的線)
-    for (const p of ps) {
-      if (collidingPersonIds.has(p.id)) continue;
-      for (const l of currentCase.lines) {
-        if (personHitsLine(p, l, ps)) {
-          collidingPersonIds.add(p.id);
-          break;
-        }
-      }
-    }
+    // 人 vs 線:在婚姻線走法算完之後才判(見下方 marriageRoutes),U 型的線要用橫桿判,不是兩端直線
   }
   const collidingUnitIds = new Set<string>();
   {
@@ -781,6 +774,119 @@ export default function Canvas() {
     }
   }
 
+  // 婚姻線走法(1.5.0):直線會穿過別人 → U 型;使用者拖過把手的偏移(visual.trunkOffset)一併算進去
+  const marriageRoutes = new Map<string, MarriageRoute>();
+  const busBaseById = new Map<string, number>();
+  {
+    // 兩條 U 型橫桿在同一高度、x 範圍重疊 → 後算的往下錯 1/4 格(使用者拖過把手的不動)
+    const placedBuses: { x1: number; x2: number; y: number }[] = [];
+    const ordered = [...marriageGroups].sort(
+      (p, q) => Math.min(p.a.position.x, p.b.position.x) - Math.min(q.a.position.x, q.b.position.x),
+    );
+    for (const g of ordered) {
+      // 障礙 = 別人;自己的子女不算(不然橫桿會被自己的子女往下推,fork 反而畫穿子女)
+      const ownChildren = new Set(g.childBundles.map((cb) => cb.child.id));
+      const others = currentCase.persons.filter(
+        (p) => p.id !== g.a.id && p.id !== g.b.id && !ownChildren.has(p.id),
+      );
+      const geo0 = computeForkGeometry(g.a, g.b, g.childBundles);
+      const maxBusY = geo0.hasChildren ? geo0.minChildTop - GRID_SIZE : undefined;
+      const yHi = Math.max(g.a.position.y, g.b.position.y);
+      // 把手拖曳中:橫桿跟著指標(不能高於符號底邊);換算成相對於「無偏移路線」的偏移量
+      let manual = g.marriage.visual?.trunkOffset ?? 0;
+      if (busDrag?.lineId === g.marriage.id) {
+        const wanted = Math.max(busDrag.barStartY + busDrag.dy, yHi + SHAPE_HALF + 4);
+        manual = wanted - busDrag.busY0;
+      }
+      const route = computeMarriageRoute(g.a, g.b, others, { trunkOffset: manual, maxBusY });
+      busBaseById.set(g.marriage.id, marriageBusBase(g.a, g.b, others, { maxBusY }));
+      if (route.kind === 'u' && manual === 0) {
+        let guard = 0;
+        while (
+          guard++ < 8 &&
+          (maxBusY === undefined || route.busY + GRID_SIZE / 4 <= maxBusY) &&
+          placedBuses.some(
+            (b) => Math.min(b.x2, route.rightX) - Math.max(b.x1, route.leftX) >= 8 && Math.abs(b.y - route.busY) < 12,
+          )
+        ) {
+          route.busY += GRID_SIZE / 4;
+        }
+      }
+      if (route.kind === 'u') placedBuses.push({ x1: route.leftX, x2: route.rightX, y: route.busY });
+      marriageRoutes.set(g.marriage.id, route);
+    }
+  }
+  // 把手拖曳:讀的是這次 render 算出來的走法(barStartY = 目前畫的高度,busY0 = 無偏移時的高度)
+  const onBusHandleDown = (e: React.PointerEvent, lineId: string) => {
+    const pointerId = e.pointerId;
+    const startY = e.clientY;
+    const c0 = useGenogramStore.getState().currentCase;
+    const line = c0?.lines.find((l) => l.id === lineId);
+    const a = c0?.persons.find((p) => p.id === line?.fromPersonId);
+    const b = c0?.persons.find((p) => p.id === line?.toPersonId);
+    if (!c0 || !line || !a || !b) return;
+    // 目前畫出來的橫桿高度(直線 = 兩人中線),以及「無偏移」時路線會落在哪(當作偏移量的基準)
+    const shown = marriageRoutes.get(lineId);
+    const barStartY = shown && shown.kind === 'u' ? shown.busY : (a.position.y + b.position.y) / 2;
+    const busY0 = busBaseById.get(lineId) ?? Math.max(a.position.y, b.position.y) + SHAPE_HALF + GRID_SIZE / 4;
+    setBusDrag({ lineId, dy: 0, barStartY, busY0 });
+    const onMove = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      setBusDrag({ lineId, dy: (ev.clientY - startY) / viewZoom, barStartY, busY0 });
+    };
+    const onUp = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+      setBusDrag(null);
+      const dy = (ev.clientY - startY) / viewZoom;
+      const yHi = Math.max(a.position.y, b.position.y);
+      const wanted = Math.max(barStartY + dy, yHi + SHAPE_HALF + 4);
+      const step = GRID_SIZE / 4;
+      const offset = Math.round((wanted - busY0) / step) * step;
+      const latest = useGenogramStore.getState().currentCase?.lines.find((l) => l.id === lineId);
+      if (!latest) return;
+      if ((latest.visual.trunkOffset ?? 0) === offset) return;
+      // 偏移回到 0 = 交回自動(拿掉欄位)
+      const visual = { ...latest.visual, trunkOffset: offset === 0 ? undefined : offset };
+      updateLine(lineId, { visual });
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+  };
+  // 人 vs 線(不允許壓到自己非端點的線):婚姻線若是 U 型,用橫桿那一段判;其餘用兩端直線
+  {
+    const ps = currentCase.persons;
+    const busOf = new Map<string, MarriageRoute>();
+    for (const g of marriageGroups) {
+      const r = marriageRoutes.get(g.marriage.id);
+      if (r) busOf.set(g.marriage.id, r);
+    }
+    for (const p of ps) {
+      if (collidingPersonIds.has(p.id)) continue;
+      for (const l of currentCase.lines) {
+        const r = busOf.get(l.id);
+        if (r && r.kind === 'u') {
+          if (l.fromPersonId === p.id || l.toPersonId === p.id) continue;
+          if (bandHitsZone(r.leftX, r.rightX, r.busY - 2, r.busY + 2, personZone(p))) {
+            collidingPersonIds.add(p.id);
+            break;
+          }
+          continue;
+        }
+        if (personHitsLine(p, l, ps)) {
+          collidingPersonIds.add(p.id);
+          break;
+        }
+      }
+    }
+  }
+  const routeBaseline = (id: string) => {
+    const r = marriageRoutes.get(id);
+    return r && r.kind === 'u' ? r.busY : undefined;
+  };
   // 婚姻 fork 重疊處理(重疊修正):
   //   1. 自動錯層 — 兩段婚姻的子女橫桿 x 重疊且高度相同時,後者往下錯半格,
   //      同一邊畫多段關係也能各自成層看得清。只調「顯示層」橫桿高度,不動使用者的人物位置。
@@ -794,7 +900,7 @@ export default function Canvas() {
     const forks = marriageGroups
       .map((g) => ({
         id: g.marriage.id,
-        geo: computeForkGeometry(g.a, g.b, g.childBundles),
+        geo: computeForkGeometry(g.a, g.b, g.childBundles, routeBaseline(g.marriage.id)),
       }))
       .filter((f) => f.geo.hasChildren)
       // 排序讓結果穩定:左邊的先佔基準層,右邊的往下錯
@@ -832,6 +938,38 @@ export default function Canvas() {
       placed.push({ id: f.id, geo: f.geo, y });
     }
   }
+  // 交叉跳線(1.5.0):每段婚姻實際畫出來的結構線段(婚姻線 / U 型兩端 / 主幹 / 橫桿 / 子女直線),
+  // 給別段婚姻找交點用;交叉處由 MarriageGroup 鼓小弧。只算交點,不改任何走法。
+  const marriageSegmentsById = new Map<string, Seg[]>();
+  for (const g of marriageGroups) {
+    const route = marriageRoutes.get(g.marriage.id);
+    const geo = computeForkGeometry(g.a, g.b, g.childBundles, routeBaseline(g.marriage.id));
+    const trunkY = marriageTrunkYOverrides.get(g.marriage.id) ?? geo.trunkY;
+    const [L, R] = g.a.position.x <= g.b.position.x ? [g.a, g.b] : [g.b, g.a];
+    const out: Seg[] = [];
+    if (route && route.kind === 'u') {
+      out.push({ x1: L.position.x, y1: L.position.y - topEdgeY(L.shape), x2: L.position.x, y2: route.busY });
+      out.push({ x1: L.position.x, y1: route.busY, x2: R.position.x, y2: route.busY });
+      out.push({ x1: R.position.x, y1: R.position.y - topEdgeY(R.shape), x2: R.position.x, y2: route.busY });
+    } else {
+      out.push({ x1: L.position.x, y1: L.position.y, x2: R.position.x, y2: R.position.y });
+    }
+    if (geo.hasChildren) {
+      const top = route && route.kind === 'u' ? route.busY : geo.midY;
+      out.push({ x1: geo.midX, y1: top, x2: geo.midX, y2: trunkY });
+      if (geo.needHbar) out.push({ x1: geo.hbarMinX, y1: trunkY, x2: geo.hbarMaxX, y2: trunkY });
+      for (const cb of geo.sortedChildren) {
+        const ax = geo.childAnchorX.get(cb.child.id) ?? cb.child.position.x;
+        out.push({ x1: ax, y1: trunkY, x2: ax, y2: cb.child.position.y + topEdgeY(cb.child.shape) });
+      }
+    }
+    marriageSegmentsById.set(g.marriage.id, out);
+  }
+  const crossingSegmentsFor = (id: string): Seg[] => {
+    const acc: Seg[] = [];
+    for (const [k, v] of marriageSegmentsById) if (k !== id) acc.push(...v);
+    return acc;
+  };
 
   // ==================== Helpers ====================
   // 先把 screen 座標轉到 SVG root(未變形);再反推 <g transform> 的 pan/zoom
@@ -855,7 +993,8 @@ export default function Canvas() {
         l.toPersonId === personId &&
         (l.subType === 'biological' ||
           l.subType === 'adopted' ||
-          l.subType === 'placed-out'),
+          l.subType === 'placed-out' ||
+          l.subType === 'fostered'),
     );
 
   const countSpousesOnSide = (personId: string, dir: 'left' | 'right') => {
@@ -926,14 +1065,19 @@ export default function Canvas() {
       const a = currentCase.persons.find((p) => p.id === m.fromPersonId);
       const b = currentCase.persons.find((p) => p.id === m.toPersonId);
       if (!a || !b) continue;
-      const d = distToSegment(
-        x,
-        y,
-        a.position.x,
-        a.position.y,
-        b.position.x,
-        b.position.y,
-      );
+      const r = marriageRoutes.get(m.id);
+      let d: number;
+      if (r && r.kind === 'u') {
+        // U 型:兩條垂直段 + 橫桿,取最近的
+        const [L, R] = a.position.x <= b.position.x ? [a, b] : [b, a];
+        d = Math.min(
+          distToSegment(x, y, L.position.x, L.position.y, L.position.x, r.busY),
+          distToSegment(x, y, L.position.x, r.busY, R.position.x, r.busY),
+          distToSegment(x, y, R.position.x, R.position.y, R.position.x, r.busY),
+        );
+      } else {
+        d = distToSegment(x, y, a.position.x, a.position.y, b.position.x, b.position.y);
+      }
       if (d <= threshold) return m;
     }
     return null;
@@ -1187,7 +1331,6 @@ export default function Canvas() {
       document.removeEventListener('pointerup', onUp);
       document.removeEventListener('pointercancel', onUp);
       const local = toSvgPoint(ev.clientX, ev.clientY);
-      // 優先級 1:拖到另一人物 → 建立親子線(來源是父母,目標是子女)
       const targetPerson = findPersonAt(local.x, local.y);
       if (targetPerson && targetPerson.id !== personId) {
         createUnknownFamilyLine(personId, targetPerson.id);
@@ -1206,7 +1349,6 @@ export default function Canvas() {
     document.addEventListener('pointerup', onUp);
     document.addEventListener('pointercancel', onUp);
   };
-
   // ==================== Background (marquee / pan / 畫筆) ====================
   const onBackgroundPointerDown = (e: React.PointerEvent) => {
     // 點背景 → 退出生態圈編輯
@@ -1609,7 +1751,6 @@ export default function Canvas() {
           style={{ pointerEvents: 'visiblePainted' }}
         />
 
-              <DeleteButton
       {/* 同住成員圈:與生態圈同一套元件與手勢(1.5.0);沒有自訂形狀時自動包住成員 */}
       {(currentCase.households ?? []).map((hh) => (
         <HouseholdPolygon
@@ -1652,90 +1793,6 @@ export default function Canvas() {
           ecosystem={eco}
           onStartDrag={(ev, ecoId) => {
             if (drawMode) return;
-            const startClientX = ev.clientX;
-            const startClientY = ev.clientY;
-            const pointerId = ev.pointerId;
-            let lastDX = 0;
-            let lastDY = 0;
-            const onMoveEco = (me: PointerEvent) => {
-              if (me.pointerId !== pointerId) return;
-              const dx =
-                snapToGrid((me.clientX - startClientX) / viewZoom);
-              const dy =
-                snapToGrid((me.clientY - startClientY) / viewZoom);
-              if (dx !== lastDX || dy !== lastDY) {
-                moveEcosystem(ecoId, dx - lastDX, dy - lastDY);
-                lastDX = dx;
-                lastDY = dy;
-              }
-            };
-            const onUpEco = (me: PointerEvent) => {
-              if (me.pointerId !== pointerId) return;
-              document.removeEventListener('pointermove', onMoveEco);
-              document.removeEventListener('pointerup', onUpEco);
-              document.removeEventListener('pointercancel', onUpEco);
-            };
-            document.addEventListener('pointermove', onMoveEco);
-            document.addEventListener('pointerup', onUpEco);
-            document.addEventListener('pointercancel', onUpEco);
-          }}
-          onVertexDown={(ev, ecoId, vIdx) => {
-            const orig = eco.points;
-            const pointerId = ev.pointerId;
-            // 上一個合法位置(被自相交擋住時形狀停在這裡)
-            let lastValidPoints = orig;
-            // 內部變形函式:給定新的 vertex 座標,推導其他兩個鄰點維持直角
-            const reshape = (newX: number, newY: number) => {
-              const n = orig.length;
-              const prevIdx = (vIdx - 1 + n) % n;
-              const nextIdx = (vIdx + 1) % n;
-              const oldV = orig[vIdx];
-              const prev = orig[prevIdx];
-              const next = orig[nextIdx];
-              const newPoints = orig.map((p) => ({ ...p }));
-              newPoints[vIdx] = { x: newX, y: newY };
-              if (prev.y === oldV.y)
-                newPoints[prevIdx] = { x: prev.x, y: newY };
-              else if (prev.x === oldV.x)
-                newPoints[prevIdx] = { x: newX, y: prev.y };
-              if (next.y === oldV.y)
-                newPoints[nextIdx] = { x: next.x, y: newY };
-              else if (next.x === oldV.x)
-                newPoints[nextIdx] = { x: newX, y: next.y };
-              return newPoints;
-            };
-            // 拖曳中:不 snap,即時跟手;若會自相交則不更新(形狀「黏」在上一個合法位置)
-            const onMove = (me: PointerEvent) => {
-              if (me.pointerId !== pointerId) return;
-              const local = toSvgPoint(me.clientX, me.clientY);
-              const candidate = reshape(local.x, local.y);
-              if (isSimplePolygon(candidate)) {
-                lastValidPoints = candidate;
-                setEcosystemPointsTransient(ecoId, candidate);
-              }
-            };
-            // 放手:snap 到 grid + commit;若 snap 後不合法 → 退回最後合法位置
-            const onUp = (me: PointerEvent) => {
-              if (me.pointerId !== pointerId) return;
-              document.removeEventListener('pointermove', onMove);
-              document.removeEventListener('pointerup', onUp);
-              document.removeEventListener('pointercancel', onUp);
-              const local = toSvgPoint(me.clientX, me.clientY);
-              const snapped = reshape(
-                snapToGrid(local.x),
-                snapToGrid(local.y),
-              );
-              const final = isSimplePolygon(snapped)
-                ? snapped
-                : lastValidPoints;
-              setEcosystemPointsTransient(ecoId, final);
-              commitEcosystemEdit(ecoId, orig);
-            };
-            document.addEventListener('pointermove', onMove);
-            document.addEventListener('pointerup', onUp);
-            document.addEventListener('pointercancel', onUp);
-          }}
-          onEdgeDown={(ev, ecoId, edgeIdx) => {
             const orig = eco.points;
             startZoneDrag(
               ev,
@@ -1763,7 +1820,6 @@ export default function Canvas() {
           }
         />
       ))}
-
       {/* 畫筆即時預覽 */}
       {drawMode && drawPath.length > 0 && (
         <>
@@ -2246,6 +2302,9 @@ export default function Canvas() {
           childBundles={g.childBundles}
           colliding={collidingMarriageIds.has(g.marriage.id)}
           trunkYOverride={marriageTrunkYOverrides.get(g.marriage.id)}
+          route={marriageRoutes.get(g.marriage.id)}
+          onBusHandleDown={onBusHandleDown}
+          crossingSegments={crossingSegmentsFor(g.marriage.id)}
           selectedLineIds={selectedLineIds}
           handleDrag={handleDrag}
           onLinePointerDown={onLinePointerDown}

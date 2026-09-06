@@ -256,6 +256,9 @@ export type RelationSubType =
 export type LineSubType = MemberSubType | RelationSubType;
 
 export type LineVisual = {
+  /** 婚姻線橫桿的手動高度偏移(px,1.5.0;只對婚姻類線有意義)。
+   *  有值 = 使用者自己拖過,自動錯層不再碰它;正值往下。選填,舊檔照讀。 */
+  trunkOffset?: number;
   lineStyle:
     | 'solid'
     | 'dashed'

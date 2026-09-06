@@ -8,12 +8,7 @@ import {
 } from '../../store/genogramStore';
 import type { MidSymbolKey } from '../../store/genogramStore';
 import { useT } from '../../i18n';
-import {
-  type ChildBundle,
-  topEdgeY,
-  edgeHalfXAtY,
-  computeForkGeometry,
-} from './forkGeometry';
+import { type ChildBundle, topEdgeY, edgeHalfXAtY, computeForkGeometry, type MarriageRoute, type Seg, hopXs, horizontalPathWithHops } from './forkGeometry';
 
 type HandleDragState = {
   drags: Array<{ lineId: string; end: 'from' | 'to' }>;
@@ -38,6 +33,12 @@ type Props = {
   colliding?: boolean;
   /** 自動錯層(Fix6):Canvas 算出的橫桿高度覆寫 — 同側多段婚姻各自成層 */
   trunkYOverride?: number;
+  /** 婚姻線走法(1.5.0):直線會穿過別人 → U 型(兩端往下、橫桿在 busY) */
+  route?: MarriageRoute;
+  /** 選取時橫桿中點的把手:拖曳改高度(存進 visual.trunkOffset) */
+  onBusHandleDown?: (e: React.PointerEvent, lineId: string) => void;
+  /** 別段婚姻的結構線段:本段的水平線跟它們交叉的地方鼓小弧(交叉跳線,1.5.0) */
+  crossingSegments?: Seg[];
 };
 
 // 線中點符號:每條 stroke 都先畫白底較粗版本,再畫彩色細版本(產生白邊)
@@ -131,6 +132,9 @@ export default function MarriageGroup({
   onDeleteLine,
   colliding,
   trunkYOverride,
+  route,
+  onBusHandleDown,
+  crossingSegments = [],
 }: Props) {
   const t = useT();
   const updateLine = useGenogramStore((s) => s.updateLine);
@@ -203,7 +207,10 @@ export default function MarriageGroup({
     needHbar,
     sortedChildren,
     childAnchorX,
-  } = computeForkGeometry(a, b, childBundles);
+  } = computeForkGeometry(a, b, childBundles, route?.kind === 'u' ? route.busY : undefined);
+  // U 型時婚姻線的橫桿高度;直線時就是兩人中線
+  const isU = route?.kind === 'u' && !marriageDragging;
+  const busTopY = isU ? route.busY : midY;
   // 自動錯層(Fix6):Canvas 傳入覆寫高度時,整個 fork(主幹/橫桿/子女線)跟著移
   const trunkY = trunkYOverride ?? baseTrunkY;
   // fork 與另一段婚姻重疊且錯無可錯 → 警示紅;個別線的選取/拖曳顏色仍優先
@@ -232,35 +239,60 @@ export default function MarriageGroup({
 
   return (
     <g>
-      {/* 婚姻線本體 */}
-      <line
-        x1={lineStart.x}
-        y1={lineStart.y}
-        x2={lineEnd.x}
-        y2={lineEnd.y}
-        stroke={mColor}
-        strokeWidth={mWidth}
-        strokeDasharray={mDash}
-      />
-      <line
-        x1={lineStart.x}
-        y1={lineStart.y}
-        x2={lineEnd.x}
-        y2={lineEnd.y}
-        stroke="transparent"
-        strokeWidth={18}
-        onPointerDown={(e) => onLinePointerDown(e, m.id)}
-        onDoubleClick={(e) => {
-          e.stopPropagation();
-          enterEditNote();
-        }}
-        style={{ cursor: marriageDragging ? 'grabbing' : 'grab' }}
-      />
+      {/* 婚姻線本體:直線,或 U 型(兩端從符號底邊往下、橫桿在 busY;1.5.0) */}
+      {(isU
+        ? [
+            { x1: left.position.x, y1: left.position.y - topEdgeY(left.shape), x2: left.position.x, y2: busTopY },
+            { x1: left.position.x, y1: busTopY, x2: right.position.x, y2: busTopY },
+            { x1: right.position.x, y1: busTopY, x2: right.position.x, y2: right.position.y - topEdgeY(right.shape) },
+          ]
+        : [{ x1: lineStart.x, y1: lineStart.y, x2: lineEnd.x, y2: lineEnd.y }]
+      ).map((seg, i) => (
+        <g key={`m-${i}`}>
+          {seg.y1 === seg.y2 && hopXs(seg, crossingSegments).length > 0 ? (
+            <path
+              d={horizontalPathWithHops(seg, hopXs(seg, crossingSegments))}
+              fill="none"
+              stroke={mColor}
+              strokeWidth={mWidth}
+              strokeDasharray={mDash}
+            />
+          ) : (
+            <line {...seg} stroke={mColor} strokeWidth={mWidth} strokeDasharray={mDash} />
+          )}
+          <line
+            {...seg}
+            stroke="transparent"
+            strokeWidth={18}
+            onPointerDown={(e) => onLinePointerDown(e, m.id)}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              enterEditNote();
+            }}
+            style={{ cursor: marriageDragging ? 'grabbing' : 'grab' }}
+          />
+        </g>
+      ))}
+      {/* 選取時:橫桿中點的高度把手(拖曳上下 → visual.trunkOffset) */}
+      {marriageSelected && !marriageDragging && onBusHandleDown && (
+        <g
+          transform={`translate(${midX}, ${busTopY})`}
+          style={{ cursor: 'ns-resize' }}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            onBusHandleDown(e, m.id);
+          }}
+        >
+          <title>{t('marriage.busHandleTitle')}</title>
+          <rect x={-7} y={-7} width={14} height={14} rx={3} fill="#ffffff" stroke="#007aff" strokeWidth={1.6} />
+          <path d="M0,-4 L0,4 M-2.5,-2 L0,-4 L2.5,-2 M-2.5,2 L0,4 L2.5,2" stroke="#007aff" strokeWidth={1.2} fill="none" />
+        </g>
+      )}
 
       {/* 中間符號(斜線/X/房屋) */}
       {mMidSymbol && !marriageDragging && (
         <g
-          transform={`translate(${midX}, ${midY})`}
+          transform={`translate(${midX}, ${busTopY})`}
           style={{ pointerEvents: 'none' }}
         >
           {renderMidSymbol(mMidSymbol, mColor, mWidth)}
@@ -269,7 +301,7 @@ export default function MarriageGroup({
 
       {/* 婚姻線備注編輯框(雙擊婚姻線進入)— 換型態請去 Tab2 點按鈕 */}
       {editingNote && !marriageDragging && (
-        <foreignObject x={midX - 80} y={midY - 26} width={160} height={26}>
+        <foreignObject x={midX - 80} y={busTopY - 26} width={160} height={26}>
           <input
             type="text"
             value={noteDraft}
@@ -306,7 +338,7 @@ export default function MarriageGroup({
         return (
           <text
             x={midX}
-            y={midY - 16}
+            y={busTopY - 16}
             textAnchor="middle"
             fontSize={11}
             fill="#6e6e73"
@@ -327,7 +359,7 @@ export default function MarriageGroup({
           {/* 主幹視覺 */}
           <line
             x1={midX}
-            y1={midY}
+            y1={busTopY}
             x2={midX}
             y2={trunkY}
             stroke={forkColor}
@@ -338,7 +370,7 @@ export default function MarriageGroup({
           {childBundles[0] && (childBundles[0].bioFromA ?? childBundles[0].bioFromB) && (
             <line
               x1={midX}
-              y1={midY}
+              y1={busTopY}
               x2={midX}
               y2={trunkY}
               stroke="transparent"
@@ -360,15 +392,21 @@ export default function MarriageGroup({
           )}
           {needHbar && (
             <>
-              <line
-                x1={hbarMinX}
-                y1={trunkY}
-                x2={hbarMaxX}
-                y2={trunkY}
-                stroke={forkColor}
-                strokeWidth={baseWidth}
-                strokeDasharray={trunkDash}
-              />
+              {(() => {
+                const hbar = { x1: hbarMinX, y1: trunkY, x2: hbarMaxX, y2: trunkY };
+                const xs = hopXs(hbar, crossingSegments);
+                return xs.length > 0 ? (
+                  <path
+                    d={horizontalPathWithHops(hbar, xs)}
+                    fill="none"
+                    stroke={forkColor}
+                    strokeWidth={baseWidth}
+                    strokeDasharray={trunkDash}
+                  />
+                ) : (
+                  <line {...hbar} stroke={forkColor} strokeWidth={baseWidth} strokeDasharray={trunkDash} />
+                );
+              })()}
               {/* 橫分叉 hit area */}
               {childBundles[0] && (childBundles[0].bioFromA ?? childBundles[0].bioFromB) && (
                 <line
