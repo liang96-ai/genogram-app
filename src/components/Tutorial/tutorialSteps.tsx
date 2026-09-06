@@ -1302,6 +1302,9 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
           <br />
           • 空白處<Strong>拖框</Strong> = 圈選多人,批量拖動一起搬位置
         </P>
+        <p style={{ margin: '6px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
+          箭頭也能<Strong>長按 0.25 秒後拖曳</Strong>:左右拖到別人 = 結婚;上拖到人或婚姻線 = 對方成為父母;下拖到人 = 對方成為子女。放在空白處就取消。
+        </p>
       </>
     ),
   },
@@ -1496,7 +1499,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         <P>
           除了人物與線,還可以用 <Strong>多邊形</Strong> 框起一群人,
           表達<Strong>子系統</Strong>(原生家庭、學校、職場、親屬圈等),
-          同住的人不用畫多邊形:框選 2 人以上,畫布上方會浮出「<Strong>圈成同住</Strong>」;點圈的邊線可以選取它,按紅 × 或 Delete 解除。
+          同住的人不用畫多邊形:框選 2 人以上,畫布上方會浮出「<Strong>圈成同住</Strong>」。同住圈和生態圈的操作完全一樣:點邊線選取、雙擊進編輯拖邊拖角、雙擊標籤改名、紅 × 或 Delete 解除;差別只在同住圈一開始會自動包住成員,拖過把手後就固定形狀。
         </P>
         <EcosystemMockup lang="zh" />
         <P>
@@ -1598,6 +1601,9 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           <br />
           • <Strong>Drag-select</Strong> on empty area = pick multiple people and move them together
         </P>
+        <p style={{ margin: '6px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
+          Arrows can also be <Strong>long-pressed (0.25 s) and dragged</Strong>: left/right onto a person = marry; up onto a person or marriage line = they become the parent(s); down onto a person = they become a child. Drop on empty space to cancel.
+        </p>
       </>
     ),
   },
@@ -1792,8 +1798,10 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           Beyond people and lines, you can also draw a <Strong>polygon</Strong>
           around a group to express a <Strong>subsystem</Strong>
           (family of origin, school, workplace, kinship, etc.).
-          For people living together, select 2+ people and tap the <Strong>household</Strong> button above the canvas;
-          click the circle's edge to select it, then the red × or Delete dissolves it.
+          For people living together, select 2+ people and tap the <Strong>household</Strong> button above the canvas.
+          Household circles work exactly like ecosystems: click the edge to select, double-click to edit (drag edges and corners),
+          double-click the label to rename, red × or Delete to dissolve; the only difference is that a household circle
+          wraps its members automatically until you drag a handle.
         </P>
         <EcosystemMockup lang="en" />
         <P>
