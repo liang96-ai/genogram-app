@@ -777,6 +777,9 @@ type GenogramStore = {
     fromPersonId: string,
     toPersonId: string,
   ) => void;
+  /** 箭頭拖曳落點(services/arrowDrop):把 parentIds 接成 childId 的父母。
+   *  primary = 還沒有父母 → 實線親生;否則 = 次要父母(虛線,與拖線改父母同規)。一次一格復原 */
+  attachParents: (childId: string, parentIds: string[], primary: boolean) => void;
 
   updateLine: (id: string, patch: Partial<Line>, opts?: EditOpts) => void;
   removeLine: (id: string) => void;
@@ -1790,6 +1793,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     });
   },
 
+  attachParents: (childId, parentIds, primary) => {
     const { currentCase: c, history } = get();
     if (!c) return;
     const existing = new Set(

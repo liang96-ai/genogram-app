@@ -570,6 +570,7 @@ export default function PersonShape({
     };
     return (
       <g
+        data-person-id={person.id}
         transform={`translate(${x}, ${y}) scale(${scale})`}
         onPointerDown={onPointerDown}
         onDoubleClick={onDoubleClick}
@@ -732,6 +733,7 @@ export default function PersonShape({
 
   return (
     <g
+        data-person-id={person.id}
       transform={`translate(${x}, ${y}) scale(${scale})`}
       onPointerDown={onPointerDown}
       onDoubleClick={onDoubleClick}

@@ -25,6 +25,7 @@ import { type ChildBundle, computeForkGeometry, computeMarriageRoute, type Marri
 import NetworkUnitShape from './NetworkUnitShape';
 import EcosystemPolygon from './EcosystemPolygon';
 import HouseholdPolygon from './HouseholdPolygon';
+import { resolveArrowDrop, type ArrowDir } from '../../services/arrowDrop';
 import TwinDialog from './TwinDialog';
 import { useT } from '../../i18n';
 
@@ -214,6 +215,7 @@ export default function Canvas() {
   const addEcosystem = useGenogramStore((s) => s.addEcosystem);
   const moveEcosystem = useGenogramStore((s) => s.moveEcosystem);
   const moveHousehold = useGenogramStore((s) => s.moveHousehold);
+  const attachParents = useGenogramStore((s) => s.attachParents);
   const updateLine = useGenogramStore((s) => s.updateLine);
   const setHouseholdPointsTransient = useGenogramStore((s) => s.setHouseholdPointsTransient);
   const commitHouseholdEdit = useGenogramStore((s) => s.commitHouseholdEdit);
@@ -419,9 +421,6 @@ export default function Canvas() {
   const pendingMember = useGenogramStore((s) => s.pendingMember);
   const setPendingMember = useGenogramStore((s) => s.setPendingMember);
   const createMarriageLine = useGenogramStore((s) => s.createMarriageLine);
-  const createUnknownFamilyLine = useGenogramStore(
-    (s) => s.createUnknownFamilyLine,
-  );
   const inspectorTarget = useGenogramStore((s) => s.inspectorTarget);
 
   // 切換個案時自動把畫面置中到內容中心(保留目前 zoom)
@@ -1302,10 +1301,8 @@ export default function Canvas() {
   };
 
   // ==================== Person ▲ 拖出「未明家人」線 ====================
-  const onPersonConnectHandleDown = (
-    e: React.PointerEvent,
-    personId: string,
-  ) => {
+  /** 四個箭頭的長按拖曳(1.5.0):幽靈線跟著指標,放手時用 services/arrowDrop 決定做什麼 */
+  const onArrowDragStart = (e: React.PointerEvent, personId: string, dir: ArrowDir) => {
     e.stopPropagation();
     if (drawMode) return;
     const fromPerson = currentCase.persons.find((p) => p.id === personId);
@@ -1321,29 +1318,28 @@ export default function Canvas() {
     const onMove = (ev: PointerEvent) => {
       if (ev.pointerId !== pointerId) return;
       const local = toSvgPoint(ev.clientX, ev.clientY);
-      setUnknownFamilyDrag((prev) =>
-        prev ? { ...prev, x: local.x, y: local.y } : null,
-      );
+      setUnknownFamilyDrag((prev) => (prev ? { ...prev, x: local.x, y: local.y } : null));
     };
     const onUp = (ev: PointerEvent) => {
       if (ev.pointerId !== pointerId) return;
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
       document.removeEventListener('pointercancel', onUp);
+      setUnknownFamilyDrag(null);
       const local = toSvgPoint(ev.clientX, ev.clientY);
       const targetPerson = findPersonAt(local.x, local.y);
-      if (targetPerson && targetPerson.id !== personId) {
-        createUnknownFamilyLine(personId, targetPerson.id);
-        setUnknownFamilyDrag(null);
-        return;
-      }
-      // 優先級 2:拖到婚姻線 → 把這個人物當「該婚姻的小孩」(雙方都成為父母)
-      // 用 addSecondaryParentsFromMarriage(預設 placed-out 虛線,使用者可再升級)
-      const marriageHit = findMarriageAt(local.x, local.y);
-      if (marriageHit) {
-        addSecondaryParentsFromMarriage(personId, marriageHit.id);
-      }
-      setUnknownFamilyDrag(null);
+      const target = targetPerson
+        ? ({ type: 'person', id: targetPerson.id } as const)
+        : (() => {
+            const m = findMarriageAt(local.x, local.y);
+            return m ? ({ type: 'marriage', id: m.id } as const) : null;
+          })();
+      const latest = useGenogramStore.getState().currentCase;
+      if (!latest) return;
+      const action = resolveArrowDrop(latest, dir, personId, target);
+      if (action.kind === 'marry') createMarriageLine(action.a, action.b, 'marriage');
+      else if (action.kind === 'parents') attachParents(action.childId, action.parentIds, action.primary);
+      // none:放在空白處或不合理的目標 → 什麼都不建
     };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
@@ -2385,9 +2381,7 @@ export default function Canvas() {
               onDownLongPress={(personId) =>
                 setTwinDialogTarget({ type: 'person', id: personId })
               }
-              onUpLongPress={(personId, e) =>
-                onPersonConnectHandleDown(e, personId)
-              }
+              onArrowDrag={(personId, dir, e) => onArrowDragStart(e, personId, dir)}
             />
           );
         })()}
