@@ -25,6 +25,7 @@ import MarriageGroup from './MarriageGroup';
 import { type ChildBundle, computeForkGeometry } from './forkGeometry';
 import NetworkUnitShape from './NetworkUnitShape';
 import EcosystemPolygon from './EcosystemPolygon';
+import HouseholdPolygon from './HouseholdPolygon';
 import TwinDialog from './TwinDialog';
 import { useT } from '../../i18n';
 
@@ -162,9 +163,6 @@ export default function Canvas() {
   const currentCase = useGenogramStore((s) => s.currentCase);
   const selectedPersonIds = useGenogramStore((s) => s.selectedPersonIds);
   const selectedLineIds = useGenogramStore((s) => s.selectedLineIds);
-  const selectedHouseholdId = useGenogramStore((s) => s.selectedHouseholdId);
-  const selectHousehold = useGenogramStore((s) => s.selectHousehold);
-  const removeHousehold = useGenogramStore((s) => s.removeHousehold);
   const selectPerson = useGenogramStore((s) => s.selectPerson);
   const togglePersonSelection = useGenogramStore(
     (s) => s.togglePersonSelection,
@@ -216,7 +214,151 @@ export default function Canvas() {
   const setDrawMode = useGenogramStore((s) => s.setDrawMode);
   const addEcosystem = useGenogramStore((s) => s.addEcosystem);
   const moveEcosystem = useGenogramStore((s) => s.moveEcosystem);
+  const moveHousehold = useGenogramStore((s) => s.moveHousehold);
+  const setHouseholdPointsTransient = useGenogramStore((s) => s.setHouseholdPointsTransient);
+  const commitHouseholdEdit = useGenogramStore((s) => s.commitHouseholdEdit);
+
+  // ==================== 「圈」的共用拖曳(1.5.0):生態圈與同住圈同一套 ====================
+  type ZonePt = { x: number; y: number };
+  /** 整圈平移:放手時有移動才提交一格歷史 */
+  const startZoneDrag = (
+    ev: React.PointerEvent,
+    move: (dx: number, dy: number) => void,
+    commit: () => void,
+  ) => {
+    const startClientX = ev.clientX;
+    const startClientY = ev.clientY;
+    const pointerId = ev.pointerId;
+    let lastDX = 0;
+    let lastDY = 0;
+    const onMove = (me: PointerEvent) => {
+      if (me.pointerId !== pointerId) return;
+      const dx = snapToGrid((me.clientX - startClientX) / viewZoom);
+      const dy = snapToGrid((me.clientY - startClientY) / viewZoom);
+      if (dx !== lastDX || dy !== lastDY) {
+        move(dx - lastDX, dy - lastDY);
+        lastDX = dx;
+        lastDY = dy;
+      }
+    };
+    const onUp = (me: PointerEvent) => {
+      if (me.pointerId !== pointerId) return;
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+      if (lastDX !== 0 || lastDY !== 0) commit();
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+  };
+  /** 頂點拖曳:鄰邊維持直角;自相交就黏在最後合法位置;放手 snap 後提交 */
+  const startZoneVertexDrag = (
+    ev: React.PointerEvent,
+    orig: ZonePt[],
+    vIdx: number,
+    setTransient: (pts: ZonePt[]) => void,
+    commit: () => void,
+  ) => {
+    const pointerId = ev.pointerId;
+    let lastValidPoints = orig;
+    const reshape = (newX: number, newY: number) => {
+      const n = orig.length;
+      const prevIdx = (vIdx - 1 + n) % n;
+      const nextIdx = (vIdx + 1) % n;
+      const oldV = orig[vIdx];
+      const prev = orig[prevIdx];
+      const next = orig[nextIdx];
+      const newPoints = orig.map((p) => ({ ...p }));
+      newPoints[vIdx] = { x: newX, y: newY };
+      if (prev.y === oldV.y) newPoints[prevIdx] = { x: prev.x, y: newY };
+      else if (prev.x === oldV.x) newPoints[prevIdx] = { x: newX, y: prev.y };
+      if (next.y === oldV.y) newPoints[nextIdx] = { x: next.x, y: newY };
+      else if (next.x === oldV.x) newPoints[nextIdx] = { x: newX, y: next.y };
+      return newPoints;
+    };
+    const onMove = (me: PointerEvent) => {
+      if (me.pointerId !== pointerId) return;
+      const local = toSvgPoint(me.clientX, me.clientY);
+      const candidate = reshape(local.x, local.y);
+      if (isSimplePolygon(candidate)) {
+        lastValidPoints = candidate;
+        setTransient(candidate);
+      }
+    };
+    const onUp = (me: PointerEvent) => {
+      if (me.pointerId !== pointerId) return;
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+      const local = toSvgPoint(me.clientX, me.clientY);
+      const snapped = reshape(snapToGrid(local.x), snapToGrid(local.y));
+      const final = isSimplePolygon(snapped) ? snapped : lastValidPoints;
+      setTransient(final);
+      commit();
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+  };
+  /** 邊把手推拉:整條邊平移;放手 snap 後提交 */
+  const startZoneEdgeDrag = (
+    ev: React.PointerEvent,
+    orig: ZonePt[],
+    edgeIdx: number,
+    setTransient: (pts: ZonePt[]) => void,
+    commit: () => void,
+  ) => {
+    const pointerId = ev.pointerId;
+    const a = orig[edgeIdx];
+    const b = orig[(edgeIdx + 1) % orig.length];
+    const horizontal = a.y === b.y;
+    const startClientX = ev.clientX;
+    const startClientY = ev.clientY;
+    let lastValidPoints = orig;
+    const reshape = (delta: number) => {
+      const i = edgeIdx;
+      const j = (edgeIdx + 1) % orig.length;
+      const newPoints = orig.map((p) => ({ ...p }));
+      if (horizontal) {
+        newPoints[i] = { x: a.x, y: a.y + delta };
+        newPoints[j] = { x: b.x, y: b.y + delta };
+      } else {
+        newPoints[i] = { x: a.x + delta, y: a.y };
+        newPoints[j] = { x: b.x + delta, y: b.y };
+      }
+      return newPoints;
+    };
+    const onMove = (me: PointerEvent) => {
+      if (me.pointerId !== pointerId) return;
+      const dx = (me.clientX - startClientX) / viewZoom;
+      const dy = (me.clientY - startClientY) / viewZoom;
+      const candidate = reshape(horizontal ? dy : dx);
+      if (isSimplePolygon(candidate)) {
+        lastValidPoints = candidate;
+        setTransient(candidate);
+      }
+    };
+    const onUp = (me: PointerEvent) => {
+      if (me.pointerId !== pointerId) return;
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+      const dx = (me.clientX - startClientX) / viewZoom;
+      const dy = (me.clientY - startClientY) / viewZoom;
+      const snapped = horizontal ? snapToGrid(dy) : snapToGrid(dx);
+      const candidate = reshape(snapped);
+      const final = isSimplePolygon(candidate) ? candidate : lastValidPoints;
+      setTransient(final);
+      commit();
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+  };
   const editingEcosystemId = useGenogramStore((s) => s.editingEcosystemId);
+  const editingHouseholdId = useGenogramStore((s) => s.editingHouseholdId);
+  const setEditingHousehold = useGenogramStore((s) => s.setEditingHousehold);
   const setEditingEcosystem = useGenogramStore((s) => s.setEditingEcosystem);
   const setEcosystemPointsTransient = useGenogramStore(
     (s) => s.setEcosystemPointsTransient,
@@ -313,13 +455,14 @@ export default function Canvas() {
 
   // 生態圈編輯模式:Esc 退出
   useEffect(() => {
-    if (!editingEcosystemId) return;
+    if (!editingEcosystemId && !editingHouseholdId) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setEditingEcosystem(null);
+      if (e.key === 'Escape') if (editingEcosystemId) setEditingEcosystem(null);
+        if (editingHouseholdId) setEditingHousehold(null);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [editingEcosystemId, setEditingEcosystem]);
+  }, [editingEcosystemId, editingHouseholdId, setEditingEcosystem, setEditingHousehold]);
 
   // Tab2 關係線 pending mode:Esc 取消
   useEffect(() => {
@@ -1068,6 +1211,7 @@ export default function Canvas() {
   const onBackgroundPointerDown = (e: React.PointerEvent) => {
     // 點背景 → 退出生態圈編輯
     if (editingEcosystemId) setEditingEcosystem(null);
+    if (editingHouseholdId) setEditingHousehold(null);
     // 點背景 → 取消關係線 / 婚姻線 pending
     if (pendingRelation) setPendingRelation(null);
     if (pendingMember) setPendingMember(null);
@@ -1465,77 +1609,42 @@ export default function Canvas() {
           style={{ pointerEvents: 'visiblePainted' }}
         />
 
-      {/* 同住成員圈(虛線框圍住成員) */}
-      {(currentCase.households ?? []).map((hh) => {
-        const members = currentCase.persons.filter((p) =>
-          hh.memberIds.includes(p.id),
-        );
-        if (members.length === 0) return null;
-        const PADDING = 28;
-        const xs = members.map((m) => m.position.x);
-        const ys = members.map((m) => m.position.y);
-        const minX = Math.min(...xs) - PADDING;
-        const minY = Math.min(...ys) - PADDING;
-        const maxX = Math.max(...xs) + PADDING;
-        const maxY = Math.max(...ys) + PADDING;
-        const hhSelected = selectedHouseholdId === hh.id;
-        return (
-          <g key={hh.id}>
-            {/* 視覺框:一律不吃事件(圈內的人物/背景照常可點) */}
-            <rect
-              x={minX}
-              y={minY}
-              width={maxX - minX}
-              height={maxY - minY}
-              rx={20}
-              fill="rgba(255,149,0,0.04)"
-              stroke="#ff9500"
-              strokeWidth={hhSelected ? 2.5 : 1.5}
-              strokeDasharray={hhSelected ? undefined : '6 4'}
-              opacity={hhSelected ? 1 : 0.7}
-              style={{ pointerEvents: 'none' }}
-            />
-            {/* 命中框:只有「邊線附近」吃點擊(pointerEvents:stroke),
-                圈內部維持穿透 —— 不跟成員人物搶點擊(2026-08-29 A 案) */}
-            <rect
-              x={minX}
-              y={minY}
-              width={maxX - minX}
-              height={maxY - minY}
-              rx={20}
-              fill="none"
-              stroke="transparent"
-              strokeWidth={14}
-              style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                selectHousehold(hhSelected ? null : hh.id);
-              }}
-            />
-            {hh.label && (
-              <text
-                x={minX + 12}
-                y={minY - 6}
-                fontSize={11}
-                fill="#ff9500"
-                fontWeight={500}
-                style={{ userSelect: 'none', pointerEvents: 'none' }}
-              >
-                🏠 {hh.label}
-              </text>
-            )}
-            {hhSelected && (
               <DeleteButton
-                cx={maxX}
-                cy={minY}
-                onClick={() => removeHousehold(hh.id)}
-                title={t('household.deleteTooltip')}
-              />
-            )}
-          </g>
-        );
-      })}
-
+      {/* 同住成員圈:與生態圈同一套元件與手勢(1.5.0);沒有自訂形狀時自動包住成員 */}
+      {(currentCase.households ?? []).map((hh) => (
+        <HouseholdPolygon
+          key={hh.id}
+          household={hh}
+          persons={currentCase.persons}
+          onStartDrag={(ev, hhId) => {
+            if (drawMode) return;
+            const orig = hh.points;
+            startZoneDrag(
+              ev,
+              (dx, dy) => moveHousehold(hhId, dx, dy),
+              () => commitHouseholdEdit(hhId, orig),
+            );
+          }}
+          onVertexDown={(ev, h, points, vIdx) =>
+            startZoneVertexDrag(
+              ev,
+              points,
+              vIdx,
+              (pts) => setHouseholdPointsTransient(h.id, pts),
+              () => commitHouseholdEdit(h.id, h.points),
+            )
+          }
+          onEdgeDown={(ev, h, points, eIdx) =>
+            startZoneEdgeDrag(
+              ev,
+              points,
+              eIdx,
+              (pts) => setHouseholdPointsTransient(h.id, pts),
+              () => commitHouseholdEdit(h.id, h.points),
+            )
+          }
+        />
+      ))}
       {/* 生態圈(多個自訂多邊形) */}
       {(currentCase.ecosystems ?? []).map((eco) => (
         <EcosystemPolygon
@@ -1628,55 +1737,30 @@ export default function Canvas() {
           }}
           onEdgeDown={(ev, ecoId, edgeIdx) => {
             const orig = eco.points;
-            const pointerId = ev.pointerId;
-            const a = orig[edgeIdx];
-            const b = orig[(edgeIdx + 1) % orig.length];
-            const horizontal = a.y === b.y;
-            const startClientX = ev.clientX;
-            const startClientY = ev.clientY;
-            let lastValidPoints = orig;
-            const reshape = (delta: number) => {
-              const i = edgeIdx;
-              const j = (edgeIdx + 1) % orig.length;
-              const newPoints = orig.map((p) => ({ ...p }));
-              if (horizontal) {
-                newPoints[i] = { x: a.x, y: a.y + delta };
-                newPoints[j] = { x: b.x, y: b.y + delta };
-              } else {
-                newPoints[i] = { x: a.x + delta, y: a.y };
-                newPoints[j] = { x: b.x + delta, y: b.y };
-              }
-              return newPoints;
-            };
-            const onMove = (me: PointerEvent) => {
-              if (me.pointerId !== pointerId) return;
-              const dx = (me.clientX - startClientX) / viewZoom;
-              const dy = (me.clientY - startClientY) / viewZoom;
-              const candidate = reshape(horizontal ? dy : dx);
-              if (isSimplePolygon(candidate)) {
-                lastValidPoints = candidate;
-                setEcosystemPointsTransient(ecoId, candidate);
-              }
-            };
-            const onUp = (me: PointerEvent) => {
-              if (me.pointerId !== pointerId) return;
-              document.removeEventListener('pointermove', onMove);
-              document.removeEventListener('pointerup', onUp);
-              document.removeEventListener('pointercancel', onUp);
-              const dx = (me.clientX - startClientX) / viewZoom;
-              const dy = (me.clientY - startClientY) / viewZoom;
-              const snapped = horizontal ? snapToGrid(dy) : snapToGrid(dx);
-              const candidate = reshape(snapped);
-              const final = isSimplePolygon(candidate)
-                ? candidate
-                : lastValidPoints;
-              setEcosystemPointsTransient(ecoId, final);
-              commitEcosystemEdit(ecoId, orig);
-            };
-            document.addEventListener('pointermove', onMove);
-            document.addEventListener('pointerup', onUp);
-            document.addEventListener('pointercancel', onUp);
+            startZoneDrag(
+              ev,
+              (dx, dy) => moveEcosystem(ecoId, dx, dy),
+              () => commitEcosystemEdit(ecoId, orig),
+            );
           }}
+          onVertexDown={(ev, ecoId, vIdx) =>
+            startZoneVertexDrag(
+              ev,
+              eco.points,
+              vIdx,
+              (pts) => setEcosystemPointsTransient(ecoId, pts),
+              () => commitEcosystemEdit(ecoId, eco.points),
+            )
+          }
+          onEdgeDown={(ev, ecoId, edgeIdx) =>
+            startZoneEdgeDrag(
+              ev,
+              eco.points,
+              edgeIdx,
+              (pts) => setEcosystemPointsTransient(ecoId, pts),
+              () => commitEcosystemEdit(ecoId, eco.points),
+            )
+          }
         />
       ))}
 

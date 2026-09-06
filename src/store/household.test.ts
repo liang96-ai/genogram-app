@@ -138,3 +138,48 @@ describe('同一群人不重複圈(2026-08-31 實測 bug)', () => {
     expect(households()).toHaveLength(2);
   });
 });
+
+describe('同住圈與生態圈同一套手勢(1.5.0)', () => {
+  const square = [{ x: 0, y: 0 }, { x: 240, y: 0 }, { x: 240, y: 120 }, { x: 0, y: 120 }];
+
+  it('編輯模式與其他選取互斥;選人物就退出編輯', () => {
+    S().addHousehold(ids());
+    const hh = households()[0];
+    S().setEditingHousehold(hh.id);
+    let st = useGenogramStore.getState();
+    expect(st.editingHouseholdId).toBe(hh.id);
+    expect(st.selectedHouseholdId).toBe(hh.id);
+    S().selectPerson(ids()[0]);
+    st = useGenogramStore.getState();
+    expect(st.editingHouseholdId).toBeNull();
+    expect(st.selectedHouseholdId).toBeNull();
+  });
+
+  it('自動包住成員的圈:整圈平移是 no-op;拖把手後固定形狀,復原回到自動', () => {
+    S().addHousehold(ids());
+    const hh = households()[0];
+    S().moveHousehold(hh.id, 60, 60);
+    expect(households()[0].points).toBeUndefined();
+    // 拖把手:即時形狀(不推歷史)→ 放手提交(一格)
+    const before = S().history.past.length;
+    S().setHouseholdPointsTransient(hh.id, square);
+    expect(S().history.past.length).toBe(before);
+    S().commitHouseholdEdit(hh.id, undefined);
+    expect(S().history.past.length).toBe(before + 1);
+    expect(households()[0].points).toEqual(square);
+    // 固定後可整圈平移
+    S().moveHousehold(hh.id, 60, 0);
+    expect(households()[0].points![0]).toEqual({ x: 60, y: 0 });
+    S().undo();
+    expect(households()[0].points).toBeUndefined(); // 回到自動包住成員
+  });
+
+  it('removeHousehold 也清掉編輯狀態', () => {
+    S().addHousehold(ids());
+    const hh = households()[0];
+    S().setEditingHousehold(hh.id);
+    S().removeHousehold(hh.id);
+    expect(useGenogramStore.getState().editingHouseholdId).toBeNull();
+  });
+});
+

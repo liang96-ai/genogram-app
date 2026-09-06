@@ -937,6 +937,12 @@ type GenogramStore = {
     patch: Partial<import('../types/genogram').Household>,
   ) => void;
   removeHousehold: (id: string) => void;
+  /** 拖把手中的即時形狀(不推歷史);第一次拖會讓圈脫離「自動包住成員」 */
+  setHouseholdPointsTransient: (id: string, points: { x: number; y: number }[]) => void;
+  /** 整圈平移(只對已有自訂形狀的圈有效) */
+  moveHousehold: (id: string, dx: number, dy: number) => void;
+  /** 拖曳結束:把「編輯前」推進歷史(originalPoints 為 undefined = 之前是自動包住成員) */
+  commitHouseholdEdit: (id: string, originalPoints: { x: number; y: number }[] | undefined) => void;
 
   // Ecosystem(生態圈)— 畫筆繪製的閉合多邊形
   drawMode: boolean;
@@ -948,6 +954,9 @@ type GenogramStore = {
   selectEcosystem: (id: string | null) => void;
   editingEcosystemId: string | null;
   setEditingEcosystem: (id: string | null) => void;
+  /** 同住圈的編輯模式(1.5.0 與生態圈同一套手勢) */
+  editingHouseholdId: string | null;
+  setEditingHousehold: (id: string | null) => void;
   addEcosystem: (points: { x: number; y: number }[]) => void;
   removeEcosystem: (id: string) => void;
   updateEcosystem: (id: string, patch: Partial<Ecosystem>) => void;
@@ -997,6 +1006,7 @@ export const EMPTY_SELECTION = {
   selectedEcosystemId: null as string | null,
   selectedHouseholdId: null as string | null,
   editingEcosystemId: null as string | null,
+  editingHouseholdId: null as string | null,
   selectedConnector: null as { unitId: string; connectorId: string } | null,
 };
 export type SelectionFields = typeof EMPTY_SELECTION;
@@ -1229,6 +1239,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   selectedEcosystemId: null,
   selectedHouseholdId: null,
   editingEcosystemId: null,
+  editingHouseholdId: null,
   pendingRelation: null,
   // v1.1 婚姻線 pending mode:點 Tab2 婚姻按鈕後等使用者點 2 個人物完成連線
   pendingMember: null,
@@ -1434,6 +1445,8 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   // 進編輯也順便保持選中
   setEditingEcosystem: (id) =>
     set(() => selectOnly({ editingEcosystemId: id, selectedEcosystemId: id })),
+  setEditingHousehold: (id) =>
+    set(() => selectOnly({ editingHouseholdId: id, selectedHouseholdId: id })),
 
   selectPersons: (ids) =>
     set((s) => ({
@@ -3211,14 +3224,52 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     if (!c) return;
     // 不存在(如殘留選取指向已解散的圈)→ 只清選取,不推空 history(#126 同款)
     if (!(c.households ?? []).some((h) => h.id === id)) {
-      set({ selectedHouseholdId: null });
+      set({ selectedHouseholdId: null, editingHouseholdId: null });
       return;
     }
     const next = touch({
       ...c,
       households: (c.households ?? []).filter((h) => h.id !== id),
     });
-    set({ ...pushHistory(c, history, next), selectedHouseholdId: null });
+    set({ ...pushHistory(c, history, next), selectedHouseholdId: null, editingHouseholdId: null });
+  },
+  setHouseholdPointsTransient: (id, points) => {
+    const c = get().currentCase;
+    if (!c) return;
+    set({
+      currentCase: touch({
+        ...c,
+        households: (c.households ?? []).map((h) => (h.id === id ? { ...h, points } : h)),
+      }),
+    });
+  },
+  moveHousehold: (id, dx, dy) => {
+    const c = get().currentCase;
+    if (!c) return;
+    set({
+      currentCase: touch({
+        ...c,
+        households: (c.households ?? []).map((h) =>
+          h.id === id && h.points
+            ? { ...h, points: h.points.map((p) => ({ x: p.x + dx, y: p.y + dy })) }
+            : h,
+        ),
+      }),
+    });
+  },
+  commitHouseholdEdit: (id, originalPoints) => {
+    const { currentCase: c, history } = get();
+    if (!c) return;
+    const beforeCase = touch({
+      ...c,
+      households: (c.households ?? []).map((h) => {
+        if (h.id !== id) return h;
+        if (originalPoints) return { ...h, points: originalPoints };
+        const { points: _drop, ...rest } = h; // 之前是自動包住成員:復原要回到沒有 points
+        return rest;
+      }),
+    });
+    set({ ...pushHistory(beforeCase, history, c) });
   },
 
   drawMode: false,

@@ -324,6 +324,9 @@ export type NetworkUnit = {
 export type Household = {
   id: string;
   memberIds: string[];
+  /** 自訂形狀(1.5.0):沒有 = 圈自動包住成員、跟著成員移動;使用者拖過把手後固定成這組頂點,
+   *  之後與生態圈一模一樣(可整個拖、拖邊拖角)。選填欄位,舊檔照讀。 */
+  points?: { x: number; y: number }[];
   visual: {
     style: 'dashed-circle';
     color?: string;
