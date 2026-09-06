@@ -3,6 +3,21 @@
 給使用者看的版本說明。技術細節請見 git 歷史。
 User-facing release notes; see git history for technical details.
 
+## 1.5.0 — 2026-09-07
+
+**English summary:** Quick-add never moves people you already placed (plus a "tidy children row" command); household circles now behave exactly like ecosystems (edit handles, rename, delete); marriage lines that would pass through other people now route underneath with small hops at line crossings, a draggable bar height, and a "move spouses to the near ends" helper; the four quick arrows can be long-pressed and dragged onto people or marriage lines to marry, attach parents, or attach children.
+
+### 改了什麼
+- **新增不再搬人**:按快捷箭頭加子女、雙胞胎、配偶,只放新的人,既有的人一個都不動;新的人接在同一排尾端,撞到別人自己讓。選單多了「**整理子女排列**」,想排整齊自己按,一步可復原。
+- **同住圈和生態圈同一套操作**:點邊線選取、雙擊進編輯拖邊拖角、雙擊標籤改名、紅 × 或 Delete 解除,兩種圈一模一樣。同住圈一開始自動包住成員,拖過把手後固定形狀;復原可回到自動。
+- **跨家族的婚姻線不再穿過人**:直線會穿過別人的婚姻線自動改走 U 型,橫桿落到沒有人的那一層;和別的線交叉的地方鼓一個小弧「跳過去」。選取婚姻線後可拖橫桿高度;選單多了「**把配偶移到靠近對方的那一端**」,按了才動、一步可復原。
+- **四個箭頭可以長按拖曳**:短按照舊;長按 0.25 秒後拖到人物或婚姻線 —— 左右拖到人是結婚,上拖到人是對方成為父母、拖到婚姻線是那對夫妻成為父母,下拖到人是對方成為子女。放在空白處或不合理的目標(自己、已有線、會變成自己的祖先)什麼都不做。
+- 上箭頭拖到人的意思改成「對方成為我的父母」(原本是我成為對方的父母),與拖到婚姻線的意思一致。
+
+### 幕後
+- 檔案格式只新增選填欄位(同住圈自訂形狀、婚姻線橫桿偏移),舊檔照讀。
+- 新增 30 條單元測試與 2 條使用者旅程(同住圈編輯、箭頭拖曳結婚),共 252 單元、15 旅程。
+
 ## 1.4.0 — 2026-09-03
 
 **English summary:** One modal shell for all 17 dialogs (stacking, Escape and background-lock guaranteed by a single stack), one text-input strategy (draft fields: 0.8 s idle / blur / before-save / unmount, one input session = one undo step), selection exclusivity defined in one place, every delete gesture is one undo step, the update banner now always reloads, unified wording on free use vs. voluntary support vs. commercial licensing, brochure updated.
