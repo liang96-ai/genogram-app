@@ -193,6 +193,8 @@ const uid = (prefix: string) =>
 
 export const GRID_SIZE = 60;
 export const SHAPE_HALF = 28;
+/** 所有「親子」類的線型(判斷有沒有父母用) */
+const BIO_SUBTYPES_ALL = new Set<LineSubType>(['biological', 'adopted', 'placed-out', 'fostered', 'sperm-donor']);
 export const snapToGrid = (v: number) => Math.round(v / GRID_SIZE) * GRID_SIZE;
 // 20(2026-08-27 決議):配合下方「文字編輯合併窗」——
 // 打字不再逐鍵吃格之後,20 格的實際覆蓋範圍已經很深;再大是純記憶體浪費(每格=整份個案快照)
@@ -247,37 +249,6 @@ function findFreeRight(
   return { x: cx, y };
 }
 
-// 蒐集一個人的「直接親屬」:本人 + 配偶 + 子女(2 層,不遞迴到孫)
-function collectKin(
-  personId: string,
-  lines: Line[],
-): string[] {
-  // v1.1: 用共用常數,新增婚姻 subType 不會漏掉
-  const BIO = new Set<LineSubType>([
-    'biological',
-    'adopted',
-    'placed-out',
-    'fostered',
-  ]);
-  const ids = new Set<string>([personId]);
-  const spouseIds: string[] = [];
-  for (const l of lines) {
-    if (!MARRIAGE_SUBTYPE_SET.has(l.subType)) continue;
-    if (l.fromPersonId === personId) {
-      spouseIds.push(l.toPersonId);
-      ids.add(l.toPersonId);
-    } else if (l.toPersonId === personId) {
-      spouseIds.push(l.fromPersonId);
-      ids.add(l.fromPersonId);
-    }
-  }
-  const parentSet = new Set<string>([personId, ...spouseIds]);
-  for (const l of lines) {
-    if (!BIO.has(l.subType)) continue;
-    if (parentSet.has(l.fromPersonId)) ids.add(l.toPersonId);
-  }
-  return [...ids];
-}
 
 // 整批位置碰撞檢測
 function hasBatchCollision(
@@ -318,6 +289,95 @@ function resolveBatchPositions(
     }));
   }
   return pos;
+}
+
+// ==================== 新增從不移動已擺好的人(2026-09-05)====================
+// 使用者回報:人數多時按快捷箭頭加子女,整排手足被重新對稱排列,親手拉到一邊的人被拉回去。
+// 原則(線條避讓準則第 1 條「所有權」的延伸):使用者放的位置絕不自動搬。
+// 新增只決定「新的人放哪」:接在既有手足那一排的尾端;撞到別人是新的人自己讓。
+// 想要對稱整齊的人自己按「整理子女排列」(tidyChildrenOfMarriage),一步可復原。
+const CHILD_STEP = GRID_SIZE * 2;
+
+function childrenOfCouple(c: Genogram, aId: string, bId: string): string[] {
+  const isBio = (l: Line) =>
+    l.subType === 'biological' || l.subType === 'adopted' || l.subType === 'placed-out' || l.subType === 'fostered';
+  return c.persons
+    .filter(
+      (p) =>
+        c.lines.some((l) => isBio(l) && l.fromPersonId === aId && l.toPersonId === p.id) &&
+        c.lines.some((l) => isBio(l) && l.fromPersonId === bId && l.toPersonId === p.id),
+    )
+    .map((p) => p.id);
+}
+
+/** count 個新子女的位置:沒有子女 → 以父母中點對稱;已有子女 → 接在最右邊那個的右邊,同一排 */
+function placeAppendedChildren(
+  c: Genogram,
+  a: Person,
+  b: Person,
+  childrenIds: string[],
+  count: number,
+): { x: number; y: number }[] {
+  const existing = childrenIds
+    .map((id) => c.persons.find((p) => p.id === id))
+    .filter((p): p is Person => !!p);
+  let initial: { x: number; y: number }[];
+  if (existing.length === 0) {
+    const midX = (a.position.x + b.position.x) / 2;
+    const baseY = Math.max(a.position.y, b.position.y) + GRID_SIZE * 2;
+    initial = Array.from({ length: count }, (_, i) => ({
+      x: snapToGrid(midX + (i - (count - 1) / 2) * CHILD_STEP),
+      y: snapToGrid(baseY),
+    }));
+  } else {
+    const rightmost = existing.reduce((m, p) => (p.position.x > m.position.x ? p : m), existing[0]);
+    initial = Array.from({ length: count }, (_, i) => ({
+      x: snapToGrid(rightmost.position.x + (i + 1) * CHILD_STEP),
+      y: snapToGrid(rightmost.position.y),
+    }));
+  }
+  // 撞到別人:新的人自己往右讓;讓 6 次還不行才往下一行。既有的人一個都不動
+  const offset = (i: number) => (i <= 6 ? { dx: CHILD_STEP, dy: 0 } : { dx: 0, dy: GRID_SIZE });
+  return resolveBatchPositions(c.persons, initial, [], offset);
+}
+
+/** 對稱整理:以父母中點為軸把子女排成一列(子女的配偶跟著平移)。回傳更新後的 persons */
+function tidyChildrenLayout(c: Genogram, a: Person, b: Person, childrenIds: string[]): Person[] {
+  const n = childrenIds.length;
+  const midX = (a.position.x + b.position.x) / 2;
+  const baseY = Math.max(a.position.y, b.position.y) + GRID_SIZE * 2;
+  const initial = childrenIds.map((_, i) => ({
+    x: snapToGrid(midX + (i - (n - 1) / 2) * CHILD_STEP),
+    y: snapToGrid(baseY),
+  }));
+  const positions = resolveBatchPositions(c.persons, initial, [a.id, b.id, ...childrenIds], () => ({
+    dx: 0,
+    dy: GRID_SIZE,
+  }));
+  const spouseMoves = new Map<string, { dx: number; dy: number }>();
+  childrenIds.forEach((cid, i) => {
+    const old = c.persons.find((p) => p.id === cid);
+    if (!old) return;
+    const dx = positions[i].x - old.position.x;
+    const dy = positions[i].y - old.position.y;
+    if (dx === 0 && dy === 0) return;
+    for (const l of c.lines) {
+      if (!MARRIAGE_SUBTYPE_SET.has(l.subType)) continue;
+      if (l.fromPersonId !== cid && l.toPersonId !== cid) continue;
+      const sid = l.fromPersonId === cid ? l.toPersonId : l.fromPersonId;
+      if (sid === a.id || sid === b.id || childrenIds.includes(sid) || spouseMoves.has(sid)) continue;
+      spouseMoves.set(sid, { dx, dy });
+    }
+  });
+  return c.persons.map((p) => {
+    const idx = childrenIds.indexOf(p.id);
+    if (idx !== -1) {
+      const np = positions[idx];
+      return np.x === p.position.x && np.y === p.position.y ? p : { ...p, position: np };
+    }
+    const sm = spouseMoves.get(p.id);
+    return sm ? { ...p, position: { x: p.position.x + sm.dx, y: p.position.y + sm.dy } } : p;
+  });
 }
 
 export const createEmptyCase = (name = '我的家系圖'): Genogram => {
@@ -750,6 +810,11 @@ type GenogramStore = {
   expandSpouseOrSibling: (personId: string, direction: Dir) => void;
   expandChild: (personId: string) => void;
   expandChildFromMarriage: (marriageLineId: string) => void;
+  /** 把這對夫妻的子女排成對稱一列(子女的配偶跟著平移);使用者主動按才做,一步可復原 */
+  tidyChildrenOfMarriage: (marriageLineId: string) => void;
+  /** 跨家族聯姻的靠攏助手:把兩人各自移到自家手足列「靠近對方」的那一端(同一列、只換順序),
+   *  被換位的手足其配偶跟著平移。使用者主動按才做,一步可復原 */
+  bringSpousesTogether: (marriageLineId: string) => void;
   expandTwinsFromMarriage: (
     marriageLineId: string,
     count: number,
@@ -1712,6 +1777,23 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     });
   },
 
+    const { currentCase: c, history } = get();
+    if (!c) return;
+    const existing = new Set(
+      c.lines.filter((l) => l.toPersonId === childId && BIO_SUBTYPES_ALL.has(l.subType)).map((l) => l.fromPersonId),
+    );
+    const fresh = parentIds.filter((pid) => pid !== childId && !existing.has(pid) && c.persons.some((p) => p.id === pid));
+    if (fresh.length === 0) return;
+    const newLines = fresh.map((pid) =>
+      primary ? mkLine(pid, childId, 'biological') : mkLine(pid, childId, 'placed-out', 'dashed'),
+    );
+    const newCase = touch({ ...c, lines: [...c.lines, ...newLines] });
+    set({
+      ...pushHistory(c, history, newCase),
+      ...selectOnly({ selectedLineIds: newLines.map((l) => l.id) }),
+      inspectorTarget: { type: 'line', id: newLines[0].id },
+    });
+  },
   createUnknownFamilyLine: (fromPersonId, toPersonId) => {
     const { currentCase: c, history } = get();
     if (!c) return;
@@ -2161,103 +2243,44 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     if (!c) return;
     const person = c.persons.find((p) => p.id === personId);
     if (!person) return;
-
     const existingSameSide = c.lines.filter((l) => {
-      if (
-        l.subType !== 'marriage' &&
-        l.subType !== 'engagement' &&
-        l.subType !== 'partnership' &&
-        l.subType !== 'cohabitation-commit' &&
-        l.subType !== 'divorce' &&
-        l.subType !== 'separation'
-      )
-        return false;
-      if (l.fromPersonId !== personId && l.toPersonId !== personId)
-        return false;
-      const otherId =
-        l.fromPersonId === personId ? l.toPersonId : l.fromPersonId;
+      if (!MARRIAGE_SUBTYPE_SET.has(l.subType)) return false;
+      if (l.fromPersonId !== personId && l.toPersonId !== personId) return false;
+      const otherId = l.fromPersonId === personId ? l.toPersonId : l.fromPersonId;
       const other = c.persons.find((p) => p.id === otherId);
       if (!other) return false;
       const dx = other.position.x - person.position.x;
       return direction === 'right' ? dx > 0 : dx < 0;
     });
-
     // 上限 3 段婚姻
     if (existingSameSide.length >= 3) return;
-
-    const baseRadius = GRID_SIZE * 2; // 最舊的距離
-    const stepPerLayer = GRID_SIZE; // 每層多一格
-    const n = existingSameSide.length + 1;
-
-    // 既有配偶按加入順序(舊 → 新)
-    const existingIds: string[] = existingSameSide.map((line) =>
-      line.fromPersonId === personId ? line.toPersonId : line.fromPersonId,
-    );
-
+    const xSign = direction === 'right' ? 1 : -1;
+    // 新配偶放在同側最遠的既有配偶再外面兩格;既有配偶與被撞到的人一個都不動,撞到就自己再往外讓
+    const farthest = existingSameSide.reduce((m, l) => {
+      const otherId = l.fromPersonId === personId ? l.toPersonId : l.fromPersonId;
+      const other = c.persons.find((p) => p.id === otherId);
+      return other ? Math.max(m, Math.abs(other.position.x - person.position.x)) : m;
+    }, 0);
+    const start = {
+      x: snapToGrid(person.position.x + xSign * (farthest + CHILD_STEP)),
+      y: snapToGrid(person.position.y),
+    };
+    const offset = (i: number) => (i <= 8 ? { dx: xSign * CHILD_STEP, dy: 0 } : { dx: 0, dy: GRID_SIZE });
+    const [pos] = resolveBatchPositions(c.persons, [start], [], offset);
     const newSpouse: Person = {
       id: uid('p'),
-      position: { x: 0, y: 0 },
+      position: pos,
       shape: flipShape(person.shape),
       basicInfo: {},
     };
-
-    // 順序:最新在最前(i=0 → 最上);最舊在最後(i=n-1 → 最下)
-    // 對應 fanAngle 的 sin:i=0 → 負 → Y 小(上);i=n-1 → 正 → Y 大(下)
-    const reorderedIds = [newSpouse.id, ...existingIds.slice().reverse()];
-
-    // 扇形 + 階層:新的距離遠、舊的距離近
-    const xSign = direction === 'right' ? 1 : -1;
-    const gap = n <= 1 ? 0 : Math.PI / (n + 1);
-    const initialPositions = reorderedIds.map((_, i) => {
-      const offset = (i - (n - 1) / 2) * gap;
-      const radius = baseRadius + (n - 1 - i) * stepPerLayer;
-      return {
-        x: snapToGrid(person.position.x + xSign * radius * Math.cos(offset)),
-        y: snapToGrid(person.position.y + radius * Math.sin(offset)),
-      };
-    });
-
-    // 碰撞處理:若新配偶位置撞到別人(通常是手足) → 把對方(+配偶+子女)整組往外推
-    const excludeSet = new Set([person.id, ...reorderedIds]);
-    const pushDX = xSign * GRID_SIZE * 2;
-    let pushedPersons = c.persons;
-    let safety = 5;
-    while (safety-- > 0) {
-      const collidingPerson = pushedPersons.find((p) => {
-        if (excludeSet.has(p.id)) return false;
-        return initialPositions.some(
-          (pos) =>
-            Math.abs(p.position.x - pos.x) < COLLISION_TOLERANCE &&
-            Math.abs(p.position.y - pos.y) < COLLISION_TOLERANCE,
-        );
-      });
-      if (!collidingPerson) break;
-      const kinIds = new Set(collectKin(collidingPerson.id, c.lines));
-      pushedPersons = pushedPersons.map((p) =>
-        kinIds.has(p.id)
-          ? { ...p, position: { x: p.position.x + pushDX, y: p.position.y } }
-          : p,
-      );
-    }
-
-    // 放進既有/新配偶到 initialPositions 指定的位置
-    const updatedPersons = pushedPersons.map((p) => {
-      const idx = reorderedIds.indexOf(p.id);
-      if (idx !== -1 && p.id !== newSpouse.id)
-        return { ...p, position: initialPositions[idx] };
-      return p;
-    });
-    newSpouse.position = initialPositions[0];
-
     const newLine = mkLine(
       direction === 'right' ? personId : newSpouse.id,
       direction === 'right' ? newSpouse.id : personId,
       'marriage',
     );
-
     const newCase = touch({
       ...c,
-      persons: [...updatedPersons, newSpouse],
+      persons: [...c.persons, newSpouse],
       lines: [...c.lines, newLine],
     });
     set({ ...pushHistory(c, history, newCase) });
@@ -2311,134 +2334,98 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const a = c.persons.find((p) => p.id === m.fromPersonId);
     const b = c.persons.find((p) => p.id === m.toPersonId);
     if (!a || !b) return;
-
-    const childrenIds = c.persons
-      .filter((p) => {
-        const byA = c.lines.some(
-          (l) =>
-            l.fromPersonId === a.id &&
-            l.toPersonId === p.id &&
-            (l.subType === 'biological' ||
-              l.subType === 'adopted' ||
-              l.subType === 'placed-out'),
-        );
-        const byB = c.lines.some(
-          (l) =>
-            l.fromPersonId === b.id &&
-            l.toPersonId === p.id &&
-            (l.subType === 'biological' ||
-              l.subType === 'adopted' ||
-              l.subType === 'placed-out'),
-        );
-        return byA && byB;
-      })
-      .map((p) => p.id);
-
-    const midX = (a.position.x + b.position.x) / 2;
-    const baseY = Math.max(a.position.y, b.position.y) + GRID_SIZE * 2;
-    const step = GRID_SIZE * 2;
-
-    const n = childrenIds.length + 1;
-
-    const newChild: Person = {
-      id: uid('p'),
-      position: { x: 0, y: 0 },
-      shape: 'square',
-      basicInfo: {},
-    };
-    const allIds = [...childrenIds, newChild.id];
-
-    // 同排對稱:以中點為軸,間距 2 格
-    const initialChildPositions = allIds.map((_, i) => ({
-      x: snapToGrid(midX + (i - (n - 1) / 2) * step),
-      y: snapToGrid(baseY),
-    }));
-
-    // 避開規則:整批往下一行
-    const childrenOffset = () => ({ dx: 0, dy: GRID_SIZE });
-    const newPositions = resolveBatchPositions(
-      c.persons,
-      initialChildPositions,
-      [a.id, b.id, ...childrenIds],
-      childrenOffset,
-    );
-
-    // ==================== 配偶跟動 ====================
-    // 每個被移動的現有子女,若有配偶,配偶同步平移相同 (dx, dy)
-    // v1.1 共用常數
-    const spouseMoves: { id: string; dx: number; dy: number }[] = [];
-    for (let i = 0; i < childrenIds.length; i++) {
-      const cid = childrenIds[i];
-      const oldChild = c.persons.find((p) => p.id === cid);
-      if (!oldChild) continue;
-      const dx = newPositions[i].x - oldChild.position.x;
-      const dy = newPositions[i].y - oldChild.position.y;
-      if (dx === 0 && dy === 0) continue;
-      const spouseIds = c.lines
-        .filter(
-          (l) =>
-            MARRIAGE_SUBTYPE_SET.has(l.subType) &&
-            (l.fromPersonId === cid || l.toPersonId === cid),
-        )
-        .map((l) => (l.fromPersonId === cid ? l.toPersonId : l.fromPersonId));
-      for (const sid of spouseIds) {
-        if (sid === a.id || sid === b.id) continue;
-        if (allIds.includes(sid)) continue;
-        if (spouseMoves.some((m) => m.id === sid)) continue;
-        spouseMoves.push({ id: sid, dx, dy });
-      }
-    }
-
-    // 新子女位置檢查:如果跟「移動後的配偶位置」撞,往外推
-    let finalNewChildPos = { ...newPositions[n - 1] };
-    const movedSpousePositions = spouseMoves
-      .map((m) => {
-        const sp = c.persons.find((p) => p.id === m.id);
-        return sp ? { x: sp.position.x + m.dx, y: sp.position.y + m.dy } : null;
-      })
-      .filter((x): x is { x: number; y: number } => x !== null);
-    const dir = finalNewChildPos.x >= midX ? 1 : -1;
-    let safety = 6;
-    while (
-      safety-- > 0 &&
-      movedSpousePositions.some(
-        (sp) =>
-          Math.abs(sp.x - finalNewChildPos.x) < COLLISION_TOLERANCE &&
-          Math.abs(sp.y - finalNewChildPos.y) < COLLISION_TOLERANCE,
-      )
-    ) {
-      finalNewChildPos = {
-        x: finalNewChildPos.x + dir * GRID_SIZE * 2,
-        y: finalNewChildPos.y,
-      };
-    }
-
-    const updatedPersons = c.persons.map((p) => {
-      const idx = allIds.indexOf(p.id);
-      if (idx !== -1 && p.id !== newChild.id)
-        return { ...p, position: newPositions[idx] };
-      const sm = spouseMoves.find((m) => m.id === p.id);
-      if (sm)
-        return {
-          ...p,
-          position: { x: p.position.x + sm.dx, y: p.position.y + sm.dy },
-        };
-      return p;
-    });
-    newChild.position = finalNewChildPos;
-
-    const bio1 = mkLine(a.id, newChild.id, 'biological');
-    const bio2 = mkLine(b.id, newChild.id, 'biological');
-
+    const childrenIds = childrenOfCouple(c, a.id, b.id);
+    const [pos] = placeAppendedChildren(c, a, b, childrenIds, 1);
+    const newChild: Person = { id: uid('p'), position: pos, shape: 'square', basicInfo: {} };
     const newCase = touch({
       ...c,
-      persons: [...updatedPersons, newChild],
-      lines: [...c.lines, bio1, bio2],
+      persons: [...c.persons, newChild],
+      lines: [...c.lines, mkLine(a.id, newChild.id, 'biological'), mkLine(b.id, newChild.id, 'biological')],
     });
+    set({ ...pushHistory(c, history, newCase) });
+  },
+  tidyChildrenOfMarriage: (marriageLineId) => {
+    const { currentCase: c, history } = get();
+    if (!c) return;
+    const m = c.lines.find((l) => l.id === marriageLineId);
+    if (!m) return;
+    const a = c.persons.find((p) => p.id === m.fromPersonId);
+    const b = c.persons.find((p) => p.id === m.toPersonId);
+    if (!a || !b) return;
+    const childrenIds = childrenOfCouple(c, a.id, b.id);
+    if (childrenIds.length === 0) return;
+    const persons = tidyChildrenLayout(c, a, b, childrenIds);
+    const changed = persons.some(
+      (p, i) => p.position.x !== c.persons[i].position.x || p.position.y !== c.persons[i].position.y,
+    );
+    if (!changed) return; // 已經整齊:不推歷史、不動 lastModifiedAt
+    const newCase = touch({ ...c, persons });
     set({ ...pushHistory(c, history, newCase) });
   },
 
   // 一次新增 N 胞胎(共享 twinGroupId,渲染時共用 fork)
+  bringSpousesTogether: (marriageLineId) => {
+    const { currentCase: c, history } = get();
+    if (!c) return;
+    const m = c.lines.find((l) => l.id === marriageLineId);
+    if (!m) return;
+    const spouseA = c.persons.find((p) => p.id === m.fromPersonId);
+    const spouseB = c.persons.find((p) => p.id === m.toPersonId);
+    if (!spouseA || !spouseB) return;
+    const isBio = (l: Line) => BIO_SUBTYPES_ALL.has(l.subType);
+    const parentsOf = (pid: string) => c.lines.filter((l) => isBio(l) && l.toPersonId === pid).map((l) => l.fromPersonId);
+    const moves = new Map<string, { x: number; y: number }>();
+    for (const [s0, other] of [[spouseA, spouseB], [spouseB, spouseA]] as const) {
+      const ps = parentsOf(s0.id);
+      if (ps.length === 0) continue;
+      // 「同一對父母」(父母集合完全相同)且同一列的手足 —— 同父異母的半手足不算,
+      // 免得把繼親家庭另一段婚姻的孩子整排搬過來
+      const key = [...ps].sort().join('|');
+      const row = c.persons
+        .filter((p) => Math.abs(p.position.y - s0.position.y) <= GRID_SIZE / 2)
+        .filter((p) => p.id === s0.id || [...parentsOf(p.id)].sort().join('|') === key)
+        .sort((x, y) => x.position.x - y.position.x);
+      if (row.length < 2) continue;
+      const slots = row.map((p) => p.position.x);
+      const toRight = other.position.x > s0.position.x;
+      const rest = row.filter((p) => p.id !== s0.id);
+      const order = toRight ? [...rest, s0] : [s0, ...rest];
+      order.forEach((p, k) => {
+        if (slots[k] !== p.position.x) moves.set(p.id, { x: slots[k], y: p.position.y });
+      });
+    }
+    if (moves.size === 0) return;
+    // 被換位的手足(非這對夫妻本人)的配偶跟著平移
+    const spouseFollow = new Map<string, { x: number; y: number }>();
+    for (const [pid, np] of moves) {
+      if (pid === spouseA.id || pid === spouseB.id) continue;
+      const orig = c.persons.find((p) => p.id === pid)!;
+      const dx = np.x - orig.position.x;
+      for (const l of c.lines) {
+        if (!MARRIAGE_SUBTYPE_SET.has(l.subType)) continue;
+        if (l.fromPersonId !== pid && l.toPersonId !== pid) continue;
+        const sid = l.fromPersonId === pid ? l.toPersonId : l.fromPersonId;
+        if (moves.has(sid) || spouseFollow.has(sid) || sid === spouseA.id || sid === spouseB.id) continue;
+        const sp = c.persons.find((p) => p.id === sid);
+        if (!sp) continue;
+        const target = { x: sp.position.x + dx, y: sp.position.y };
+        // 跟動的位置撞到別人就不跟(寧可留在原地,不疊到人身上)
+        const blocked = c.persons.some(
+          (q) =>
+            q.id !== sid &&
+            !moves.has(q.id) &&
+            Math.abs(q.position.x - target.x) < COLLISION_TOLERANCE &&
+            Math.abs(q.position.y - target.y) < COLLISION_TOLERANCE,
+        );
+        if (!blocked) spouseFollow.set(sid, target);
+      }
+    }
+    const persons = c.persons.map((p) => {
+      const np = moves.get(p.id) ?? spouseFollow.get(p.id);
+      return np ? { ...p, position: np } : p;
+    });
+    set({ ...pushHistory(c, history, touch({ ...c, persons })) });
+  },
   expandTwinsFromMarriage: (marriageLineId, count, twinType) => {
     const { currentCase: c, history } = get();
     if (!c) return;
@@ -2448,83 +2435,25 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const a = c.persons.find((p) => p.id === m.fromPersonId);
     const b = c.persons.find((p) => p.id === m.toPersonId);
     if (!a || !b) return;
-
-    const childrenIds = c.persons
-      .filter((p) => {
-        const byA = c.lines.some(
-          (l) =>
-            l.fromPersonId === a.id &&
-            l.toPersonId === p.id &&
-            (l.subType === 'biological' ||
-              l.subType === 'adopted' ||
-              l.subType === 'placed-out'),
-        );
-        const byB = c.lines.some(
-          (l) =>
-            l.fromPersonId === b.id &&
-            l.toPersonId === p.id &&
-            (l.subType === 'biological' ||
-              l.subType === 'adopted' ||
-              l.subType === 'placed-out'),
-        );
-        return byA && byB;
-      })
-      .map((p) => p.id);
-
-    const midX = (a.position.x + b.position.x) / 2;
-    const baseY = Math.max(a.position.y, b.position.y) + GRID_SIZE * 2;
-    const step = GRID_SIZE * 2;
-    const total = childrenIds.length + count;
-    const twinGroupId = `tw_${Date.now()}_${Math.random()
-      .toString(36)
-      .slice(2, 8)}`;
-
-    const newChildren: Person[] = [];
-    for (let i = 0; i < count; i++) {
-      newChildren.push({
-        id: uid('p'),
-        position: { x: 0, y: 0 },
-        shape: 'square',
-        basicInfo: {},
-        twinGroupId,
-        twinType,
-      });
-    }
-    const allIds = [...childrenIds, ...newChildren.map((nc) => nc.id)];
-
-    const initialChildPositions = allIds.map((_, i) => ({
-      x: snapToGrid(midX + (i - (total - 1) / 2) * step),
-      y: snapToGrid(baseY),
+    const childrenIds = childrenOfCouple(c, a.id, b.id);
+    const positions = placeAppendedChildren(c, a, b, childrenIds, count);
+    const twinGroupId = `tw_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const newChildren: Person[] = positions.map((position) => ({
+      id: uid('p'),
+      position,
+      shape: 'square',
+      basicInfo: {},
+      twinGroupId,
+      twinType,
     }));
-
-    const childrenOffset = () => ({ dx: 0, dy: GRID_SIZE });
-    const newPositions = resolveBatchPositions(
-      c.persons,
-      initialChildPositions,
-      [a.id, b.id, ...childrenIds],
-      childrenOffset,
-    );
-
-    const updatedPersons = c.persons.map((p) => {
-      const idx = allIds.indexOf(p.id);
-      if (idx !== -1 && !newChildren.some((nc) => nc.id === p.id))
-        return { ...p, position: newPositions[idx] };
-      return p;
-    });
-    // 為每個 newChildren 設位置(後 count 個位置)
-    newChildren.forEach((nc, i) => {
-      nc.position = newPositions[childrenIds.length + i];
-    });
-
     const newLines: Line[] = [];
     for (const nc of newChildren) {
       newLines.push(mkLine(a.id, nc.id, 'biological'));
       newLines.push(mkLine(b.id, nc.id, 'biological'));
     }
-
     const newCase = touch({
       ...c,
-      persons: [...updatedPersons, ...newChildren],
+      persons: [...c.persons, ...newChildren],
       lines: [...c.lines, ...newLines],
     });
     set({ ...pushHistory(c, history, newCase) });

@@ -65,6 +65,10 @@ const dict: Record<Lang, Record<string, string>> = {
     'tutorial.next': '下一步',
     'tutorial.done': '完成',
     'menu.assessmentTools': '評估工具',
+    'menu.bringSpouses': '把配偶移到靠近對方的那一端',
+    'menu.bringSpousesHint': '先選一條婚姻線;兩人各自在「同一對父母」的手足列換到靠近對方的一端,只換順序、一步可復原',
+    'menu.tidyChildren': '整理子女排列',
+    'menu.tidyChildrenHint': '先選一條婚姻線;子女排成對稱一列,一步可復原',
     'menu.language': '語言 / Language',
     'menu.copyrightNotice':
       '⚠️ 量表版權聲明：本工具內建量表均為公開或授權版本（衛福部、WHO、CDC、Pfizer 等公開來源）。商業營利使用請洽各量表原始版權方確認授權範圍。量表結果僅供參考,不作臨床診斷依據。',
@@ -780,6 +784,10 @@ const dict: Record<Lang, Record<string, string>> = {
     'tutorial.next': 'Next',
     'tutorial.done': 'Done',
     'menu.assessmentTools': 'Assessment Tools',
+    'menu.bringSpouses': 'Move spouses to the near ends',
+    'menu.bringSpousesHint': 'Select a marriage line first; each spouse moves to the near end of their own full-sibling row (order only, one undo step)',
+    'menu.tidyChildren': 'Tidy children row',
+    'menu.tidyChildrenHint': 'Select a marriage line first; children are laid out symmetrically, one undo step',
     'menu.language': 'Language',
     'menu.copyrightNotice':
       '⚠️ Scale Copyright Notice: All built-in scales are public-domain or properly licensed versions (Taiwan MOHW, WHO, CDC, Pfizer, etc.). For commercial use, please contact the original copyright holders. Results are for reference only, not for clinical diagnosis.',

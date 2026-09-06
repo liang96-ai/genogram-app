@@ -38,7 +38,7 @@ import {
   onNeedRefreshChange,
 } from './services/pwaUpdate';
 import { ensurePersistentStorage } from './services/storagePersist';
-import { GRID_SIZE, useGenogramStore } from './store/genogramStore';
+import { GRID_SIZE, MARRIAGE_SUBTYPE_SET, useGenogramStore } from './store/genogramStore';
 
 // 大塊且非常用的畫面 lazy 拆包(#127):教學手冊 / 符號圖例 開啟時才載入
 const Tutorial = lazy(() => import('./components/Tutorial/Tutorial'));
@@ -687,6 +687,15 @@ function Toolbar({
   const [quickBuildOpen, setQuickBuildOpen] = useState(false);
   const [kinshipOpen, setKinshipOpen] = useState(false);
   const [scalePickerOpen, setScalePickerOpen] = useState(false);
+  // 「整理子女排列」:選取的線剛好是一條婚姻線時才可用(新增不再自動排列,想整齊的人自己按)
+  const selectedLineIds = useGenogramStore((s) => s.selectedLineIds);
+  const tidyChildrenOfMarriage = useGenogramStore((s) => s.tidyChildrenOfMarriage);
+  const bringSpousesTogether = useGenogramStore((s) => s.bringSpousesTogether);
+  const tidyTarget =
+    selectedLineIds.length === 1 &&
+    currentCase?.lines.some((l) => l.id === selectedLineIds[0] && MARRIAGE_SUBTYPE_SET.has(l.subType))
+      ? selectedLineIds[0]
+      : null;
   // 第四分頁「施測」按鈕 → 開同一個量表挑選器(services/uiEvents.ts)
   useEffect(() => {
     const onOpen = () => setScalePickerOpen(true);
@@ -917,6 +926,26 @@ function Toolbar({
             label={t('menu.assessmentTools')}
             onClick={() => {
               setScalePickerOpen(true);
+              setOpen(false);
+            }}
+          />
+          <MenuItem
+            icon="🤝"
+            label={t('menu.bringSpouses')}
+            subtitle={t('menu.bringSpousesHint')}
+            disabled={!tidyTarget}
+            onClick={() => {
+              if (tidyTarget) bringSpousesTogether(tidyTarget);
+              setOpen(false);
+            }}
+          />
+          <MenuItem
+            icon="🧹"
+            label={t('menu.tidyChildren')}
+            subtitle={t('menu.tidyChildrenHint')}
+            disabled={!tidyTarget}
+            onClick={() => {
+              if (tidyTarget) tidyChildrenOfMarriage(tidyTarget);
               setOpen(false);
             }}
           />
