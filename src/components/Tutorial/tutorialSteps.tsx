@@ -1499,7 +1499,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         <P>
           除了人物與線,還可以用 <Strong>多邊形</Strong> 框起一群人,
           表達<Strong>子系統</Strong>(原生家庭、學校、職場、親屬圈等),
-          同住的人不用畫多邊形:框選 2 人以上,畫布上方會浮出「<Strong>圈成同住</Strong>」。同住圈和生態圈的操作完全一樣:點邊線選取、雙擊進編輯拖邊拖角、雙擊標籤改名、紅 × 或 Delete 解除;差別只在同住圈一開始會自動包住成員,拖過把手後就固定形狀。
+          同住的人不用畫多邊形:框選 2 人以上,畫布上方會浮出「<Strong>圈成同住</Strong>」。同住圈和生態圈的操作完全一樣:點邊線選取、雙擊進編輯拖邊拖角、雙擊標籤改名、紅 × 或 Delete 解除;差別只在同住圈一開始會自動包住成員,拖過把手後就固定形狀(改畫點虛線),選取後按 ↺ 可回到自動包住成員。
         </P>
         <EcosystemMockup lang="zh" />
         <P>
@@ -1801,7 +1801,7 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           For people living together, select 2+ people and tap the <Strong>household</Strong> button above the canvas.
           Household circles work exactly like ecosystems: click the edge to select, double-click to edit (drag edges and corners),
           double-click the label to rename, red × or Delete to dissolve; the only difference is that a household circle
-          wraps its members automatically until you drag a handle.
+          wraps its members automatically until you drag a handle (then it is drawn dash-dot); select it and tap ↺ to go back to auto.
         </P>
         <EcosystemMockup lang="en" />
         <P>

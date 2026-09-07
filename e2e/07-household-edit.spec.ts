@@ -32,4 +32,20 @@ test('⑭ 同住圈:雙擊邊線進編輯,拖邊把手後形狀固定', async ({
       timeout: 5000,
     })
     .toBe(4);
+  // 回到自動(1.5.1):退出編輯 → 點邊線選取 → 按 ↺ → 形狀欄位拿掉,圈重新自動包住成員
+  await app.keyboard.press('Escape');
+  // 用 getBoundingClientRect 取幾何邊界(boundingBox 對 SVG 多邊形會外擴,點不到邊線)
+  const rect = await hit.evaluate((el) => {
+    const r = (el as SVGGraphicsElement).getBoundingClientRect();
+    return { x: r.x, y: r.y, w: r.width };
+  });
+  await app.mouse.click(rect.x + rect.w / 2, rect.y + 1);
+  const reset = app.locator('g[data-hh-id] [data-action="reset-shape"]');
+  await expect(reset).toBeVisible();
+  await reset.click();
+  await expect
+    .poll(async () => ((await readCaseByName(app, 'E2E 同住圈編輯'))!.households![0].points ?? []).length, {
+      timeout: 5000,
+    })
+    .toBe(0);
 });

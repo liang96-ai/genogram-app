@@ -27,6 +27,9 @@ export type ZonePolygonProps = {
   onEdgeDown: (e: React.PointerEvent, edgeIdx: number) => void;
   onRemove: () => void;
   onRename: (label: string) => void;
+  /** 有值時,選取後 × 旁多一顆 ↺(同住圈:回到自動包住成員,1.5.1) */
+  resetTitle?: string;
+  onReset?: () => void;
 };
 
 export default function ZonePolygon(p: ZonePolygonProps) {
@@ -204,6 +207,30 @@ export default function ZonePolygon(p: ZonePolygonProps) {
           <circle r={8} fill="#ff3b30" />
           <line x1={-4} y1={-4} x2={4} y2={4} stroke="#fff" strokeWidth={1.5} />
           <line x1={4} y1={-4} x2={-4} y2={4} stroke="#fff" strokeWidth={1.5} />
+        </g>
+      )}
+      {/* 選中且可回到自動時:× 右邊 ↺ */}
+      {p.selected && !editing && p.onReset && (
+        <g
+          data-action="reset-shape"
+          transform={`translate(${labelX + 62}, ${labelY - 5})`}
+          style={{ cursor: 'pointer' }}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            p.onReset?.();
+          }}
+        >
+          {p.resetTitle && <title>{p.resetTitle}</title>}
+          <circle r={8} fill="#ffffff" stroke={p.color} strokeWidth={1.5} />
+          <text
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize={12}
+            fill={p.color}
+            style={{ userSelect: 'none', pointerEvents: 'none' }}
+          >
+            ↺
+          </text>
         </g>
       )}
     </g>

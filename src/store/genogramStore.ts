@@ -946,6 +946,8 @@ type GenogramStore = {
   moveHousehold: (id: string, dx: number, dy: number) => void;
   /** 拖曳結束:把「編輯前」推進歷史(originalPoints 為 undefined = 之前是自動包住成員) */
   commitHouseholdEdit: (id: string, originalPoints: { x: number; y: number }[] | undefined) => void;
+  /** 回到自動包住成員:拿掉自訂形狀(一步可復原);本來就是自動的圈不動 */
+  resetHouseholdShape: (id: string) => void;
 
   // Ecosystem(生態圈)— 畫筆繪製的閉合多邊形
   drawMode: boolean;
@@ -3220,6 +3222,22 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       households: (c.households ?? []).map((h) =>
         h.id === id ? { ...h, ...patch } : h,
       ),
+    });
+    set(pushHistory(c, history, next));
+  },
+  resetHouseholdShape: (id) => {
+    const { currentCase: c, history } = get();
+    if (!c) return;
+    const hh = (c.households ?? []).find((h) => h.id === id);
+    if (!hh?.points) return;
+    const next = touch({
+      ...c,
+      households: (c.households ?? []).map((h) => {
+        if (h.id !== id) return h;
+        const rest = { ...h };
+        delete rest.points;
+        return rest;
+      }),
     });
     set(pushHistory(c, history, next));
   },

@@ -181,5 +181,20 @@ describe('同住圈與生態圈同一套手勢(1.5.0)', () => {
     S().removeHousehold(hh.id);
     expect(useGenogramStore.getState().editingHouseholdId).toBeNull();
   });
-});
 
+  it('回到自動:拿掉自訂形狀一步可復原;本來就是自動的圈不推歷史', () => {
+    S().addHousehold(ids());
+    const hh = households()[0];
+    const before = S().history.past.length;
+    S().resetHouseholdShape(hh.id);
+    expect(S().history.past.length).toBe(before);
+    S().setHouseholdPointsTransient(hh.id, square);
+    S().commitHouseholdEdit(hh.id, undefined);
+    expect(households()[0].points).toEqual(square);
+    S().resetHouseholdShape(hh.id);
+    expect(households()[0].points).toBeUndefined();
+    expect('points' in households()[0]).toBe(false);
+    S().undo();
+    expect(households()[0].points).toEqual(square);
+  });
+});
