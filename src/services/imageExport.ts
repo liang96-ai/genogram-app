@@ -42,7 +42,9 @@ export async function exportCanvasImage(
     line: [...store.selectedLineIds],
     unit: [...store.selectedUnitIds],
     eco: store.selectedEcosystemId,
+    household: store.selectedHouseholdId,
     editing: store.editingEcosystemId,
+    householdEditing: store.editingHouseholdId,
   };
   store.clearSelection();
 
@@ -232,7 +234,9 @@ export async function exportCanvasImage(
     else if (prev.line.length > 0) store.selectLines(prev.line);
     else if (prev.unit.length > 0) store.selectUnits(prev.unit);
     else if (prev.eco) store.selectEcosystem(prev.eco);
+    else if (prev.household) store.selectHousehold(prev.household);
     if (prev.editing) store.setEditingEcosystem(prev.editing);
+    if (prev.householdEditing) store.setEditingHousehold(prev.householdEditing);
   }
 }
 

@@ -458,8 +458,9 @@ export default function Canvas() {
   useEffect(() => {
     if (!editingEcosystemId && !editingHouseholdId) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') if (editingEcosystemId) setEditingEcosystem(null);
-        if (editingHouseholdId) setEditingHousehold(null);
+      if (e.key !== 'Escape') return;
+      if (editingEcosystemId) setEditingEcosystem(null);
+      if (editingHouseholdId) setEditingHousehold(null);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -1701,6 +1702,7 @@ export default function Canvas() {
       style={{
         display: 'block',
         touchAction: 'none',
+        WebkitTouchCallout: 'none',
         width: '100%',
         height: '100%',
         cursor,
