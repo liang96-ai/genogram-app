@@ -855,6 +855,14 @@ export default function Canvas() {
     document.addEventListener('pointerup', onUp);
     document.addEventListener('pointercancel', onUp);
   };
+  // 雙擊把手:拿掉手動高度,回到自動(1.5.1;一步可復原)
+  const onBusHandleReset = (lineId: string) => {
+    const line = useGenogramStore.getState().currentCase?.lines.find((l) => l.id === lineId);
+    if (!line || line.visual.trunkOffset === undefined) return;
+    const visual = { ...line.visual };
+    delete visual.trunkOffset;
+    updateLine(lineId, { visual });
+  };
   // 人 vs 線(不允許壓到自己非端點的線):婚姻線若是 U 型,用橫桿那一段判;其餘用兩端直線
   {
     const ps = currentCase.persons;
@@ -2300,6 +2308,7 @@ export default function Canvas() {
           trunkYOverride={marriageTrunkYOverrides.get(g.marriage.id)}
           route={marriageRoutes.get(g.marriage.id)}
           onBusHandleDown={onBusHandleDown}
+          onBusHandleReset={onBusHandleReset}
           crossingSegments={crossingSegmentsFor(g.marriage.id)}
           selectedLineIds={selectedLineIds}
           handleDrag={handleDrag}

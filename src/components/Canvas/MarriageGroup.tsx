@@ -37,6 +37,8 @@ type Props = {
   route?: MarriageRoute;
   /** 選取時橫桿中點的把手:拖曳改高度(存進 visual.trunkOffset) */
   onBusHandleDown?: (e: React.PointerEvent, lineId: string) => void;
+  /** 雙擊把手:拿掉手動高度,回到自動(1.5.1) */
+  onBusHandleReset?: (lineId: string) => void;
   /** 別段婚姻的結構線段:本段的水平線跟它們交叉的地方鼓小弧(交叉跳線,1.5.0) */
   crossingSegments?: Seg[];
 };
@@ -134,6 +136,7 @@ export default function MarriageGroup({
   trunkYOverride,
   route,
   onBusHandleDown,
+  onBusHandleReset,
   crossingSegments = [],
 }: Props) {
   const t = useT();
@@ -277,10 +280,14 @@ export default function MarriageGroup({
       {marriageSelected && !marriageDragging && onBusHandleDown && (
         <g
           transform={`translate(${midX}, ${busTopY})`}
-          style={{ cursor: 'ns-resize' }}
+          style={{ cursor: 'ns-resize', userSelect: 'none' }}
           onPointerDown={(e) => {
             e.stopPropagation();
             onBusHandleDown(e, m.id);
+          }}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            onBusHandleReset?.(m.id);
           }}
         >
           <title>{t('marriage.busHandleTitle')}</title>
