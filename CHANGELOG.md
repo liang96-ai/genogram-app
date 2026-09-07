@@ -3,6 +3,17 @@
 給使用者看的版本說明。技術細節請見 git 歷史。
 User-facing release notes; see git history for technical details.
 
+## 1.5.1 — 2026-09-07
+
+**English summary:** Household circles can go back to auto-wrapping their members (select → ↺), and a manually shaped circle is drawn dash-dot so you can tell it no longer follows people; double-click the marriage-line handle to reset its height; long-pressing an arrow without dragging now counts as a tap; the canvas suppresses the iOS long-press menu; exporting an image while editing a household no longer includes the handles.
+
+### 改了什麼
+- **同住圈可以回到自動**:選取後按 ↺,圈重新自動包住成員,一步可復原。調整過形狀的圈改畫點虛線,一看就知道它不會再跟著成員走。
+- **婚姻線高度雙擊回到自動**:選取婚姻線後雙擊橫桿把手,手動高度取消,一步可復原。
+- **長按沒拖動就放開,視同短按**:四個箭頭一致,不會再出現「按了沒反應」。
+- **iPad 長按不再跳出系統選單**。
+- **修正**:編輯同住圈時匯出圖片,不再把把手畫進圖裡。
+
 ## 1.5.0 — 2026-09-07
 
 **English summary:** Quick-add never moves people you already placed (plus a "tidy children row" command); household circles now behave exactly like ecosystems (edit handles, rename, delete); marriage lines that would pass through other people now route underneath with small hops at line crossings, a draggable bar height, and a "move spouses to the near ends" helper; the four quick arrows can be long-pressed and dragged onto people or marriage lines to marry, attach parents, or attach children.
