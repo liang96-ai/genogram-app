@@ -39,3 +39,24 @@ test('⑮ 長按 → 箭頭拖到另一個人 → 建立婚姻線', async ({ app
     )
     .toBe(1);
 });
+
+/**
+ * 長按後沒拖動就放開 = 短按(1.5.1):↑ 箭頭按 0.4 秒放開 → 加父母,不會「按了沒反應」。
+ */
+test('⑯ 長按不動放開 = 短按:↑ 箭頭按 0.4 秒放開 → 加父母', async ({ app }) => {
+  await createCase(app, 'E2E 長按放開');
+  await app.getByRole('button', { name: UI.addLonePerson }).click();
+  await expect
+    .poll(async () => (await readCaseByName(app, 'E2E 長按放開'))!.persons.length, { timeout: 5000 })
+    .toBe(2);
+  const arrow = app.locator('g[data-arrow="up"]');
+  await expect(arrow).toBeVisible();
+  const ab = await arrow.boundingBox();
+  await app.mouse.move(ab!.x + ab!.width / 2, ab!.y + ab!.height / 2);
+  await app.mouse.down();
+  await app.waitForTimeout(400); // 超過 0.25 秒,但沒有移動
+  await app.mouse.up();
+  await expect
+    .poll(async () => (await readCaseByName(app, 'E2E 長按放開'))!.persons.length, { timeout: 5000 })
+    .toBe(4);
+});

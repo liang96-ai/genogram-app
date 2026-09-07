@@ -65,7 +65,7 @@ export default function SmallArrows({ person, hasParents, leftFull, rightFull, o
   /**
    * 四個方向同一套按壓規則:
    *   放開前沒超過 0.25 秒 → 短按;超過 0.25 秒後移動超過 10px → 拖曳(交給 Canvas 落點);
-   *   ↑ 維持既有行為:0.25 秒一到就進拖曳(不必先移動);↓ 長按 1 秒不動 → 多胞胎。
+   *   長按後沒拖動就放開 → 視同短按(四個方向一致,1.5.1);↓ 長按 1 秒不動 → 多胞胎。
    */
   const onPointerDown = (dir: ArrowDir) => (e: React.PointerEvent) => {
     e.stopPropagation();
@@ -79,8 +79,14 @@ export default function SmallArrows({ person, hasParents, leftFull, rightFull, o
     const cleanup = () => {
       document.removeEventListener('pointerup', onUp);
       document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointercancel', onCancel);
       window.clearTimeout(armTimer);
       window.clearTimeout(twinsTimer);
+    };
+    // 手勢被系統中斷(切 App、多指):只收拾,不做任何動作,免得殘留的 listener 被下一次按放誤觸發
+    const onCancel = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      cleanup();
     };
     const startDrag = () => {
       done = true;
@@ -89,7 +95,6 @@ export default function SmallArrows({ person, hasParents, leftFull, rightFull, o
     };
     const armTimer = window.setTimeout(() => {
       armed = true;
-      if (dir === 'up' && !moved) startDrag();
     }, LONG_PRESS_MS);
     const twinsTimer = window.setTimeout(() => {
       if (dir === 'down' && !moved && !done) {
@@ -113,10 +118,14 @@ export default function SmallArrows({ person, hasParents, leftFull, rightFull, o
     };
     document.addEventListener('pointerup', onUp);
     document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointercancel', onCancel);
   };
 
   return (
-    <g transform={`translate(${person.position.x}, ${person.position.y})`}>
+    <g
+      transform={`translate(${person.position.x}, ${person.position.y})`}
+      style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+    >
       {dirs.map((dir) => {
         if (dir === 'left' && leftFull) return null;
         if (dir === 'right' && rightFull) return null;
