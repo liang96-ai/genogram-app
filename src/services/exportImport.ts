@@ -140,10 +140,11 @@ export function parseImport(text: string): ExportBundle {
       `不支援的檔案版本 (${ver || 'unknown'});此版本可讀 1.x 系列的檔案`,
     );
   }
-  if (!Array.isArray(bundle.cases))
+  if (!Array.isArray(bundle.cases)) {
     throw new Error(
       '這不是本工具匯出的個案檔(裡面沒有個案內容)。請選擇當初用「輸出檔案」存下來的 .json',
     );
+  }
   return bundle as ExportBundle;
 }
 

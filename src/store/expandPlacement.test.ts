@@ -135,3 +135,100 @@ describe('整理子女排列(使用者主動)', () => {
     expect(pos(c1)).toEqual(scattered);
   });
 });
+
+describe('加父母:同一代留在同一排', () => {
+  it('爸爸和媽媽各自加父母:四位祖父母在同一排、互不重疊,外公外婆往外側讓', () => {
+    const me = S().currentCase!.persons[0].id;
+    S().expandParents(me);
+    const bioParents = (id: string) =>
+      S().currentCase!.lines.filter((l) => l.subType === 'biological' && l.toPersonId === id).map((l) => l.fromPersonId);
+    const [dad, mom] = bioParents(me).sort((a, b) => pos(a).x - pos(b).x);
+    S().expandParents(dad);
+    S().expandParents(mom);
+    const grand = [...bioParents(dad), ...bioParents(mom)];
+    expect(grand).toHaveLength(4);
+    const ys = new Set(grand.map((id) => pos(id).y));
+    expect(ys.size).toBe(1); // 同一排
+    const all = S().currentCase!.persons;
+    for (const a of all) {
+      for (const b of all) {
+        if (a.id < b.id) {
+          expect(
+            Math.abs(a.position.x - b.position.x) >= 36 || Math.abs(a.position.y - b.position.y) >= 36,
+            `${a.id} 與 ${b.id} 重疊`,
+          ).toBe(true);
+        }
+      }
+    }
+    const maxPaternal = Math.max(...bioParents(dad).map((id) => pos(id).x));
+    const minMaternal = Math.min(...bioParents(mom).map((id) => pos(id).x));
+    expect(minMaternal).toBeGreaterThan(maxPaternal); // 母系在父系右邊
+  });
+});
+
+describe('加父母:換順序也不會把人推到另一個家族那頭', () => {
+  const bioParents = (id: string) =>
+    S().currentCase!.lines.filter((l) => l.subType === 'biological' && l.toPersonId === id).map((l) => l.fromPersonId);
+  const noOverlap = () => {
+    const all = S().currentCase!.persons;
+    for (const a of all) {
+      for (const b of all) {
+        if (a.id < b.id) {
+          expect(
+            Math.abs(a.position.x - b.position.x) >= 36 || Math.abs(a.position.y - b.position.y) >= 36,
+            `${a.id} 與 ${b.id} 重疊`,
+          ).toBe(true);
+        }
+      }
+    }
+  };
+  const nearChild = (childId: string) => {
+    const ps = bioParents(childId);
+    const mid = (pos(ps[0]).x + pos(ps[1]).x) / 2;
+    expect(Math.abs(mid - pos(childId).x), `${childId} 的父母離太遠`).toBeLessThanOrEqual(240);
+  };
+  for (const order of [
+    ['mom', 'dad', 'momDad', 'dadMom'],
+    ['dad', 'mom', 'dadMom', 'momDad'],
+    ['mom', 'momDad', 'dad', 'dadMom'],
+  ]) {
+    it(`順序:${order.join(' → ')}`, () => {
+      const me = S().currentCase!.persons[0].id;
+      S().expandParents(me);
+      const [dad, mom] = bioParents(me).sort((a, b) => pos(a).x - pos(b).x);
+      const ids: Record<string, () => string> = {
+        dad: () => dad,
+        mom: () => mom,
+        // 外公 = 媽媽的父親(方塊)、奶奶 = 爸爸的母親(圓形)
+        momDad: () => bioParents(mom).find((id) => S().currentCase!.persons.find((p) => p.id === id)!.shape === 'square')!,
+        dadMom: () => bioParents(dad).find((id) => S().currentCase!.persons.find((p) => p.id === id)!.shape === 'circle')!,
+      };
+      for (const step of order) S().expandParents(ids[step]());
+      noOverlap();
+      for (const step of order) nearChild(ids[step]());
+    });
+  }
+});
+
+describe('加子女:同居、喪偶也算伴侶,不會多生出新配偶', () => {
+  for (const kind of ['cohabitation', 'widowed', 'legal-separation'] as const) {
+    it(`只有「${kind}」這條伴侶線時,加子女只多一個人`, () => {
+      const me = S().currentCase!.persons[0].id;
+      S().expandSpouseOrSibling(me, 'right');
+      const m = marriageOf(me);
+      useGenogramStore.setState({
+        currentCase: {
+          ...S().currentCase!,
+          lines: S().currentCase!.lines.map((l) => (l.id === m.id ? { ...l, subType: kind } : l)),
+        },
+      });
+      const before = S().currentCase!.persons.length;
+      S().expandChild(me);
+      expect(S().currentCase!.persons.length).toBe(before + 1);
+      const child = S().currentCase!.persons[S().currentCase!.persons.length - 1];
+      const parents = S().currentCase!.lines.filter((l) => l.toPersonId === child.id).map((l) => l.fromPersonId);
+      expect(parents).toContain(me);
+    });
+  }
+});
+

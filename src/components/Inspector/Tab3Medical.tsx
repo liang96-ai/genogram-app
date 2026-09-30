@@ -14,6 +14,7 @@ import {
   PrivacyMainToggle,
   SectionPrivacyToggle,
 } from './Tab1Basic';
+import Icon from '../ui/Icon';
 
 type Props = {
   person: Person;
@@ -1950,7 +1951,7 @@ function renderItem(
     >
       {isHistory && (
         <span style={{ marginRight: 6, fontSize: 11, color: '#86868b' }}>
-          🕐
+          <Icon name="clock" size={14} />
         </span>
       )}
       <span

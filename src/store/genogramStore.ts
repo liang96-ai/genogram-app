@@ -16,6 +16,14 @@ import type {
 } from '../types/genogram';
 import { addDeletedCaseId, db } from '../services/database';
 import { deleteCaseFolder, writeCaseJson } from '../services/fileSystem';
+import {
+  AFFAIR_SUBTYPES,
+  MARRIAGE_SUBTYPES,
+  CYCLING_MARRIAGE_SUBTYPES,
+  PARENT_CHILD_SUBTYPES,
+  STANDARD_PARENT_CHILD_SUBTYPES,
+  ORIGIN_PARENT_SUBTYPES,
+} from '../services/relationKinds';
 
 const MAX_INSTITUTION_HISTORY = 30;
 const MAX_MEDICAL_HISTORY = 60;
@@ -193,8 +201,6 @@ const uid = (prefix: string) =>
 
 export const GRID_SIZE = 60;
 export const SHAPE_HALF = 28;
-/** 所有「親子」類的線型(判斷有沒有父母用) */
-const BIO_SUBTYPES_ALL = new Set<LineSubType>(['biological', 'adopted', 'placed-out', 'fostered', 'sperm-donor']);
 export const snapToGrid = (v: number) => Math.round(v / GRID_SIZE) * GRID_SIZE;
 // 20(2026-08-27 決議):配合下方「文字編輯合併窗」——
 // 打字不再逐鍵吃格之後,20 格的實際覆蓋範圍已經很深;再大是純記憶體浪費(每格=整份個案快照)
@@ -299,8 +305,7 @@ function resolveBatchPositions(
 const CHILD_STEP = GRID_SIZE * 2;
 
 function childrenOfCouple(c: Genogram, aId: string, bId: string): string[] {
-  const isBio = (l: Line) =>
-    l.subType === 'biological' || l.subType === 'adopted' || l.subType === 'placed-out' || l.subType === 'fostered';
+  const isBio = (l: Line) => STANDARD_PARENT_CHILD_SUBTYPES.has(l.subType);
   return c.persons
     .filter(
       (p) =>
@@ -412,51 +417,12 @@ const flipShape = (s: BasicShape): BasicShape =>
 // v1.1: 婚姻線 subType 共用名單(Canvas/store 多處都要判斷「這是婚姻嗎?」)
 // — 包含新+舊 14 個,確保新加婚姻 subType 不會漏改 Canvas 渲染分組
 // — 漏改的後果:子女找不到該綁哪條線,看起來「亂連」(實際是斷開)
-export const MARRIAGE_SUBTYPE_SET: Set<LineSubType> = new Set<LineSubType>([
-  // 現行
-  'marriage',
-  'engagement',
-  'cohabitation',
-  'legal-cohabitation',
-  'engagement-cohabitation',
-  'separation',
-  'legal-separation',
-  'engagement-separation',
-  'divorce',
-  'widowed',
-  'love-affair',
-  // 舊名(向後相容,migration 會自動轉現行)
-  'cohabitation-commit',
-  'partnership',
-  'secret-affair',
-  'divorce-remarriage',
-]);
+export const MARRIAGE_SUBTYPE_SET = MARRIAGE_SUBTYPES;
 
 // v1.1: 把 member subType 集中管理(對齊 MemberSubType union),避免每次新增婚姻 subtype 都要漏改 mkLine
-const MEMBER_SUBTYPE_SET: Set<LineSubType> = new Set<LineSubType>([
-  // 婚姻
-  'marriage',
-  'engagement',
-  'divorce',
-  'separation',
-  'legal-separation',
-  'engagement-separation',
-  'widowed',
-  'cohabitation',
-  'legal-cohabitation',
-  'engagement-cohabitation',
-  'love-affair',
-  // 舊名(向後相容)
-  'cohabitation-commit',
-  'partnership',
-  'secret-affair',
-  'divorce-remarriage',
-  // 親子
-  'biological',
-  'adopted',
-  'fostered',
-  'placed-out',
-  'sperm-donor',
+const MEMBER_SUBTYPE_SET: ReadonlySet<LineSubType> = new Set<LineSubType>([
+  ...MARRIAGE_SUBTYPES,
+  ...PARENT_CHILD_SUBTYPES,
   // 手足
   'twins',
   'identical-twins',
@@ -482,10 +448,25 @@ const mkLine = (
   visual: { lineStyle },
 });
 
+/** 這個人的伴侶關係(掛子女用):所有婚姻類都算,外遇類排最後。
+ *  以前只認 1.1 改名前的舊名稱,開檔遷移後的同居、喪偶都對不到 —— 按「加子女」會多生出一個新配偶。 */
+function partnerLineOf(c: Genogram, personId: string): Line | undefined {
+  const mine = c.lines.filter(
+    (l) => MARRIAGE_SUBTYPES.has(l.subType) && (l.fromPersonId === personId || l.toPersonId === personId),
+  );
+  return mine.find((l) => !AFFAIR_SUBTYPES.has(l.subType)) ?? mine[0];
+}
+
 const touch = (g: Genogram): Genogram => ({
   ...g,
   lastModifiedAt: new Date().toISOString(),
 });
+
+/** 復原/重做換回歷史快照時:畫布內容用快照,但「整份文件」的屬性要往前走 ——
+ *  個案名稱保留目前的(改名不進復原紀錄),修改時間更新成現在
+ *  (否則換回的舊時間會讓資料夾同步誤判哪一份比較新)。 */
+const restoreSnapshot = (snapshot: Genogram, current: Genogram | null): Genogram =>
+  touch(current && current.id === snapshot.id ? { ...snapshot, caseName: current.caseName } : snapshot);
 
 /** majorEvents 若不是陣列(手改壞的舊資料)就當空的 —— 讓所有 CRUD 對壞資料免疫。
  *  注意:這裡只是「不要炸」,不會去改寫使用者的資料。 */
@@ -509,8 +490,9 @@ const cleanEventPersonRefs = (
     if (!e || typeof e !== 'object') return e;
     // 必須是 Array.isArray:'x'.length === 1 為真,舊的 ?.length 守衛擋不住字串
     // → 下一行 .filter 直接 TypeError(第二輪複核實測到的漏網形狀)
-    if (!Array.isArray(e.relatedPersonIds) || e.relatedPersonIds.length === 0)
+    if (!Array.isArray(e.relatedPersonIds) || e.relatedPersonIds.length === 0) {
       return e;
+    }
     const kept = e.relatedPersonIds.filter((pid) => !removed.has(pid));
     if (kept.length === e.relatedPersonIds.length) return e;
     changed = true;
@@ -621,12 +603,18 @@ type GenogramStore = {
   // 教學
   showTutorial: boolean;
   setShowTutorial: (v: boolean) => void;
+  /** 「帶著做一次」進行中(1.6.0);步驟進度由 GuidedTour 自己管 */
+  tourActive: boolean;
+  setTourActive: (v: boolean) => void;
 
   // App routing
   appMode: AppMode;
   caseList: Genogram[];
   loadCaseList: () => Promise<void>;
   openCase: (id: string) => Promise<void>;
+  /** 資料庫裡的版本被換掉(例:選了「用資料夾的版本」)時,正在編輯的同一個個案也換成新的;
+   *  沒在編輯它就什麼都不做。不切換畫面、不動視角;復原紀錄清空(舊紀錄屬於被換掉的版本)。 */
+  reloadCaseIfOpen: (id: string) => Promise<void>;
   createCase: (name: string) => Promise<void>;
   renameCase: (id: string, name: string) => Promise<void>;
   /** 回傳 false = 資料夾備份檔未能一併刪除(權限休眠)— UI 應提示(#125) */
@@ -952,6 +940,9 @@ type GenogramStore = {
   // Ecosystem(生態圈)— 畫筆繪製的閉合多邊形
   drawMode: boolean;
   setDrawMode: (v: boolean) => void;
+  /** 匯出圖片進行中:畫布不畫任何警示(橘色重疊圈、紅色 fork),只有匯出流程會開關 */
+  exporting: boolean;
+  setExporting: (v: boolean) => void;
   selectedEcosystemId: string | null;
   /** 同住圈選取(2026-08-29:點圈邊線→紅×刪除)*/
   selectedHouseholdId: string | null;
@@ -1088,6 +1079,8 @@ function savePrivateFields(fields: Record<PrivacyField, boolean>): void {
 export const useGenogramStore = create<GenogramStore>((set, get) => ({
   showTutorial: false,
   setShowTutorial: (v) => set({ showTutorial: v }),
+  tourActive: false,
+  setTourActive: (v) => set({ tourActive: v }),
 
   appMode: 'list',
   caseList: [],
@@ -1132,6 +1125,29 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       console.error('openCase failed:', err);
     }
   },
+  reloadCaseIfOpen: async (id) => {
+    try {
+      const c = await db.cases.get(id);
+      const { currentCase, appMode } = get();
+      if (!c || appMode !== 'edit' || currentCase?.id !== id) return;
+      const migrated = relevelScaleResults(migrateGenogram(c)).case;
+      set({
+        currentCase: migrated,
+        loadedSnapshot: { id: migrated.id, lastModifiedAt: migrated.lastModifiedAt },
+        history: { past: [], future: [] },
+        selectedPersonIds: [],
+        selectedLineIds: [],
+        selectedUnitIds: [],
+        selectedEcosystemId: null,
+        selectedHouseholdId: null,
+        editingEcosystemId: null,
+        editingHouseholdId: null,
+        selectedConnector: null,
+      });
+    } catch (err) {
+      console.error('reloadCaseIfOpen failed:', err);
+    }
+  },
   createCase: async (name) => {
     const trimmed = name.trim() || '我的家系圖';
     const fresh = createEmptyCase(trimmed);
@@ -1168,10 +1184,13 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const cur = get().currentCase;
     try {
       let updated;
-      if (cur && cur.id === id) {
-        updated = touch({ ...cur, caseName: trimmed });
-        await db.cases.put(updated);
+      if (cur && cur.id === id && get().appMode === 'edit') {
+        // 只在正在編輯它時才用記憶體那份(回到列表後記憶體裡的可能已經過期,例如剛採用了資料夾版本)。
+        // 先改畫面上的這份(以最新狀態為準,不用 await 之前的舊快照,免得吃掉等待期間的編輯),再寫資料庫。
+        // 個案名稱是整份文件的屬性,不進復原紀錄;復原/重做時會保留目前的名稱(見 undo/redo)。
+        updated = touch({ ...get().currentCase!, caseName: trimmed });
         set({ currentCase: updated });
+        await db.cases.put(updated);
       } else {
         const c = await db.cases.get(id);
         if (!c) return;
@@ -1289,16 +1308,18 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
         privacyEnabled: boolean;
         privateFields: Record<PrivacyField, boolean>;
       }> = {};
-      if (en && typeof en === 'object' && 'value' in en)
+      if (en && typeof en === 'object' && 'value' in en) {
         patch.privacyEnabled = !!(en as { value: unknown }).value;
+      }
       if (fields && typeof fields === 'object' && 'value' in fields) {
         const v = (fields as { value: unknown }).value;
-        if (v && typeof v === 'object')
+        if (v && typeof v === 'object') {
           // 蓋在預設值上 —— 未來新增的欄位沒存過就用預設,不會 undefined
           patch.privateFields = {
             ...DEFAULT_PRIVATE_FIELDS,
             ...(v as Record<PrivacyField, boolean>),
           };
+        }
       }
       if (Object.keys(patch).length) set(patch);
     } catch (err) {
@@ -1498,8 +1519,9 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
   describeDeletable: () => {
     const st = get();
     if (st.selectedHouseholdId) return { kind: 'household', n: 1 };
-    if (st.selectedPersonIds.length > 0 && st.selectedUnitIds.length > 0)
+    if (st.selectedPersonIds.length > 0 && st.selectedUnitIds.length > 0) {
       return { kind: 'personsUnits', n: st.selectedPersonIds.length, m: st.selectedUnitIds.length };
+    }
     if (st.selectedPersonIds.length > 0) return { kind: 'persons', n: st.selectedPersonIds.length };
     if (st.selectedLineIds.length > 0) return { kind: 'lines', n: st.selectedLineIds.length };
     if (st.selectedUnitIds.length > 0) return { kind: 'units', n: st.selectedUnitIds.length };
@@ -1799,7 +1821,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const { currentCase: c, history } = get();
     if (!c) return;
     const existing = new Set(
-      c.lines.filter((l) => l.toPersonId === childId && BIO_SUBTYPES_ALL.has(l.subType)).map((l) => l.fromPersonId),
+      c.lines.filter((l) => l.toPersonId === childId && PARENT_CHILD_SUBTYPES.has(l.subType)).map((l) => l.fromPersonId),
     );
     const fresh = parentIds.filter((pid) => pid !== childId && !existing.has(pid) && c.persons.some((p) => p.id === pid));
     if (fresh.length === 0) return;
@@ -1873,13 +1895,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
 
     // 找配對線:同 child + 另一配偶 + 同 bio-like subType → 一起刪
     // (處理「拖小孩到婚姻線」會建立兩條配對線,刪一條另一條應該也消失)
-    const BIO_LIKE = new Set<LineSubType>([
-      'biological',
-      'adopted',
-      'placed-out',
-      'fostered',
-      'sperm-donor',
-    ]);
+    const BIO_LIKE = PARENT_CHILD_SUBTYPES;
     const idsToRemove = new Set<string>(wanted);
     for (const id of wanted) {
       const target = c.lines.find((l) => l.id === id)!;
@@ -1969,23 +1985,9 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       'cutoff',
     ];
 
-    const marriageish = new Set<LineSubType>([
-      'marriage',
-      'divorce',
-      'engagement',
-      'cohabitation-commit',
-      'partnership',
-      'separation',
-      'secret-affair',
-      'divorce-remarriage',
-    ]);
+    const marriageish = CYCLING_MARRIAGE_SUBTYPES;
     // 親子線視為「主要(實線)/次要(虛線)」二元 — 細分 subType 不在 UI 暴露
-    const bioish = new Set<LineSubType>([
-      'biological',
-      'adopted',
-      'fostered',
-      'placed-out',
-    ]);
+    const bioish = STANDARD_PARENT_CHILD_SUBTYPES;
 
     // 親子線特殊處理:2-態 toggle(實 ⇄ 虛)
     if (bioish.has(line.subType)) {
@@ -2115,13 +2117,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     if (childId === m1Id || childId === m2Id) return; // 自己不能當自己父母
 
     // Guard:若 M 已是 A 的父母則不重複加(避免雙條同向)
-    const BIO_LIKE = new Set<LineSubType>([
-      'biological',
-      'adopted',
-      'placed-out',
-      'fostered',
-      'sperm-donor',
-    ]);
+    const BIO_LIKE = PARENT_CHILD_SUBTYPES;
     const existsM1 = c.lines.some(
       (l) =>
         l.fromPersonId === m1Id &&
@@ -2160,13 +2156,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const { currentCase: c, history } = get();
     if (!c) return;
     if (childId === parentPersonId) return;
-    const BIO_LIKE = new Set<LineSubType>([
-      'biological',
-      'adopted',
-      'placed-out',
-      'fostered',
-      'sperm-donor',
-    ]);
+    const BIO_LIKE = PARENT_CHILD_SUBTYPES;
     // Guard:已經是父母則不重複加
     const exists = c.lines.some(
       (l) =>
@@ -2206,11 +2196,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const child = c.persons.find((p) => p.id === childId);
     if (!child) return;
     const alreadyHasParents = c.lines.some(
-      (l) =>
-        l.toPersonId === childId &&
-        (l.subType === 'biological' ||
-          l.subType === 'adopted' ||
-          l.subType === 'placed-out'),
+      (l) => l.toPersonId === childId && ORIGIN_PARENT_SUBTYPES.has(l.subType),
     );
     if (alreadyHasParents) return;
 
@@ -2218,21 +2204,48 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const motherXIdeal = child.position.x + GRID_SIZE;
     const parentsY = child.position.y - GRID_SIZE * 2;
 
-    // 避開規則:先往上推一行,2 次後改往右推
-    const parentsOffset = (i: number) =>
-      i <= 2
-        ? { dx: 0, dy: -GRID_SIZE }
-        : { dx: GRID_SIZE * 2, dy: 0 };
-
-    const resolved = resolveBatchPositions(
-      c.persons,
-      [
-        { x: snapToGrid(fatherXIdeal), y: snapToGrid(parentsY) },
-        { x: snapToGrid(motherXIdeal), y: snapToGrid(parentsY) },
-      ],
-      [childId],
-      parentsOffset,
+    // 避開規則(2026-09-30):新的一對父母留在同一代那一排,往「離開擋住的人」那一側讓。
+    // 以前是先往上推一行 —— 爺爺奶奶和外公外婆會落在不同高度,家系圖的世代就歪了。
+    // 往旁邊讓 8 次(約 16 格)都還撞到,才退而往上。
+    const ideal = [
+      { x: snapToGrid(fatherXIdeal), y: snapToGrid(parentsY) },
+      { x: snapToGrid(motherXIdeal), y: snapToGrid(parentsY) },
+    ];
+    const blockers = c.persons.filter(
+      (p) =>
+        p.id !== childId &&
+        ideal.some(
+          (q) =>
+            Math.abs(p.position.x - q.x) < COLLISION_TOLERANCE &&
+            Math.abs(p.position.y - q.y) < COLLISION_TOLERANCE,
+        ),
     );
+    const blockersX =
+      blockers.length > 0
+        ? blockers.reduce((sum, p) => sum + p.position.x, 0) / blockers.length
+        : child.position.x;
+    // 偏好方向:孩子有配偶時往「離開配偶」那側(配偶的父母需要中間的位置);沒配偶時往離開擋路者那側。
+    // 然後從近到遠、左右交替找第一個空位 —— 只往一個方向找,會把人推到另一個家族的另一頭(線交叉)
+    const spouseLine = c.lines.find(
+      (l) => MARRIAGE_SUBTYPES.has(l.subType) && (l.fromPersonId === childId || l.toPersonId === childId),
+    );
+    const spouse = spouseLine
+      ? c.persons.find((p) => p.id === (spouseLine.fromPersonId === childId ? spouseLine.toPersonId : spouseLine.fromPersonId))
+      : undefined;
+    const prefer = spouse ? (spouse.position.x > child.position.x ? -1 : 1) : blockersX <= child.position.x ? 1 : -1;
+    const shifted = (dx: number) => ideal.map((q) => ({ x: q.x + dx, y: q.y }));
+    let resolved = hasBatchCollision(c.persons, ideal, [childId]) ? null : ideal;
+    for (let k = 1; !resolved && k <= 8; k++) {
+      for (const dir of [prefer, -prefer]) {
+        const candidate = shifted(dir * k * GRID_SIZE * 2);
+        if (!hasBatchCollision(c.persons, candidate, [childId])) {
+          resolved = candidate;
+          break;
+        }
+      }
+    }
+    // 同一排左右各 16 格都滿了:退而往上
+    if (!resolved) resolved = resolveBatchPositions(c.persons, ideal, [childId], () => ({ dx: 0, dy: -GRID_SIZE }));
 
     const father: Person = {
       id: uid('p'),
@@ -2311,16 +2324,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const person = c.persons.find((p) => p.id === personId);
     if (!person) return;
 
-    const marriageLine = c.lines.find(
-      (l) =>
-        (l.subType === 'marriage' ||
-          l.subType === 'engagement' ||
-          l.subType === 'partnership' ||
-          l.subType === 'cohabitation-commit' ||
-          l.subType === 'divorce' ||
-          l.subType === 'separation') &&
-        (l.fromPersonId === personId || l.toPersonId === personId),
-    );
+    const marriageLine = partnerLineOf(c, personId);
 
     if (marriageLine) {
       get().expandChildFromMarriage(marriageLine.id);
@@ -2334,10 +2338,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       .reverse()
       .find(
         (l) =>
-          (l.subType === 'marriage' ||
-            l.subType === 'engagement' ||
-            l.subType === 'partnership' ||
-            l.subType === 'cohabitation-commit') &&
+          MARRIAGE_SUBTYPES.has(l.subType) &&
           (l.fromPersonId === personId || l.toPersonId === personId),
       );
     if (newMarriage) {
@@ -2391,7 +2392,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     const spouseA = c.persons.find((p) => p.id === m.fromPersonId);
     const spouseB = c.persons.find((p) => p.id === m.toPersonId);
     if (!spouseA || !spouseB) return;
-    const isBio = (l: Line) => BIO_SUBTYPES_ALL.has(l.subType);
+    const isBio = (l: Line) => PARENT_CHILD_SUBTYPES.has(l.subType);
     const parentsOf = (pid: string) => c.lines.filter((l) => isBio(l) && l.toPersonId === pid).map((l) => l.fromPersonId);
     const moves = new Map<string, { x: number; y: number }>();
     for (const [s0, other] of [[spouseA, spouseB], [spouseB, spouseA]] as const) {
@@ -2487,16 +2488,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
     if (!person) return;
 
     // 已有 marriage-like 線 → 用該 marriage 觸發
-    const marriageLine = c.lines.find(
-      (l) =>
-        (l.subType === 'marriage' ||
-          l.subType === 'engagement' ||
-          l.subType === 'partnership' ||
-          l.subType === 'cohabitation-commit' ||
-          l.subType === 'divorce' ||
-          l.subType === 'separation') &&
-        (l.fromPersonId === personId || l.toPersonId === personId),
-    );
+    const marriageLine = partnerLineOf(c, personId);
     if (marriageLine) {
       get().expandTwinsFromMarriage(marriageLine.id, count, twinType);
       return;
@@ -2509,10 +2501,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       .reverse()
       .find(
         (l) =>
-          (l.subType === 'marriage' ||
-            l.subType === 'engagement' ||
-            l.subType === 'partnership' ||
-            l.subType === 'cohabitation-commit') &&
+          MARRIAGE_SUBTYPES.has(l.subType) &&
           (l.fromPersonId === personId || l.toPersonId === personId),
       );
     if (newMarriage) {
@@ -2530,7 +2519,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       ? [currentCase, ...history.future].slice(0, MAX_HISTORY)
       : history.future;
     set({
-      currentCase: previous,
+      currentCase: restoreSnapshot(previous, currentCase),
       history: { past: newPast, future: newFuture },
       // 清掉「所有」選取(#126)— 殘留的 unit/生態圈選取按 Delete 會吃掉復原額度
       selectedPersonIds: [],
@@ -2539,6 +2528,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       selectedEcosystemId: null,
       selectedHouseholdId: null,
       editingEcosystemId: null,
+      editingHouseholdId: null,
       selectedConnector: null,
     });
   },
@@ -2553,7 +2543,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       ? [...history.past, currentCase].slice(-MAX_HISTORY)
       : history.past;
     set({
-      currentCase: next,
+      currentCase: restoreSnapshot(next, currentCase),
       history: { past: newPast, future: newFuture },
       selectedPersonIds: [],
       selectedLineIds: [],
@@ -2561,6 +2551,7 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
       selectedEcosystemId: null,
       selectedHouseholdId: null,
       editingEcosystemId: null,
+      editingHouseholdId: null,
       selectedConnector: null,
     });
   },
@@ -3296,6 +3287,8 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
 
   drawMode: false,
   setDrawMode: (v) => set({ drawMode: v }),
+  exporting: false,
+  setExporting: (v) => set({ exporting: v }),
   addEcosystem: (points) => {
     const { currentCase: c, history } = get();
     if (!c) return;

@@ -2,7 +2,8 @@
 //   ← / → 拖到人物:結婚;↑ 拖到人物:對方成為父或母;↑ 拖到婚姻線:那對夫妻成為父母;
 //   ↓ 拖到人物:對方成為子女。放在空白處或不合理的目標:什麼都不做。
 // 防呆:不能和自己、不能重複建同一條線、不能讓自己變成自己的祖先。
-import type { Genogram, Line, LineSubType } from '../types/genogram';
+import type { Genogram, Line } from '../types/genogram';
+import { MARRIAGE_SUBTYPES, PARENT_CHILD_SUBTYPES } from './relationKinds';
 
 export type ArrowDir = 'up' | 'down' | 'left' | 'right';
 export type DropTarget = { type: 'person'; id: string } | { type: 'marriage'; id: string } | null;
@@ -11,8 +12,8 @@ export type ArrowDropAction =
   | { kind: 'parents'; childId: string; parentIds: string[]; primary: boolean }
   | { kind: 'none'; reason: 'no-target' | 'self' | 'exists' | 'cycle' | 'kin' | 'unsupported' | 'limit' };
 
-const BIO_LIKE = new Set<LineSubType>(['biological', 'adopted', 'placed-out', 'fostered', 'sperm-donor']);
-const MARRIAGE_LIKE = new Set<LineSubType>(['marriage', 'engagement', 'partnership', 'cohabitation-commit', 'divorce', 'separation']);
+const BIO_LIKE = PARENT_CHILD_SUBTYPES;
+const MARRIAGE_LIKE = MARRIAGE_SUBTYPES;
 /** 與快捷箭頭加配偶同一條上限:一個人最多 3 段婚姻 */
 export const MARRIAGE_LIMIT = 3;
 function marriageCount(c: Genogram, id: string): number {
@@ -67,8 +68,9 @@ export function resolveArrowDrop(c: Genogram, dir: ArrowDir, sourceId: string, t
     if (dir === 'left' || dir === 'right') {
       if (memberLineBetween(c, sourceId, t)) return { kind: 'none', reason: 'exists' };
       if (isAncestor(c, sourceId, t) || isAncestor(c, t, sourceId)) return { kind: 'none', reason: 'kin' };
-      if (marriageCount(c, sourceId) >= MARRIAGE_LIMIT || marriageCount(c, t) >= MARRIAGE_LIMIT)
+      if (marriageCount(c, sourceId) >= MARRIAGE_LIMIT || marriageCount(c, t) >= MARRIAGE_LIMIT) {
         return { kind: 'none', reason: 'limit' };
+      }
       return { kind: 'marry', a: dir === 'right' ? sourceId : t, b: dir === 'right' ? t : sourceId };
     }
     if (dir === 'up') return parentsAction(c, sourceId, [t]);

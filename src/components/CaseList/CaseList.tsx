@@ -9,53 +9,25 @@ import {
   selectRootFolder,
   getRootFolderName,
   isFileSystemAccessSupported,
-  writeCaseJson,
-  loadAllCasesFromFolder,
+  getConfiguredRootHandle,
+  wipeAppFilesInFolder,
 } from '../../services/fileSystem';
 import { db } from '../../services/database';
-import { findNewerInFolder, rescueCasesFromFolder } from '../../services/folderRescue';
-import { promptNewerInFolder } from '../../services/folderConflictPrompt';
+import { syncAfterFolderPick } from '../../services/folderSync';
 import { daysSinceBackupIfShouldRemind } from '../../services/backupReminder';
 import FeedbackDialog from './FeedbackDialog';
 import PrivacyWelcomeDialog, {
   hasAcknowledgedPrivacy,
+  markAcknowledged,
 } from './PrivacyWelcomeDialog';
+import WelcomeCard from '../Onboarding/WelcomeCard';
+import { hasSeenGuidedTour } from '../Onboarding/tourSeen';
 import FolderSetupModal from './FolderSetupModal';
-import { hasTutorialBeenSeen } from '../Tutorial/tutorialSeen';
 import AboutDialog from '../About/AboutDialog';
-import { SupportButton } from '../About/SupportDialog';
+import { SupportDialog } from '../About/SupportDialog';
+import Icon, { BrandMark } from '../ui/Icon';
 import EyeComfortButton from '../EyeComfort/EyeComfortButton';
 
-/** 選完資料夾後的固定三步(2026-08-27 決議):先把資料夾裡的個案救回來(pull),
- *  再把現有個案寫出去(push),缺一步都會有一邊資料看起來「消失」。回傳救回筆數。 */
-async function syncAfterFolderPick(): Promise<number> {
-  let restored = 0;
-  let folderCases: Genogram[] = [];
-  try {
-    folderCases = await loadAllCasesFromFolder(); // 整個資料夾只掃一次
-    restored = await rescueCasesFromFolder(folderCases);
-  } catch (err) {
-    console.error('rescue from folder failed:', err);
-  }
-  // 先處理「資料夾比這台新」的個案(問使用者),再把其餘個案寫出去 ——
-  // 順序反過來會在使用者還沒看到之前就把較新的版本蓋掉(2026-09-03)。
-  // 採用的筆數不算進「救回」(使用者剛剛已經親自決定過,不用再提示)
-  let hold = new Set<string>();
-  try {
-    const newer = await findNewerInFolder(folderCases);
-    hold = new Set(newer.map((p) => p.folder.id));
-    await promptNewerInFolder(newer);
-  } catch (err) {
-    console.error('check newer in folder failed:', err);
-  }
-  try {
-    const allCases = await db.cases.toArray();
-    for (const g of allCases) if (!hold.has(g.id)) await writeCaseJson(g);
-  } catch (err) {
-    console.error('sync to folder failed:', err);
-  }
-  return restored;
-}
 
 // 符號圖例 lazy 拆包(#127)— 開圖例時才載入(symbolData 本身被 Tab1/Tab2 引用,仍在主包)
 const SymbolGallery = lazy(() => import('../Gallery/SymbolGallery'));
@@ -88,8 +60,10 @@ export default function CaseList() {
   const [folderDeleteWarn, setFolderDeleteWarn] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   // 第一次開啟才彈隱私說明(localStorage flag 控制只彈一次)
+  // 第一次打開只出現歡迎卡(1.6.0);完整隱私說明從徽章或歡迎卡的連結打開
+  const [welcomeOpen, setWelcomeOpen] = useState(() => !hasAcknowledgedPrivacy());
   const [privacyWelcomeOpen, setPrivacyWelcomeOpen] = useState(
-    () => !hasAcknowledgedPrivacy(),
+    () => false,
   );
   // 點「新增個案」時若還沒設資料夾,先彈資料夾提醒;
   // 提醒關閉(選了或暫時不要)後再開 NewCaseDialog
@@ -131,6 +105,46 @@ export default function CaseList() {
         .catch(() => {});
     }
   }, [loadCaseList]);
+
+  const [supportOpen, setSupportOpen] = useState(false);
+  // 新建個案之後,第一次用的人自動開始「帶著做一次」
+  const startTourIfNew = () => {
+    if (!hasSeenGuidedTour()) useGenogramStore.getState().setTourActive(true);
+  };
+  const startFirstCase = async () => {
+    markAcknowledged();
+    setWelcomeOpen(false);
+    await createCase(t('caseList.untitledCase'));
+    startTourIfNew();
+  };
+  // 選資料夾:選單與提醒列共用(選完照固定流程同步,services/folderSync)
+  const pickFolder = async (): Promise<boolean> => {
+    const h = await selectRootFolder();
+    if (!h) return false;
+    setFolderName(h.name);
+    const restored = await syncAfterFolderPick();
+    await loadCaseList();
+    if (restored > 0) alert(t('caseList.folderRescued', { n: restored }));
+    return true;
+  };
+  // 安裝成 App:兩段式,先問要不要裝(可以按稍後),同意了才動作
+  const installApp = async () => {
+    const ok = await showConfirm(t('install.confirm'), {
+      yes: t('install.yes'),
+      no: t('install.later'),
+      tone: 'normal',
+    });
+    if (!ok) return;
+    if (canInstall) {
+      const r = await triggerInstall();
+      if (r !== 'unavailable') return;
+    }
+    await showConfirm(isIOS ? t('install.stepsIOS') : t('install.stepsDesktop'), {
+      yes: t('install.gotIt'),
+      no: t('common.close'),
+      tone: 'normal',
+    });
+  };
 
   return (
     <div
@@ -194,7 +208,7 @@ export default function CaseList() {
                 style={{
                   position: 'absolute',
                   top: 44,
-                  right: 0,
+                  left: 0,
                   minWidth: 240,
                   padding: 4,
                   background: '#ffffff',
@@ -205,7 +219,15 @@ export default function CaseList() {
                 }}
               >
                 <HomeMenuItem
-                  icon="📖"
+                  icon={<Icon name="book" />}
+                  label={t('menu.manual')}
+                  onClick={() => {
+                    setShowTutorial(true);
+                    setMenuOpen(false);
+                  }}
+                />
+                <HomeMenuItem
+                  icon={<Icon name="shapes" />}
                   label={t('menu.symbolGallery')}
                   onClick={() => {
                     setGalleryOpen(true);
@@ -213,32 +235,68 @@ export default function CaseList() {
                   }}
                 />
                 <HomeMenuItem
-                  icon="👨‍👩‍👧"
+                  icon={<Icon name="family" />}
                   label={t('kinship.menuLabel')}
                   onClick={() => {
                     setKinshipOpen(true);
                     setMenuOpen(false);
                   }}
                 />
+                <MenuSeparator />
+                {fsaSupported && (
+                  <HomeMenuItem
+                    icon={<Icon name="folder" />}
+                    label={folderName ? t('menu.folderCurrent', { name: folderName }) : t('menu.folderSetup')}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      void pickFolder();
+                    }}
+                  />
+                )}
                 <HomeMenuItem
-                  icon="📕"
-                  label={t('menu.tutorialBasic')}
+                  icon={<Icon name="share" />}
+                  label={t('menu.shareTool')}
                   onClick={() => {
-                    setShowTutorial(true);
+                    setShowShare(true);
+                    setMenuOpen(false);
+                  }}
+                />
+                {!isStandalone && (
+                  <HomeMenuItem
+                    icon={<Icon name="install" />}
+                    label={t('caseList.install')}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      void installApp();
+                    }}
+                  />
+                )}
+                <MenuSeparator />
+                <HomeMenuItem
+                  icon={<Icon name="mail" />}
+                  label={t('menu.feedback')}
+                  onClick={() => {
+                    setFeedbackOpen(true);
                     setMenuOpen(false);
                   }}
                 />
                 <HomeMenuItem
-                  icon="ℹ️"
+                  icon={<Icon name="heart" />}
+                  label={t('menu.support')}
+                  onClick={() => {
+                    setSupportOpen(true);
+                    setMenuOpen(false);
+                  }}
+                />
+                <HomeMenuItem
+                  icon={<Icon name="info" />}
                   label={t('about.title')}
                   onClick={() => {
                     setAboutOpen(true);
                     setMenuOpen(false);
                   }}
                 />
-                <div
-                  style={{ height: 1, background: '#e5e4e7', margin: '4px 4px' }}
-                />
+                <MenuSeparator />
                 {/* 全部重置 — 危險動作,紅字、收在最底 */}
                 <button
                   onClick={async () => {
@@ -246,6 +304,23 @@ export default function CaseList() {
                       t('caseList.fullResetConfirm', { n: caseList.length }),
                     );
                     if (!ok) return;
+                    // 備份資料夾裡還有個案檔:不問就留著,等於沒刪乾淨(重選同一個資料夾會全部救回來)。
+                    // 權限休眠時記憶體裡沒有 handle,要從設定讀回來,否則這一問會被跳過
+                    const folderHandle = await getConfiguredRootHandle();
+                    if (folderHandle) {
+                      const folder = folderHandle.name;
+                      const wipeFolder = await showConfirm(
+                        t('caseList.fullResetFolderAsk', { folder }),
+                        {
+                          yes: t('caseList.fullResetFolderYes'),
+                          no: t('caseList.fullResetFolderNo'),
+                          tone: 'danger',
+                        },
+                      );
+                      if (wipeFolder && !(await wipeAppFilesInFolder(folderHandle))) {
+                        alert(t('caseList.fullResetFolderFailed', { folder }));
+                      }
+                    }
                     try {
                       await db.cases.clear();
                       await db.settings.clear();
@@ -288,7 +363,9 @@ export default function CaseList() {
                     (e.currentTarget.style.background = 'transparent')
                   }
                 >
-                  <span style={{ width: 18, textAlign: 'center' }}>🗑️</span>
+                  <span style={{ width: 18, display: 'inline-flex', justifyContent: 'center' }}>
+                    <Icon name="trash" />
+                  </span>
                   <span style={{ flex: 1 }}>{t('caseList.fullReset')}</span>
                 </button>
               </div>
@@ -327,87 +404,38 @@ export default function CaseList() {
                 whiteSpace: 'nowrap',
               }}
             >
-              🔒 {t('caseList.subtitle')}
+              <Icon name="lock" size={14} />
+              {t('caseList.subtitle')}
             </span>
           </div>
-          {/* 護眼 + 支持 + 常用工具:緊鄰漢堡(order:1),與編輯器頂列一致
-              v1.2.2:原本埋在漢堡選單裡的 6 個項目改成圖示鈕,滑鼠靠近顯示文字。
-              留在選單裡的是「開內容」類(圖例/族譜/教學/關於)與危險操作(全部重置)。 */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              order: 1,
-              flexWrap: 'wrap',
-            }}
-          >
+          {/* 頂列只留:選單、護眼、語言、隱私徽章(1.6.0)。
+              資料夾、分享、安裝、回報、支持收進選單,每個都有文字 —— 以前六顆只有 emoji 的按鈕,第一次來的人猜不出來。 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, order: 1 }}>
             <EyeComfortButton size="lg" />
-            <SupportButton size="lg" />
-            {fsaSupported && (
-              <TopBarIconButton
-                icon="📁"
-                label={
-                  folderName
-                    ? `${t('caseList.folderLabel')}: ${folderName} · ${t('caseList.folderSwitch')}`
-                    : t('menu.folderSetup')
-                }
-                onClick={async () => {
-                  const h = await selectRootFolder();
-                  if (h) {
-                    setFolderName(h.name);
-                    const restored = await syncAfterFolderPick();
-                    await loadCaseList();
-                    if (restored > 0)
-                      alert(t('caseList.folderRescued', { n: restored }));
-                  }
-                }}
-              />
-            )}
-            <TopBarIconButton
-              icon="🌐"
-              label={`${t('menu.language')}: ${language === 'zh' ? '中文' : 'English'}`}
+            <button
               onClick={() => setLanguage(language === 'zh' ? 'en' : 'zh')}
-            />
-            <TopBarIconButton
-              icon="✉️"
-              label={t('menu.feedback')}
-              onClick={() => setFeedbackOpen(true)}
-            />
-            {!isStandalone && (
-              <TopBarIconButton
-                icon="📲"
-                label={t('caseList.install')}
-                onClick={async () => {
-                  // 兩段式:先問「要不要裝」(可以按稍後),同意了才動作。
-                  // 舊版直接彈一個只有「確定」的 alert,對不熟軟體的使用者像是被強迫。
-                  const ok = await showConfirm(t('install.confirm'), {
-                    yes: t('install.yes'),
-                    no: t('install.later'),
-                    tone: 'normal',
-                  });
-                  if (!ok) return;
-                  if (canInstall) {
-                    const r = await triggerInstall();
-                    if (r !== 'unavailable') return;
-                  }
-                  // 瀏覽器不支援原生安裝流程 → 給手動步驟
-                  await showConfirm(
-                    isIOS ? t('install.stepsIOS') : t('install.stepsDesktop'),
-                    { yes: t('install.gotIt'), no: t('common.close'), tone: 'normal' },
-                  );
-                }}
-              />
-            )}
-            {/* 分享排最右 — 使用頻率低於資料夾/語言/回報 */}
-            <TopBarIconButton
-              icon="📤"
-              label={t('caseList.share')}
-              onClick={() => setShowShare(true)}
-            />
+              title={t('menu.language')}
+              aria-label={t('menu.language')}
+              style={{
+                height: 36,
+                padding: '0 12px',
+                background: '#ffffff',
+                border: '0.5px solid #d2d2d7',
+                borderRadius: 9,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontFamily: 'inherit',
+                fontSize: 13,
+                color: '#1d1d1f',
+              }}
+            >
+              <Icon name="globe" size={17} />
+              {language === 'zh' ? 'English' : '中文'}
+            </button>
           </div>
         </div>
-
         {/* Hero — 置中:🌳 與標題同排 + 建立新個案 + 匯入/備份 */}
         <div style={{ textAlign: 'center', padding: '8px 0 34px' }}>
           <h1
@@ -417,14 +445,19 @@ export default function CaseList() {
               letterSpacing: '-0.5px',
               color: '#1d1d1f',
               margin: '0 0 4px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 12,
             }}
           >
+            <BrandMark size={40} />
             {t('caseList.title')}
           </h1>
           <div style={{ marginTop: 26 }}>
             <button
               onClick={() => {
-                if (fsaSupported && !folderName) {
+                if (fsaSupported && !folderName && !folderPromptSeen()) {
+                  markFolderPromptSeen();
                   setFolderPromptForNew(true);
                 } else {
                   setShowNew(true);
@@ -472,7 +505,8 @@ export default function CaseList() {
                 fontFamily: 'inherit',
               }}
             >
-              📥 {t('caseList.import')}
+              <Icon name="import" size={16} />
+              {t('caseList.import')}
             </button>
             {caseList.length > 0 && (
               <button
@@ -490,7 +524,8 @@ export default function CaseList() {
                   fontFamily: 'inherit',
                 }}
               >
-                📦 {t('caseList.backup')}
+                <Icon name="backup" size={16} />
+                {t('caseList.backup')}
               </button>
             )}
           </div>
@@ -503,48 +538,34 @@ export default function CaseList() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
-              padding: '10px 14px',
-              background: '#fff5e6',
-              border: '1px solid #ffd9a3',
-              borderRadius: 8,
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              gap: 6,
               marginBottom: 16,
               fontSize: 13,
+              color: '#6e6e73',
             }}
           >
-            <span style={{ fontSize: 16 }}>📁</span>
-            <span style={{ flex: 1, color: '#8a6d3b' }}>
-              {t('caseList.folderNotSet')}
-            </span>
+            <Icon name="folder" size={15} />
+            <span>{t('caseList.folderHint')}</span>
             <button
-              onClick={async () => {
-                const h = await selectRootFolder();
-                if (h) {
-                  setFolderName(h.name);
-                  const restored = await syncAfterFolderPick();
-                  await loadCaseList();
-                  if (restored > 0)
-                    alert(t('caseList.folderRescued', { n: restored }));
-                }
-              }}
+              onClick={() => void pickFolder()}
+              title={t('caseList.folderSwitchTitle')}
               style={{
-                padding: '4px 12px',
-                fontSize: 12,
-                background: '#ffffff',
-                border: '1px solid #d2d2d7',
-                borderRadius: 4,
+                padding: 0,
+                fontSize: 13,
+                background: 'transparent',
+                border: 'none',
                 cursor: 'pointer',
                 color: '#007aff',
                 fontFamily: 'inherit',
                 fontWeight: 500,
               }}
-              title={t('caseList.folderSwitchTitle')}
             >
-              {t('caseList.folderSelect')}
+              {t('caseList.folderHintAction')}
             </button>
           </div>
         )}
-
         {/* 刪除個案但資料夾備份檔未能一併移除(權限休眠)的提示(#125) */}
         {folderDeleteWarn && (
           <div
@@ -561,7 +582,7 @@ export default function CaseList() {
               fontSize: 13,
             }}
           >
-            <span style={{ fontSize: 16 }}>⚠️</span>
+            <Icon name="warning" size={16} style={{ color: '#b25000' }} />
             <span style={{ flex: 1, color: '#8a6d3b' }}>
               {t('caseList.folderDeleteFailed')}
             </span>
@@ -599,7 +620,7 @@ export default function CaseList() {
               flexWrap: 'wrap',
             }}
           >
-            <span style={{ fontSize: 16 }}>⏰</span>
+            <Icon name="clock" size={16} />
             <span style={{ flex: 1, minWidth: 200 }}>
               {backupRemindDays === 'never'
                 ? t('backupRemind.textNever')
@@ -677,7 +698,9 @@ export default function CaseList() {
               borderRadius: 10,
             }}
           >
-            <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
+            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center', color: '#b0b0b8' }}>
+              <Icon name="family" size={40} strokeWidth={1.5} />
+            </div>
             <div style={{ fontSize: 15, marginBottom: 4 }}>
               {t('caseList.empty')}
             </div>
@@ -793,10 +816,8 @@ export default function CaseList() {
           onCreate={async (name) => {
             setShowNew(false);
             await createCase(name);
-            // 首次新建個案 + 進入畫布 → 跳基礎教學(只跳一次)
-            if (!hasTutorialBeenSeen()) {
-              window.setTimeout(() => setShowTutorial(true), 400);
-            }
+            // 第一次新建個案 → 在這個個案上帶著做一次(只自動開一次)
+            startTourIfNew();
           }}
           onCancel={() => setShowNew(false)}
         />
@@ -814,6 +835,7 @@ export default function CaseList() {
         />
       )}
       {showShare && <ShareDialog onClose={() => setShowShare(false)} />}
+      {supportOpen && <SupportDialog onClose={() => setSupportOpen(false)} />}
       {kinshipOpen && (
         <Suspense fallback={null}>
           <KinshipDialog onClose={() => setKinshipOpen(false)} />
@@ -829,6 +851,29 @@ export default function CaseList() {
       )}
       {feedbackOpen && (
         <FeedbackDialog onClose={() => setFeedbackOpen(false)} />
+      )}
+      {welcomeOpen && (
+        <WelcomeCard
+          folderSupported={fsaSupported}
+          onStart={() => void startFirstCase()}
+          onPickFolderFirst={async () => {
+            markAcknowledged();
+            setWelcomeOpen(false);
+            markFolderPromptSeen();
+            // 按了取消 → 回到歡迎卡,讓使用者重新選
+            if (!(await pickFolder())) {
+              setWelcomeOpen(true);
+              return;
+            }
+            // 資料夾裡已經有個案(換電腦)→ 留在清單;是空的 → 直接開始第一個個案
+            if (useGenogramStore.getState().caseList.length === 0) await startFirstCase();
+          }}
+          onLater={() => {
+            markAcknowledged();
+            setWelcomeOpen(false);
+          }}
+          onShowPrivacyDetails={() => setPrivacyWelcomeOpen(true)}
+        />
       )}
       {privacyWelcomeOpen && (
         <PrivacyWelcomeDialog
@@ -851,8 +896,9 @@ export default function CaseList() {
             setFolderName(getRootFolderName());
             const restored = await syncAfterFolderPick();
             await loadCaseList();
-            if (restored > 0)
+            if (restored > 0) {
               alert(t('caseList.folderRescued', { n: restored }));
+            }
             setShowNew(true);
           }}
         />
@@ -880,52 +926,25 @@ export default function CaseList() {
 }
 
 /* ==================== 首頁主選單項目 ==================== */
-/**
- * 首頁頂列的圖示鈕 —— 尺寸與 EyeComfortButton size="lg" 對齊(40×36 / 圓角 9 / 0.5px 邊)。
- * 文字只走原生 title tooltip:滑鼠靠近才出現,不佔版面。
- * aria-label 給螢幕閱讀器與鍵盤使用者,不能只靠 emoji。
- */
-function TopBarIconButton({
-  icon,
-  label,
-  onClick,
-  disabled,
-}: {
-  icon: string;
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      title={label}
-      aria-label={label}
-      style={{
-        width: 40,
-        height: 36,
-        padding: 0,
-        background: '#ffffff',
-        border: '0.5px solid #d2d2d7',
-        borderRadius: 9,
-        cursor: disabled ? 'default' : 'pointer',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'inherit',
-        fontSize: 17,
-        lineHeight: 1,
-        opacity: disabled ? 0.5 : 1,
-      }}
-      onMouseEnter={(e) => {
-        if (!disabled) e.currentTarget.style.background = '#f5f5f7';
-      }}
-      onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
-    >
-      {icon}
-    </button>
-  );
+// 新增個案時「選資料夾」的彈窗只問一次(1.6.0),之後靠首頁那一行提醒
+const FOLDER_PROMPT_KEY = 'genogram_folder_prompt_seen';
+function folderPromptSeen(): boolean {
+  try {
+    return localStorage.getItem(FOLDER_PROMPT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function markFolderPromptSeen(): void {
+  try {
+    localStorage.setItem(FOLDER_PROMPT_KEY, '1');
+  } catch {
+    /* 寫不進去:下次新增個案會再問一次 */
+  }
+}
+
+function MenuSeparator() {
+  return <div style={{ height: 1, background: '#e5e4e7', margin: '4px 4px' }} />;
 }
 
 function HomeMenuItem({
@@ -933,7 +952,7 @@ function HomeMenuItem({
   label,
   onClick,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   onClick: () => void;
 }) {
@@ -958,7 +977,7 @@ function HomeMenuItem({
       onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f0f5')}
       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
     >
-      <span style={{ width: 18, textAlign: 'center' }}>{icon}</span>
+      <span style={{ width: 18, display: 'inline-flex', justifyContent: 'center', color: '#3a3a3c' }}>{icon}</span>
       <span style={{ flex: 1 }}>{label}</span>
     </button>
   );

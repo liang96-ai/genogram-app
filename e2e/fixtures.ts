@@ -20,7 +20,7 @@ export const UI = {
   privacyAck: '我了解,開始使用',
   backToList: '返回個案清單',
   menu: '選單',
-  addLonePerson: '新增獨立人物',
+  addLonePerson: '新增人物',
   tabBasic: '基本資料',
   tabNetwork: '網絡關係',
   tabMedical: '醫療',
@@ -85,22 +85,29 @@ export async function listFolder(page: Page): Promise<string[]> {
 }
 
 export const test = base.extend<{ app: Page }>({
-  app: async ({ page }, use) => {
+  app: async ({ page }, use, testInfo) => {
     // ── 替身:showDirectoryPicker 需要作業系統授權,自動化點不到。
     //    換成 OPFS 的具名子資料夾 —— 它回傳的是真正的 FileSystemDirectoryHandle,
     //    App 其餘程式碼一行都不用改。
     //    ⚠️ 一定要回「有名字的子資料夾」:OPFS 根目錄的 .name 是空字串,
     //       App 會判定成「沒選資料夾」(這個坑踩過一次)。
+    //    ⚠️ 只給桌面 Chrome:真的 iPad / iPhone Safari 沒有這個功能,
+    //       手機平板體檢也假造它,會測到使用者根本看不到的畫面(2026-09-30)。
+    if (testInfo.project.name === 'chrome') {
+      await page.addInitScript(() => {
+        // @ts-expect-error 覆寫瀏覽器 API
+        window.showDirectoryPicker = async () => {
+          const root = await navigator.storage.getDirectory();
+          return root.getDirectoryHandle('TestFolder', { create: true });
+        };
+      });
+    }
     await page.addInitScript(() => {
-      // @ts-expect-error 覆寫瀏覽器 API
-      window.showDirectoryPicker = async () => {
-        const root = await navigator.storage.getDirectory();
-        return root.getDirectoryHandle('TestFolder', { create: true });
-      };
       // 首次啟動的雜訊:隱私說明、教學、抖內提示 —— 先標記成看過
       try {
         localStorage.setItem('privacyAcknowledged', '1');
         localStorage.setItem('genogram_tutorial_basic_seen', '1');
+        localStorage.setItem('genogram_tour_done', '1');
         localStorage.setItem('genogram_support_prompt_seen', '1');
         localStorage.setItem('genogram_install_banner_dismissed', '1');
       } catch {

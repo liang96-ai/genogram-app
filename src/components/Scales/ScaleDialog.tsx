@@ -3,6 +3,7 @@ import Modal from '../ui/Modal';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import type { Scale, ScaleAnswer } from './types';
+import Icon from '../ui/Icon';
 
 type Props = {
   scale: Scale;
@@ -187,7 +188,7 @@ export default function ScaleDialog({ scale, onClose }: Props) {
 
         {scale.disabled && (
           <div style={{ ...body, textAlign: 'center', padding: 30 }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>📜</div>
+            <div style={{ marginBottom: 12, color: '#007aff', display: 'flex', justifyContent: 'center' }}><Icon name="clipboard" size={32} /></div>
             <div
               style={{
                 fontSize: 14,

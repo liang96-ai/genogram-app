@@ -11,6 +11,7 @@ import {
   type DiagramNode,
   type Step,
 } from '../../services/kinship';
+import Icon from '../ui/Icon';
 
 /**
  * 「族譜」—— 中文稱謂查詢。
@@ -62,7 +63,7 @@ export default function KinshipDialog({ onClose }: { onClose: () => void }) {
           }}
         >
           <div style={{ fontSize: 18, fontWeight: 600, color: '#1d1d1f' }}>
-            👨‍👩‍👧 {t('kinship.title')}
+            <Icon name="family" size={18} style={{ display: 'inline-block', verticalAlign: '-3px', marginRight: 6 }} />{t('kinship.title')}
           </div>
           <button
             onClick={onClose}
@@ -252,7 +253,7 @@ export default function KinshipDialog({ onClose }: { onClose: () => void }) {
                       lineHeight: 1.7,
                     }}
                   >
-                    ⚠️ {term.ambiguous}
+                    <Icon name="warning" size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: 4 }} />{term.ambiguous}
                   </div>
                 ) : null}
                 {term.note ? (
@@ -299,7 +300,7 @@ export default function KinshipDialog({ onClose }: { onClose: () => void }) {
             {/* 答案裡已經講過堂表規則時就不重複(例:查堂哥)*/}
             {term?.note === TANG_BIAO_RULE ? null : (
               <>
-                💡 {TANG_BIAO_RULE}
+                <Icon name="tip" size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: 4 }} />{TANG_BIAO_RULE}
                 <br />
               </>
             )}

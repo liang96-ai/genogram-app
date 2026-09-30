@@ -118,6 +118,66 @@ describe('parseQuickLine — 屬性', () => {
     ).toEqual(['僵直性脊椎炎']);
   });
 
+  it('學歷:學校名稱、程度、年級都認得,不再被當成姓名或備註', () => {
+    const g = parseQuickLine('哥哥 國一', 0);
+    expect(g.education).toBe('國一');
+    expect(g.educationStatus).toBe('attending');
+    expect(g.name).toBeUndefined();
+    const u = parseQuickLine('姊姊 台灣大學 畢業', 0);
+    expect(u.education).toBe('台灣大學');
+    expect(u.educationStatus).toBe('graduated');
+    expect(u.notes).toEqual([]);
+    expect(parseQuickLine('爸爸 高中畢業', 0).education).toBe('高中');
+    expect(parseQuickLine('媽媽 大學肄業', 0).educationStatus).toBe('dropped');
+    expect(parseQuickLine('弟弟 光明國小', 0).education).toBe('光明國小');
+    expect(parseQuickLine('妹妹 就讀建國中學', 0).educationStatus).toBe('attending');
+    // 單獨的「畢業」前面沒有學歷 → 還是備註
+    expect(parseQuickLine('爸爸 畢業', 0).notes).toEqual(['畢業']);
+  });
+
+  it('學歷的日常寫法:學生、簡寫的畢/肄、讀高一、國小三年級、大班、學校簡稱', () => {
+    const edu = (line: string) => {
+      const p = parseQuickLine(line, 0);
+      return [p.education, p.educationStatus, p.name];
+    };
+    expect(edu('妹妹 高中生')).toEqual(['高中', 'attending', undefined]);
+    expect(edu('姊姊 研究生')).toEqual(['研究所', 'attending', undefined]);
+    expect(edu('爸爸 國中畢')).toEqual(['國中', 'graduated', undefined]);
+    expect(edu('媽媽 高中肄')).toEqual(['高中', 'dropped', undefined]);
+    expect(edu('弟弟 國中中輟')).toEqual(['國中', 'dropped', undefined]);
+    expect(edu('哥哥 讀高一')).toEqual(['高一', 'attending', undefined]);
+    expect(edu('姊姊 念大二')).toEqual(['大二', 'attending', undefined]);
+    expect(edu('妹妹 國小三年級')).toEqual(['國小三年級', 'attending', undefined]);
+    expect(edu('妹妹 國小 三年級')).toEqual(['國小三年級', 'attending', undefined]);
+    expect(edu('弟弟 5歲 大班')).toEqual(['大班', 'attending', undefined]);
+    expect(edu('媽媽 護專')).toEqual(['護專', undefined, undefined]);
+    expect(edu('爸爸 國中補校')).toEqual(['國中補校', undefined, undefined]);
+    expect(edu('哥哥 台大 畢業')).toEqual(['台大', 'graduated', undefined]);
+    expect(edu('哥哥 高中休學中')).toEqual(['高中', 'dropped', undefined]);
+    // 整個詞就是程度,不能拆成「未」+「就學」
+    expect(edu('妹妹 未就學')).toEqual(['未就學', undefined, undefined]);
+  });
+
+  it('像名字但不是名字的詞不再被猜成姓名;真的名字照舊', () => {
+    const p = (line: string) => parseQuickLine(line, 0);
+    expect(p('弟弟 休學中').notes).toEqual(['休學中']);
+    expect(p('弟弟 中輟生').notes).toEqual(['中輟生']);
+    expect(p('爸爸 七年級生').notes).toEqual(['七年級生']);
+    expect(p('爸爸 七年級生').education).toBeUndefined();
+    expect(p('妹妹 學生').notes).toEqual(['學生']);
+    // 「念」「讀」開頭的名字不會被當成動詞拆掉
+    expect(p('妹妹 念恩').name).toBe('念恩');
+    // 「建中」也是常見的名字,不當學校
+    expect(p('哥哥 建中').name).toBe('建中');
+    expect(p('媽媽 陳美玲 高職').name).toBe('陳美玲');
+  });
+
+  it('往生的各種說法都認得(身故、離世以前會被畫成在世)', () => {
+    for (const w of ['歿', '過世', '已故', '去世', '往生', '死亡', '身故', '離世', '走了']) {
+      expect(parseQuickLine(`爸爸 ${w}`, 0).deceased, w).toBe(true);
+    }
+  });
+
   it('歿 + 裸數字 = 享年,不是年齡(工作單 1.5-9)', () => {
     const p = parseQuickLine('爺爺 歿 78', 0);
     expect(p.deceased).toBe(true);

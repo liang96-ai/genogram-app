@@ -16,6 +16,7 @@ import { useT } from '../../i18n';
  */
 
 import { countLaunch, onSupportPrompt } from './supportPromptLogic';
+import Icon, { type IconName } from '../ui/Icon';
 
 const KOFI_URL = 'https://ko-fi.com/liang96';
 const ECPAY_URL = 'https://p.ecpay.com.tw/39E7770';
@@ -39,7 +40,7 @@ function DonateRow({
   sub,
   url,
 }: {
-  icon: string;
+  icon: IconName;
   iconBg: string;
   title: string;
   sub: string;
@@ -75,9 +76,10 @@ function DonateRow({
           background: iconBg,
           borderRadius: '50%',
           fontSize: 18,
+          color: '#6b4f2a',
         }}
       >
-        {icon}
+        <Icon name={icon} size={22} />
       </span>
       <span style={{ flex: 1, textAlign: 'left' }}>
         <span
@@ -117,14 +119,14 @@ export function SupportDialog({ onClose }: { onClose: () => void }) {
   const t = useT();
 
   const coffeeRow = {
-    icon: '☕',
+    icon: 'heart' as IconName,
     iconBg: '#faeeda',
     title: t('donate.rowCoffeeTitle'),
     sub: t('donate.rowCoffeeSub'),
     url: ECPAY_URL,
   };
   const kofiRow = {
-    icon: '🌍',
+    icon: 'globe' as IconName,
     iconBg: '#f0f0f5',
     title: t('donate.rowKofiTitle'),
     sub: t('donate.rowKofiSub'),
@@ -148,7 +150,7 @@ export function SupportDialog({ onClose }: { onClose: () => void }) {
         textAlign: 'center',
       }}
     >
-        <div style={{ fontSize: 30, marginBottom: 10, lineHeight: 1 }}>☕</div>
+        <div style={{ marginBottom: 10, color: '#c2410c', display: 'flex', justifyContent: 'center' }}><Icon name="heart" size={32} /></div>
         <div
           style={{
             fontSize: 15,
@@ -172,6 +174,7 @@ export function SupportDialog({ onClose }: { onClose: () => void }) {
             lineHeight: 1.7,
             marginBottom: 16,
             whiteSpace: 'pre-line',
+            textAlign: 'left',
           }}
         >
           {t('support.story')}

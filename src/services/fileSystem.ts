@@ -340,6 +340,71 @@ export async function writeBackupToFolder(
   }
 }
 
+/** 全部重置用:目前設定的備份資料夾。權限休眠時(重開瀏覽器、沒選「每次都允許」)記憶體裡沒有 handle,
+ *  也要從設定讀回來 —— 否則重置不會問、設定清掉之後再選同一個資料夾,個案會全部被救回來。 */
+export async function getConfiguredRootHandle(): Promise<FileSystemDirectoryHandle | null> {
+  if (rootDirHandle) return rootDirHandle;
+  try {
+    const rec = await db.settings.get('rootDirHandle');
+    if (rec && typeof rec === 'object' && 'value' in rec && (rec as { value: unknown }).value) {
+      return (rec as { value: FileSystemDirectoryHandle }).value;
+    }
+  } catch (err) {
+    console.error('getConfiguredRootHandle failed:', err);
+  }
+  return null;
+}
+
+/** 全部重置用:刪掉備份資料夾裡本工具建立的個案資料夾與目錄檔。
+ *  - 個案資料夾 = 名稱 case_ 開頭、是資料夾、而且裡面有 case.json;名字像但不是的(使用者自己的檔案)一律不碰
+ *  - _目錄.txt 只刪檔案
+ *  - _backups/ 不刪:裡面是使用者按「備份」存的全備份,刪了等於毀掉他剛做的備份
+ *  要在使用者按下「一起刪除」之後呼叫(權限休眠時要在這裡請求授權)。
+ *  @returns true = 全部刪掉;false = 沒有權限或有刪不掉的 */
+export async function wipeAppFilesInFolder(handle: FileSystemDirectoryHandle): Promise<boolean> {
+  try {
+    // @ts-expect-error queryPermission 不在 lib.dom 標準 type
+    let perm = await handle.queryPermission({ mode: 'readwrite' });
+    // @ts-expect-error requestPermission 不在 lib.dom 標準 type
+    if (perm !== 'granted') perm = await handle.requestPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') return false;
+  } catch {
+    return false;
+  }
+  const targets: string[] = [];
+  try {
+    for await (const [name, entry] of (
+      handle as unknown as {
+        entries: () => AsyncIterable<[string, FileSystemHandle]>;
+      }
+    ).entries()) {
+      if (entry.kind === 'directory' && name.startsWith('case_')) {
+        try {
+          await (entry as FileSystemDirectoryHandle).getFileHandle('case.json');
+          targets.push(name);
+        } catch {
+          /* 沒有 case.json:不是本工具建的資料夾,不碰 */
+        }
+      } else if (entry.kind === 'file' && name === '_目錄.txt') {
+        targets.push(name);
+      }
+    }
+  } catch (err) {
+    console.error('wipeAppFilesInFolder list failed:', err);
+    return false;
+  }
+  let ok = true;
+  for (const name of targets) {
+    try {
+      await handle.removeEntry(name, { recursive: true });
+    } catch (err) {
+      console.error('wipeAppFilesInFolder remove failed:', name, err);
+      ok = false;
+    }
+  }
+  return ok;
+}
+
 /** 刪除整個個案資料夾(case_<id>/ + 內含 case.json + attachments/) */
 export async function deleteCaseFolder(caseId: string): Promise<boolean> {
 

@@ -31,6 +31,12 @@ export default defineConfig({
       name: 'chrome',
       use: { ...devices['Desktop Chrome'], channel: 'chrome' },
     },
+    // 手機平板體檢(2026-09-30):Safari 核心 + 觸控 + 行動裝置尺寸。
+    // 平常的 verify 只跑 chrome;iPad 跑 `npm run e2e:devices`,iPhone 跑 `npm run e2e:iphone`
+    // (iPhone 目前預期失敗:還沒有手機版面,資料面板會蓋滿整個畫面;做完手機版面再併進 e2e:devices)。
+    // 第一次需要 `npx playwright install webkit`,約 81 MB,只裝在開發機的快取。
+    { name: 'ipad', use: { ...devices['iPad Pro 11'] } },
+    { name: 'iphone', use: { ...devices['iPhone 15'] } },
   ],
   webServer: {
     command: 'npm run build && npx vite preview --port 4173 --strictPort',

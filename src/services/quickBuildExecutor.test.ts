@@ -119,6 +119,14 @@ describe('executeQuickBuild — 驗收案例(真實 store)', () => {
     expect(mom.medicalConditions?.map((c) => c.name)).toEqual(['糖尿病']);
   });
 
+  it('學歷寫進教育程度與就學狀態(以前「國一」會變成名字)', () => {
+    const { after } = run('哥哥 國一\n姊姊 台灣大學 畢業');
+    const byEdu = (e: string) => after.persons.find((p) => p.basicInfo?.education === e);
+    expect(byEdu('國一')?.basicInfo?.educationStatus).toBe('attending');
+    expect(byEdu('國一')?.basicInfo?.name).toBeUndefined();
+    expect(byEdu('台灣大學')?.basicInfo?.educationStatus).toBe('graduated');
+  });
+
   it('前妻:婚姻線是離婚,且兒子掛在同一條線下(不再多建一位空白配偶)', () => {
     const { after } = run(ACCEPTANCE);
     const me = after.persons.find((p) => p.isProband)!;

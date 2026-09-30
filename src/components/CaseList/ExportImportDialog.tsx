@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { emitTourEvent } from '../../services/uiEvents';
 import Modal from '../ui/Modal';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
@@ -30,6 +31,7 @@ import {
   writeBackupToFolder,
   getRootFolderName,
 } from '../../services/fileSystem';
+import Icon from '../ui/Icon';
 
 /* ==================== Export Dialog ==================== */
 
@@ -197,6 +199,7 @@ export function ExportDialog({
           simplifyLines: imgSimplifyLines,
         });
         downloadBlob(blob, suggestImageFilename(currentCase, imgFormat));
+        emitTourEvent('imageExported');
       } catch (e) {
         setImgError(e instanceof Error ? e.message : String(e));
         setImgBusy(false);
@@ -445,7 +448,7 @@ export function ExportDialog({
                     fontSize: 12,
                   }}
                 >
-                  ⚠️ {imgError}
+                  <Icon name="warning" size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: 4 }} />{imgError}
                 </div>
               )}
             </>
@@ -549,7 +552,7 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
                 fontSize: 12,
               }}
             >
-              ⚠️ {error}
+              <Icon name="warning" size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: 4 }} />{error}
             </div>
           )}
           <div style={{ marginTop: 18 }}>

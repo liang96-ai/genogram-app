@@ -172,12 +172,16 @@ describe('手足的手足(複合鏈收合)', () => {
 
 describe('對稱性 —— 同性質的路徑不能只收一半', () => {
   it('姪孫 / 外甥孫:兄弟四條、姊妹四條都要在', () => {
-    for (const sib of ['EB', 'YB'] as Step[])
-      for (const g of ['S', 'D'] as Step[])
+    for (const sib of ['EB', 'YB'] as Step[]) {
+      for (const g of ['S', 'D'] as Step[]) {
         expect(lookup([sib, 'S', g])!.term, [sib, 'S', g].join('·')).toContain('姪孫');
-    for (const sib of ['ES', 'YS'] as Step[])
-      for (const g of ['S', 'D'] as Step[])
+      }
+    }
+    for (const sib of ['ES', 'YS'] as Step[]) {
+      for (const g of ['S', 'D'] as Step[]) {
         expect(lookup([sib, 'S', g])!.term, [sib, 'S', g].join('·')).toContain('外甥孫');
+      }
+    }
   });
 
   it('祖輩手足:四條祖父母線都要收滿', () => {
@@ -186,9 +190,11 @@ describe('對稱性 —— 同性質的路徑不能只收一半', () => {
       ['F', 'M'],
       ['M', 'F'],
       ['M', 'M'],
-    ] as Step[][])
-      for (const sib of ['EB', 'YB', 'ES', 'YS'] as Step[])
+    ] as Step[][]) {
+      for (const sib of ['EB', 'YB', 'ES', 'YS'] as Step[]) {
         expect(lookup([...gp, sib]), [...gp, sib].join('·')).toBeTruthy();
+      }
+    }
   });
 
   it('曾祖輩:八條都要在', () => {
@@ -197,9 +203,11 @@ describe('對稱性 —— 同性質的路徑不能只收一半', () => {
       ['F', 'M'],
       ['M', 'F'],
       ['M', 'M'],
-    ] as Step[][])
-      for (const p of ['F', 'M'] as Step[])
+    ] as Step[][]) {
+      for (const p of ['F', 'M'] as Step[]) {
         expect(lookup([...gp, p]), [...gp, p].join('·')).toBeTruthy();
+      }
+    }
   });
 });
 
@@ -237,8 +245,9 @@ describe('堂 vs 表 —— 本功能最想教對的一件事', () => {
 
   it('答案分歧的條目一定有 ambiguous 註記,不能假裝很確定', () => {
     for (const [key, term] of Object.entries(KINSHIP)) {
-      if (term.term.includes(' / '))
+      if (term.term.includes(' / ')) {
         expect(term.ambiguous, `${key} 有兩個答案卻沒說明為什麼`).toBeTruthy();
+      }
     }
   });
 });

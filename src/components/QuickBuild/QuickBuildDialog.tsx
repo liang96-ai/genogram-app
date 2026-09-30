@@ -17,6 +17,8 @@ import {
   type TokenOverrides,
 } from '../../services/quickBuild';
 import { executeQuickBuild } from '../../services/quickBuildExecutor';
+import { emitTourEvent } from '../../services/uiEvents';
+import Icon from '../ui/Icon';
 
 /**
  * 快速建立家庭 —— 逐行輸入「稱謂 年齡 電話 疾病 狀態」自動畫出家系圖。
@@ -101,6 +103,7 @@ export default function QuickBuildDialog({ onClose }: { onClose: () => void }) {
       window.alert(t('quickBuild.failed'));
       return;
     }
+    emitTourEvent('quickBuildApplied');
     onClose();
   };
 
@@ -131,7 +134,7 @@ export default function QuickBuildDialog({ onClose }: { onClose: () => void }) {
           }}
         >
           <div style={{ fontSize: 18, fontWeight: 600, color: '#1d1d1f' }}>
-            ⚡ {t('quickBuild.title')}
+            <Icon name="bolt" size={18} style={{ display: 'inline-block', verticalAlign: '-3px', marginRight: 6, color: '#f5a623' }} />{t('quickBuild.title')}
           </div>
           <button
             onClick={() => void requestClose()}
@@ -233,7 +236,7 @@ export default function QuickBuildDialog({ onClose }: { onClose: () => void }) {
               lineHeight: 1.6,
             }}
           >
-            ⚠️ {t('quickBuild.repeatWarning')}
+            <Icon name="warning" size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: 4 }} />{t('quickBuild.repeatWarning')}
           </div>
 
           {/* 預覽 */}

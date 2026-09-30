@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { usePwaInstall } from '../../services/pwaInstall';
 import { SupportButton } from '../About/SupportDialog';
+import Icon from '../ui/Icon';
 
 export interface TutorialStep {
   icon: string;
@@ -28,8 +29,8 @@ function CanvasArrowsMockup({ lang }: { lang: Lang }) {
           downHint: '(adds spouse first if none)',
           left: '← Spouse',
           right: '→ Spouse',
-          tipDrag: '💡 Hold ↑ 0.25s + drag → instant parent-child line',
-          tipTwins: '💡 Hold ↓ 1s → open multiple-birth dialog (2–15)',
+          tipDrag: 'Hold ↑ 0.25s + drag → instant parent-child line',
+          tipTwins: 'Hold ↓ 1s → open multiple-birth dialog (2–15)',
         }
       : {
           canvasLabel: '畫布(中央)',
@@ -38,8 +39,8 @@ function CanvasArrowsMockup({ lang }: { lang: Lang }) {
           downHint: '(無配偶時先加配偶)',
           left: '← 加配偶',
           right: '→ 加配偶',
-          tipDrag: '💡 長按 ↑ 0.25 秒 + 拖到另一人物 → 直接畫黑色親子線',
-          tipTwins: '💡 長按 ↓ 1 秒 → 開雙胞胎設定視窗(2-15 胞胎)',
+          tipDrag: '長按 ↑ 0.25 秒 + 拖到另一人物 → 直接畫黑色親子線',
+          tipTwins: '長按 ↓ 1 秒 → 開雙胞胎設定視窗(2-15 胞胎)',
         };
   return (
     <svg
@@ -944,7 +945,7 @@ function InstallButtonZH() {
           boxShadow: '0 2px 8px rgba(0,122,255,0.3)',
         }}
       >
-        📲 點此一鍵安裝到桌面
+        點此一鍵安裝到桌面
       </button>
     );
   }
@@ -961,7 +962,7 @@ function InstallButtonZH() {
           margin: '10px 0',
         }}
       >
-        📱 <strong>iPhone/iPad 安裝步驟:</strong>
+        <strong>iPhone/iPad 安裝步驟:</strong>
         <br />
         1. 按 Safari 下方 <strong>分享 ↑</strong>
         <br />
@@ -983,7 +984,7 @@ function InstallButtonZH() {
         margin: '10px 0',
       }}
     >
-      💡 此瀏覽器不支援一鍵安裝。建議用 <strong>Chrome 或 Edge</strong>
+      此瀏覽器不支援一鍵安裝。建議用 <strong>Chrome 或 Edge</strong>
       開啟以獲得完整 App 體驗。
     </div>
   );
@@ -1028,7 +1029,7 @@ function InstallButtonEN() {
           boxShadow: '0 2px 8px rgba(0,122,255,0.3)',
         }}
       >
-        📲 Click here to install as an App
+        Click here to install as an App
       </button>
     );
   }
@@ -1045,7 +1046,7 @@ function InstallButtonEN() {
           margin: '10px 0',
         }}
       >
-        📱 <strong>iPhone/iPad install:</strong>
+        <strong>iPhone/iPad install:</strong>
         <br />
         1. Tap Safari's <strong>Share ↑</strong> button
         <br />
@@ -1067,7 +1068,7 @@ function InstallButtonEN() {
         margin: '10px 0',
       }}
     >
-      💡 This browser doesn't support one-click install. Use{' '}
+      This browser doesn't support one-click install. Use{' '}
       <strong>Chrome or Edge</strong> for the full App experience.
     </div>
   );
@@ -1367,10 +1368,10 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         <P style={{ textAlign: 'left' }}>同一對人物可以同時有兩種線:</P>
         <BlackBlueLineMockup lang="zh" />
         <p style={{ margin: '10px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          ⚫ <Strong>黑線</Strong> = 成員關係(誰是誰的家人)
+          <span aria-hidden style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#1d1d1f', marginRight: 6, verticalAlign: '0px' }} /><Strong>黑線</Strong> = 成員關係(誰是誰的家人)
         </p>
         <p style={{ margin: '6px 0 10px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          🔵 <Strong>藍線</Strong> = 互動關係(誰跟誰互動程度)
+          <span aria-hidden style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#007aff', marginRight: 6, verticalAlign: '0px' }} /><Strong>藍線</Strong> = 互動關係(誰跟誰互動程度)
         </p>
         <P style={{ textAlign: 'left' }}>
           先教<Strong>黑線</Strong>(婚姻 / 親子)→ 接著兩步;
@@ -1526,7 +1527,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
         <p style={{ margin: '6px 0 4px', fontSize: 13.5, color: '#1d1d1f', lineHeight: 1.7 }}>
           <Strong>① 總開關</Strong>(基本資料 / 醫療分頁都看得到)
           <br />
-          勾起來 → 各分頁出現<Strong>「區塊全選保密」</Strong>+ <Strong>欄位個別 🔒</Strong>
+          勾起來 → 各分頁出現<Strong>「區塊全選保密」</Strong>+ <Strong>欄位個別 <Icon name="lock" size={14} style={{ display: 'inline-block', verticalAlign: '-2px' }} /></Strong>
         </p>
         <p style={{ margin: '6px 0 4px', fontSize: 13.5, color: '#1d1d1f', lineHeight: 1.7 }}>
           <Strong>② 網絡關係「全選保密」</Strong>
@@ -1548,33 +1549,33 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
           <img src="/brand-mark.png" alt="家系圖工具" style={{ height: 58, width: 'auto' }} />
         </div>
         <P>
-          基礎教學結束 🎉 強烈建議把它<Strong>安裝為 App</Strong>:像桌面應用一樣點 icon 就開,
+          說明手冊到這裡結束。強烈建議把它<Strong>安裝為 App</Strong>:像桌面應用一樣點 icon 就開,
           且可<Strong>完全離線使用</Strong>。
         </P>
         <InstallButtonZH />
         <p style={{ margin: '10px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
-          💡 長時間使用眼睛酸?點頂列 <Code>👁</Code> 開<Strong>護眼暖色</Strong>,畫面變暖不刺眼 —— 匯出仍是純白,不影響資料。
+          長時間使用眼睛酸?點頂列 <Code><Icon name="eye" size={14} style={{ display: 'inline-block', verticalAlign: '-2px' }} /></Code> 開<Strong>護眼暖色</Strong>,畫面變暖不刺眼 —— 匯出仍是純白,不影響資料。
         </p>
         <p style={{ margin: '10px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
-          ⚡ 趕時間?<Code>☰</Code> →「<Strong>快速建立家庭</Strong>」:一行打一個人
+          趕時間?<Code><Icon name="menu" size={14} style={{ display: 'inline-block', verticalAlign: '-2px' }} /></Code> →「<Strong>快速建立家庭</Strong>」:一行打一個人
           (例:<Code>爸爸 58歲 高血壓</Code>),按建立就自動長出家系圖。
         </p>
         <p style={{ margin: '10px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
-          🔍 首頁有<Strong>個案搜尋框</Strong>;復原(<Code>⌘Z</Code> / <Code>Ctrl+Z</Code>)一次退一個編輯、最多 20 步;
+          首頁有<Strong>個案搜尋框</Strong>;復原(<Code>⌘Z</Code> / <Code>Ctrl+Z</Code>)一次退一個編輯、最多 20 步;
           沒有備份資料夾的裝置(iPad、Firefox)超過 14 天沒做全備份,會溫和提醒一次。
         </p>
         <P>
-          有任何問題,回到首頁點頂列 <Code>✉️</Code> 直接寫信給開發者;
-          <Code>☰</Code> →「關於」可查看版本與支持方式。
+          有任何問題,回到首頁,在左上角的選單選「回報意見 / 建議」直接寫信給開發者;
+          <Code><Icon name="menu" size={14} style={{ display: 'inline-block', verticalAlign: '-2px' }} /></Code> →「關於」可查看版本與支持方式。
         </P>
         <div style={{ margin: '14px 0 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
           <p style={{ margin: 0, fontSize: 13, color: '#1d1d1f', lineHeight: 1.7, textAlign: 'center' }}>
-            這個工具免費、開源、不放廣告。若它幫到你,歡迎請我喝杯飲料 ☕
+            這個工具免費、開源、不放廣告。若它幫到你,歡迎請我喝杯飲料 
           </p>
           <SupportButton size="lg" />
         </div>
         <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: '#86868b', lineHeight: 1.6, textAlign: 'center' }}>
-          祝你使用順利 🌳
+          祝你使用順利 
         </p>
         <p style={{ marginTop: 12, marginBottom: 0, fontSize: 11, color: '#a1a1a6', lineHeight: 1.6, textAlign: 'right' }}>
           — 梁人人 製作
@@ -1666,10 +1667,10 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
         <P style={{ textAlign: 'left' }}>The same pair of people can have both kinds of lines:</P>
         <BlackBlueLineMockup lang="en" />
         <p style={{ margin: '10px 0 6px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          ⚫ <Strong>Black</Strong> = Membership (who is whose family)
+          <span aria-hidden style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#1d1d1f', marginRight: 6, verticalAlign: '0px' }} /><Strong>Black</Strong> = Membership (who is whose family)
         </p>
         <p style={{ margin: '6px 0 10px', fontSize: 13.5, lineHeight: 1.7, color: '#1d1d1f', textAlign: 'left' }}>
-          🔵 <Strong>Blue</Strong> = Relationship (how close they relate)
+          <span aria-hidden style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#007aff', marginRight: 6, verticalAlign: '0px' }} /><Strong>Blue</Strong> = Relationship (how close they relate)
         </p>
         <P style={{ textAlign: 'left' }}>
           We teach <Strong>Black</Strong> (marriage / parent-child) in the next two steps; <Strong>Blue</Strong> relation
@@ -1830,7 +1831,7 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
         <p style={{ margin: '6px 0 4px', fontSize: 13.5, color: '#1d1d1f', lineHeight: 1.7 }}>
           <Strong>① Master switch</Strong> (visible in Basic / Medical tabs)
           <br />
-          Tick it → each tab gets <Strong>"Select-all-private per section"</Strong> + <Strong>per-field 🔒</Strong>.
+          Tick it → each tab gets <Strong>"Select-all-private per section"</Strong> + <Strong>per-field <Icon name="lock" size={14} style={{ display: 'inline-block', verticalAlign: '-2px' }} /></Strong>.
         </p>
         <p style={{ margin: '6px 0 4px', fontSize: 13.5, color: '#1d1d1f', lineHeight: 1.7 }}>
           <Strong>② Network tab: "All relation lines private"</Strong>
@@ -1852,33 +1853,33 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
           <img src="/brand-mark.png" alt="家系圖工具" style={{ height: 58, width: 'auto' }} />
         </div>
         <P>
-          Basic tutorial complete 🎉 We strongly recommend
+          That is the end of the manual. We strongly recommend
           <Strong>installing this as an App</Strong> — click an icon to open, works <Strong>fully offline</Strong>.
         </P>
         <InstallButtonEN />
         <p style={{ margin: '10px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
-          💡 Eyes tired after long sessions? Tap <Code>👁</Code> in the top bar for <Strong>eye-comfort warmth</Strong> — the screen warms up; exports stay pure white.
+          Eyes tired after long sessions? Tap <Code><Icon name="eye" size={14} style={{ display: 'inline-block', verticalAlign: '-2px' }} /></Code> in the top bar for <Strong>eye-comfort warmth</Strong> — the screen warms up; exports stay pure white.
         </p>
         <p style={{ margin: '10px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
-          ⚡ In a hurry? <Code>☰</Code> → "<Strong>Quick Build Family</Strong>": one person per line
+          In a hurry? <Code><Icon name="menu" size={14} style={{ display: 'inline-block', verticalAlign: '-2px' }} /></Code> → "<Strong>Quick Build Family</Strong>": one person per line
           (e.g. <Code>father 58 hypertension</Code>) and the genogram draws itself.
         </p>
         <p style={{ margin: '10px 0 4px', fontSize: 13, color: '#3a3a3c', lineHeight: 1.7 }}>
-          🔍 The home page has a <Strong>case search box</Strong>; Undo (<Code>⌘Z</Code> / <Code>Ctrl+Z</Code>) steps back one edit at a time, up to 20;
+          The home page has a <Strong>case search box</Strong>; Undo (<Code>⌘Z</Code> / <Code>Ctrl+Z</Code>) steps back one edit at a time, up to 20;
           devices without a backup folder (iPad, Firefox) get a gentle reminder once after 14 days without a full backup.
         </p>
         <P>
-          For questions, use the <Code>✉️</Code> button on the home page top bar to email the developer;
-          <Code>☰</Code> → "About" shows the version and ways to support.
+          For questions, go back to the home page and choose “Send Feedback” in the menu at the top left to email the developer;
+          <Code><Icon name="menu" size={14} style={{ display: 'inline-block', verticalAlign: '-2px' }} /></Code> → "About" shows the version and ways to support.
         </P>
         <div style={{ margin: '14px 0 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
           <p style={{ margin: 0, fontSize: 13, color: '#1d1d1f', lineHeight: 1.7, textAlign: 'center' }}>
-            This tool is free, open-source, and ad-free. If it helps you, feel free to buy me a drink ☕
+            This tool is free, open-source, and ad-free. If it helps you, feel free to buy me a drink 
           </p>
           <SupportButton size="lg" />
         </div>
         <p style={{ marginTop: 16, marginBottom: 0, fontSize: 13, color: '#86868b', lineHeight: 1.6, textAlign: 'center' }}>
-          Happy charting 🌳
+          Happy charting 
         </p>
         <p style={{ marginTop: 12, marginBottom: 0, fontSize: 11, color: '#a1a1a6', lineHeight: 1.6, textAlign: 'right' }}>
           — Liang RenRen

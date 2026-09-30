@@ -17,48 +17,17 @@ import type {
   MedicalCondition,
   Person,
 } from '../types/genogram';
+import { MARRIAGE_SUBTYPES as MARRIAGE_KINDS, ORIGIN_PARENT_SUBTYPES } from './relationKinds';
 
-// ==================== 常數(刻意複製,不 import store)====================
-// ⚠️ 下面兩個集合是 store 內同名邏輯的鏡射。改 store 時要一起改這裡。
-//    刻意不 import genogramStore:那會把 dexie / IndexedDB 拉進純函式測試。
-
-/** 親子線 subType — 對齊 store expandParents(2085-2091)與 expandChildFromMarriage(2299-2309)
- *  ⚠️ 只有這 3 種,不含 'fostered'(與 store 一致,不要「順手補齊」)*/
-const PARENT_LINK_SUBTYPES: ReadonlySet<string> = new Set([
-  'biological',
-  'adopted',
-  'placed-out',
-]);
-
-/** 婚姻類 subType — 對齊 store MARRIAGE_SUBTYPE_SET(genogramStore.ts:351)*/
-const MARRIAGE_SUBTYPES: ReadonlySet<string> = new Set([
-  'marriage',
-  'engagement',
-  'cohabitation',
-  'legal-cohabitation',
-  'engagement-cohabitation',
-  'separation',
-  'legal-separation',
-  'engagement-separation',
-  'divorce',
-  'widowed',
-  'love-affair',
-  'cohabitation-commit',
-  'partnership',
-  'secret-affair',
-  'divorce-remarriage',
-]);
-
-/** 同側上限計數白名單 — 對齊 store expandSpouseOrSibling(2143-2152)
- *  ⚠️ 只有 6 種,與 MARRIAGE_SUBTYPES 不同,這是既有行為,不要對齊它 */
-const SAME_SIDE_SUBTYPES: ReadonlySet<string> = new Set([
-  'marriage',
-  'engagement',
-  'partnership',
-  'cohabitation-commit',
-  'divorce',
-  'separation',
-]);
+// ==================== 線型分類 ====================
+// 跟 store 共用 services/relationKinds(純資料,不會把 IndexedDB 拉進純函式測試)。
+// 以前這裡是「刻意複製」的鏡射,1.5 改了 store 之後已經對不上:同側上限預覽算 6 種、實際算 15 種。
+/** 判斷「已經有爸媽了」:與 store expandParents 同一份(原生與法定父母) */
+const PARENT_LINK_SUBTYPES: ReadonlySet<string> = ORIGIN_PARENT_SUBTYPES;
+/** 婚姻類 */
+const MARRIAGE_SUBTYPES: ReadonlySet<string> = MARRIAGE_KINDS;
+/** 同側 3 段婚姻上限的計數:與 store expandSpouseOrSibling 同一份(所有婚姻類) */
+const SAME_SIDE_SUBTYPES: ReadonlySet<string> = MARRIAGE_KINDS;
 
 /** 同側婚姻段數上限 — 對齊 store expandSpouseOrSibling:2164 */
 const SAME_SIDE_LIMIT = 3;
@@ -182,10 +151,17 @@ export const BUILTIN_DISEASES: readonly string[] = [
   'anxiety', 'asthma', 'epilepsy',
 ];
 
-const DECEASED_WORDS: ReadonlySet<string> = new Set([
-  '歿', '過世', '已故', '走了', '去世', '往生', '死亡',
+/** 「已過世」的說法 —— 快速建立(一行一人、以空白分開的狀態詞)與段落切分共用這一份。 */
+export const DECEASED_WORDS: readonly string[] = [
+  '歿', '過世', '已故', '去世', '往生', '死亡', '身故', '離世', '走了',
   'deceased', 'died', 'dead',
-]);
+];
+/** 段落切分用的子集:整段口語是「找字串」,「走了」會誤中「走了很久」這種句子,
+ *  「dead」會誤中英文單字的一部分 —— 寧可少認,不要把在世的人畫成過世。 */
+export const DECEASED_WORDS_IN_PROSE: readonly string[] = DECEASED_WORDS.filter(
+  (w) => w !== '走了' && /[\u4e00-\u9fff]/.test(w),
+);
+const DECEASED_SET: ReadonlySet<string> = new Set(DECEASED_WORDS);
 
 const DIVORCED_WORDS: ReadonlySet<string> = new Set([
   '離婚', '已離婚', 'divorced', 'divorce',
@@ -203,6 +179,7 @@ export type TokenKind =
   | 'disease'
   | 'name'
   | 'note'
+  | 'education'
   | 'unsupported';
 
 export type ParsedToken = {
@@ -213,6 +190,8 @@ export type ParsedToken = {
   value?: string;
   /** 使用者是否可在預覽點擊切換三態(備註 ↔ 姓名 ↔ 疾病) */
   switchable: boolean;
+  /** 學歷 token 附帶的就學狀態(畢業 / 在學 / 肄業) */
+  educationStatus?: EducationStatus;
   /** 這個分類是使用者手動改的(不是自動判定)
    *  —— 學習迴圈只吃這種,避免把內建字典詞重複寫回全域清單(工作單 1.5-11) */
   overridden: boolean;
@@ -228,6 +207,9 @@ export type ParsedLine = {
   name?: string;
   age?: number;
   lifeSpan?: number;
+  /** 學歷:學校名稱、學歷程度或年級(國一、大三…) */
+  education?: string;
+  educationStatus?: EducationStatus;
   phones: string[];
   diseases: string[];
   notes: string[];
@@ -246,6 +228,84 @@ export const CHIP_CYCLE: readonly ('note' | 'name' | 'disease')[] = [
 ];
 
 const CJK = /^[一-鿿·‧・]{2,4}$/;
+
+// ==================== 學歷(2026-09-30)====================
+// 以前沒有學歷欄位:「國一」這種兩個字的詞會被當成姓名,「台灣大學」會變備註。
+export type EducationStatus = 'graduated' | 'attending' | 'dropped';
+const EDU_STATUS: readonly [string, EducationStatus][] = [
+  ['畢業', 'graduated'],
+  ['肄業', 'dropped'],
+  ['休學', 'dropped'],
+  ['輟學', 'dropped'],
+  ['中輟', 'dropped'],
+  ['在學', 'attending'],
+  ['在讀', 'attending'],
+  ['就讀', 'attending'],
+  ['就學', 'attending'],
+  // 紀錄上的簡寫:國中畢、高中肄(放最後,「畢業」要先比)
+  ['畢', 'graduated'],
+  ['肄', 'dropped'],
+];
+/** 學校名稱:以這些字結尾就是學校(台灣大學、建國中學、XX國小、XX護專、國中補校…) */
+const SCHOOL_SUFFIX =
+  /(大學|學院|科大|高中|高職|高工|高商|高農|中學|國中|國小|小學|附中|實小|女中|女高|商職|工職|家商|職校|補校|學校|幼兒園|幼稚園|專科|研究所|專)$/;
+/** 學歷程度:單獨出現就是學歷 */
+const EDU_LEVELS: ReadonlySet<string> = new Set([
+  '博士', '碩士', '研究所', '大學', '大專', '專科', '二專', '五專', '高中', '高職', '國中', '國小', '小學',
+  '幼兒園', '學齡前', '未就學', '不識字',
+]);
+/** 常見的學校簡稱。只放不會跟名字撞的:「建中」「中山」也是常見的名字,不放 */
+const SCHOOL_ABBREV: ReadonlySet<string> = new Set([
+  '台大', '臺大', '政大', '清大', '交大', '成大', '師大', '輔大', '空大', '北一女',
+]);
+/** 年級 —— 表示正在就讀:國一、高三、小六、大四、碩一、高1、三年級、九年級、國小三年級、幼兒園大班 */
+const GRADE =
+  /^(?:[小國高大碩博][一二三四五六七1-7]|(?:國小|小學|國中|高中|高職|大學)?[一二三四五六七八九1-9]年級|(?:幼兒園|幼稚園)?(?:大班|中班|小班|幼幼班))$/;
+
+/** 這個詞本身是不是學歷(不含前後的動詞、狀態詞) */
+function educationCore(core: string): { education: string; status?: EducationStatus } | null {
+  if (GRADE.test(core)) return { education: core, status: 'attending' };
+  if (EDU_LEVELS.has(core) || SCHOOL_ABBREV.has(core)) return { education: core };
+  // 學生:高中生、大學生、研究生、台大生。「七年級生」是在講世代,不算
+  if (core.length >= 3 && core.endsWith('生')) {
+    const level = core.slice(0, -1);
+    if (level === '研究') return { education: '研究所', status: 'attending' };
+    if (EDU_LEVELS.has(level) || SCHOOL_ABBREV.has(level)) return { education: level, status: 'attending' };
+  }
+  if (core.length >= 2 && SCHOOL_SUFFIX.test(core)) return { education: core };
+  return null;
+}
+
+/**
+ * 學歷判斷。連在一起的也拆得出狀態:「高中畢業」「國中畢」「就讀台灣大學」「讀高一」。
+ * 只有狀態詞(畢業)本身不算學歷。
+ */
+export function asEducation(raw: string): { education: string; status?: EducationStatus } | null {
+  // 程度詞整個先比:「未就學」不能拆成「未」+「就學」
+  if (EDU_LEVELS.has(raw)) return { education: raw };
+  let core = raw;
+  let status: EducationStatus | undefined;
+  for (const [word, st] of EDU_STATUS) {
+    // 「休學中」「在學中」:狀態詞後面多一個「中」
+    const tail = core.endsWith(word + '中') ? word + '中' : core.endsWith(word) ? word : null;
+    if (tail && core.length > tail.length) {
+      core = core.slice(0, -tail.length);
+      status = st;
+      break;
+    }
+  }
+  // 前面的動詞:就讀、在讀、讀、念、唸。去掉之後要是學歷才算(「念恩」是名字)
+  const verb = ['就讀', '在讀', '讀', '念', '唸'].find((v) => core.length > v.length && core.startsWith(v));
+  if (verb) {
+    const rest = educationCore(core.slice(verb.length));
+    if (rest) return { education: rest.education, status: status ?? 'attending' };
+  }
+  const hit = educationCore(core);
+  return hit ? { education: hit.education, status: status ?? hit.status } : null;
+}
+const EDU_STATUS_WORD: ReadonlyMap<string, EducationStatus> = new Map(EDU_STATUS);
+/** 看起來像名字(2-4 個中文字)但其實不是:世代說法、只說是學生 */
+const NOT_A_NAME = /^(?:[四五六七八九十]年級生|學生)$/;
 
 /** 電話:09xxxxxxxx 或 0x-xxxxxxx(允許連字號)*/
 function asPhone(raw: string): string | null {
@@ -292,7 +352,7 @@ export function parseQuickLine(
   };
 
   // 第一輪:逐 token 判定 kind(不套 override)。用 for 迴圈是為了能回看前一個 token(姓名猜測)
-  const kinds: { kind: TokenKind; value?: string }[] = [];
+  const kinds: { kind: TokenKind; value?: string; educationStatus?: EducationStatus }[] = [];
   for (let i = 0; i < words.length; i++) {
     const w = words[i];
     const low = w.toLowerCase();
@@ -308,7 +368,7 @@ export function parseQuickLine(
       continue;
     }
     // 2. 狀態詞
-    if (DECEASED_WORDS.has(low)) {
+    if (DECEASED_SET.has(low)) {
       kinds.push({ kind: 'deceased' });
       continue;
     }
@@ -333,6 +393,26 @@ export function parseQuickLine(
       kinds.push({ kind: 'disease' });
       continue;
     }
+    // 5b. 學歷(排在姓名猜測之前 —— 不然「國一」會被當成名字)
+    const edu = asEducation(w);
+    if (edu) {
+      kinds.push({ kind: 'education', value: edu.education, educationStatus: edu.status });
+      continue;
+    }
+    // 5c. 單獨的狀態詞(台灣大學 畢業):前一個是學歷才算,不然當備註
+    // 「休學中」「中輟生」也算狀態詞
+    const eduStatus =
+      EDU_STATUS_WORD.get(w) ?? (w.length > 2 && /[中生]$/.test(w) ? EDU_STATUS_WORD.get(w.slice(0, -1)) : undefined);
+    if (eduStatus) {
+      // 狀態詞永遠不是姓名(以前「爸爸 畢業」會把「畢業」當成名字)
+      kinds.push(kinds[i - 1]?.kind === 'education' ? { kind: 'education', educationStatus: eduStatus } : { kind: 'note' });
+      continue;
+    }
+    // 5d. 講世代或身分、不是名字的詞(七年級生、學生)
+    if (NOT_A_NAME.test(w)) {
+      kinds.push({ kind: 'note' });
+      continue;
+    }
     // 6. 姓名猜測:2-4 個中文字,且緊跟在稱謂 token 之後
     if (CJK.test(w) && i > 0 && kinds[i - 1]?.kind === 'relation') {
       kinds.push({ kind: 'name' });
@@ -353,6 +433,7 @@ export function parseQuickLine(
       raw: w,
       kind,
       value: base.value,
+      educationStatus: base.educationStatus,
       switchable,
       overridden: switchable && !!ov && ov !== base.kind,
     };
@@ -378,6 +459,14 @@ export function parseQuickLine(
         break;
       case 'name':
         if (out.name === undefined) out.name = tk.raw;
+        break;
+      case 'education':
+        if (tk.value) {
+          if (out.education === undefined) out.education = tk.value;
+          // 「國小 三年級」分開打:合成「國小三年級」
+          else if (/^[一二三四五六七八九1-9]年級$/.test(tk.value) && !out.education.includes('年級')) out.education += tk.value;
+        }
+        if (tk.educationStatus) out.educationStatus = tk.educationStatus;
         break;
       case 'note':
         out.notes.push(tk.raw);
@@ -567,8 +656,9 @@ function stepSpouse(
     const other = ps.find((p) => p.id === otherEnd(l, currentId));
     if (!other) return false;
     if (opts.shape && other.shape !== opts.shape) return false;
-    if (!opts.anyUnion && (l.subType === 'divorce') !== !!opts.divorced)
+    if (!opts.anyUnion && (l.subType === 'divorce') !== !!opts.divorced) {
       return false;
+    }
     return true;
   };
   // anyUnion(子女用):優先非離婚的關係
@@ -579,21 +669,24 @@ function stepSpouse(
       ]
     : marriages;
   const found = pool.find(match);
-  if (found)
+  if (found) {
     return { id: otherEnd(found, currentId), marriageLineId: found.id };
+  }
 
   // 沒有 → 建立;先做同側上限預檢(工作單 1.5-13)
   const side: 'left' | 'right' =
     sameSideCount(ops, currentId, 'right') < SAME_SIDE_LIMIT ? 'right' : 'left';
-  if (sameSideCount(ops, currentId, side) >= SAME_SIDE_LIMIT)
+  if (sameSideCount(ops, currentId, side) >= SAME_SIDE_LIMIT) {
     return { id: null, skipReason: 'spouse-limit' };
+  }
 
   const r = ops.createSpouse(currentId, side);
   if (!r) return { id: null, skipReason: 'spouse-limit' };
   created.push(r.spouseId);
   const me = ps.find((p) => p.id === currentId);
-  if (opts.shape && me && flipShape(me.shape) !== opts.shape)
+  if (opts.shape && me && flipShape(me.shape) !== opts.shape) {
     ops.setShape(r.spouseId, opts.shape);
+  }
   return { id: r.spouseId, marriageLineId: r.lineId };
 }
 
@@ -671,8 +764,9 @@ export function walkPath(
         r = stepChild(ops, cur, created);
         break;
     }
-    if (!r.id)
+    if (!r.id) {
       return { targetId: null, createdIds: created, skipReason: r.skipReason };
+    }
     if (r.marriageLineId) marriageLineId = r.marriageLineId;
     cur = r.id;
   }
@@ -741,8 +835,9 @@ export function createSimGraphOps(
           (l) =>
             l.toPersonId === childId && PARENT_LINK_SUBTYPES.has(l.subType),
         )
-      )
+      ) {
         return null;
+      }
       const fatherId = simId('f');
       const motherId = simId('m');
       const y = child.position.y - SIM_STEP;
@@ -822,7 +917,7 @@ export function createSimGraphOps(
 
 // ==================== 4. Plan(預覽)====================
 
-export type ConflictField = 'name' | 'age' | 'lifeSpan';
+export type ConflictField = 'name' | 'age' | 'lifeSpan' | 'education';
 
 export type FieldConflict = {
   field: ConflictField;
@@ -952,6 +1047,7 @@ export function buildPlan(input: {
       push('name', existing.basicInfo?.name, parsed.name);
       push('age', existing.textInfo?.age, parsed.age);
       push('lifeSpan', existing.textInfo?.lifeSpan, parsed.lifeSpan);
+      push('education', existing.basicInfo?.education, parsed.education);
     }
 
     const existingDiseases = (existing?.medicalConditions ?? []).map(

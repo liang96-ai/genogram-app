@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Modal from '../ui/Modal';
 import { useT } from '../../i18n';
+import Icon, { type IconName } from '../ui/Icon';
 
 // 收件信箱(專案專屬,不用個人 gmail)
 const FEEDBACK_EMAIL = 'genogram.feedback@gmail.com';
@@ -32,16 +33,16 @@ export default function FeedbackDialog({ onClose }: { onClose: () => void }) {
     return `Platform: ${platform}\nLang: ${lang}\nScreen: ${screen}\nUA: ${ua}\nTime: ${now}\nApp version: ${APP_VERSION}`;
   })();
 
-  const typeLabels: Record<FeedbackType, { icon: string; key: string }> = {
-    bug: { icon: '🐛', key: 'feedback.typeBug' },
-    suggestion: { icon: '💡', key: 'feedback.typeSuggestion' },
-    question: { icon: '❓', key: 'feedback.typeQuestion' },
+  const typeLabels: Record<FeedbackType, { icon: IconName; key: string }> = {
+    bug: { icon: 'bug', key: 'feedback.typeBug' },
+    suggestion: { icon: 'tip', key: 'feedback.typeSuggestion' },
+    question: { icon: 'question', key: 'feedback.typeQuestion' },
   };
 
   const handleSubmit = () => {
     const typeLabel = t(typeLabels[type].key);
     const subject = `[家系圖工具] ${typeLabel}`;
-    const body = `${t('feedback.bodyTypeLabel')}: ${typeLabels[type].icon} ${typeLabel}
+    const body = `${t('feedback.bodyTypeLabel')}: ${typeLabel}
 
 ${t('feedback.bodyDescLabel')}:
 ${description.trim() || '(空白)'}
@@ -139,7 +140,7 @@ ${deviceInfo}`;
                 }}
               >
                 <div style={{ fontSize: 20, marginBottom: 2 }}>
-                  {typeLabels[k].icon}
+                  <Icon name={typeLabels[k].icon} size={16} />
                 </div>
                 {t(typeLabels[k].key)}
               </button>
@@ -190,7 +191,7 @@ ${deviceInfo}`;
             lineHeight: 1.5,
           }}
         >
-          💡 {t('feedback.hint')}
+          <Icon name="tip" size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: 4 }} />{t('feedback.hint')}
         </div>
 
         {/* Buttons */}

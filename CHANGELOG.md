@@ -3,6 +3,41 @@
 給使用者看的版本說明。技術細節請見 git 歷史。
 User-facing release notes; see git history for technical details.
 
+## 1.6.0 — 2026-09-30
+
+**English summary:** A calmer, clearer interface. First launch is a single welcome card instead of four dialogs, and a one-minute walkthrough teaches the tool on your own case (add parents, add a spouse or child, fill a detail, quick build, export). The old 12-step tutorial became a Manual. Quick Build now fills in education: school names, levels, grades, and whether the person graduated, is attending, or dropped out. Emoji icons were replaced by one set of line icons; the home header keeps only the menu, eye comfort, language, and the privacy badge; the side panel folds rarely used fields under “More details”; undo and redo sit on the bottom bar; an empty canvas offers two ways to start. This release also includes the data-safety fixes: renaming a case is no longer reverted by undo; choosing a backup folder from the attachments tab now asks which version to keep when the folder has a newer copy; full reset asks whether to delete the case folders in the backup folder too (your own backups and files are never touched); adding a child to someone who is cohabiting or widowed no longer creates a new spouse; Quick Build recognizes more ways to say someone has died; adding grandparents on both sides keeps all four on the same generation row; exported images no longer include overlap warnings; an interrupted press on the marriage-line arrow no longer adds a child.
+
+### 介面與教學
+- **第一次打開只有一張歡迎卡。** 隱私說明濃縮成三句,按「開始第一個個案」直接進畫布;以前要先過隱私、選資料夾、取名字、12 步教學四關。
+- **帶著做一次。** 在你自己的個案上,一步一個真的動作:加爸媽、加配偶或小孩、填一個年齡、快速建立、匯出圖片。做到了自動下一步;已經會的直接按「下一步」。約一分鐘,隨時可跳過,之後從選單重看。
+- **快速建立認得學歷。** 學校名稱(台灣大學、光明國小、護專)、程度(高中、碩士)、年級(國一、國小三年級、大班)、日常說法(高中生、國中畢、讀高一),連同畢業、在學、肄業、休學,直接填進教育程度。以前「國一」「高中生」會被當成名字,「台灣大學」會變備註。
+- **支持頁重寫**,說明綠界是台灣的金流公司、付款只在綠界或 Ko-fi 的頁面完成。
+- **原本的 12 步教學變成「說明手冊」**,從選單按頁查。
+- **介面圖示改成一套線條圖示**,取代 emoji;電腦、iPad 顯示一致。
+- **首頁上排只留選單、護眼、語言和隱私徽章**;資料夾、分享、安裝、回報、支持收進選單,每個都有文字。修正主選單在電腦螢幕上左邊被切掉。標題換成 App 的標誌。
+- **沒設備份資料夾時,改成一行小字提醒**,不再是每次都在的橘色警告;新增個案時選資料夾的彈窗只問一次。
+- **右側面板:職業以外的個人資訊收進「更多資料」**,已經填過的會自動展開,一格都沒刪。看不懂的名稱改成白話:案主塗黑、民國年、更多符號(醫療、性別與標記、遺傳)。「新增人物」獨立成有字的按鈕。
+- **復原、重做放到底部縮放列**,iPad 沒鍵盤也一按就到。
+- **空白畫布出現起步卡**:用箭頭加家人,或打字快速建立。
+- **個案名稱旁有一支筆**,點一下就能改名。工具列不再常駐「支持」,改放選單。
+- 選單的「輸出檔案」不再有一個紅字。
+
+
+### 資料安全修正
+- **改名後按復原,名字不再變回舊的。** 以前改完個案名稱再按一次復原,整份個案會退回改名前,舊名字還會被自動存回去。
+- **在附件分頁設定備份資料夾,也會先問「資料夾裡的版本比較新」。** 以前只有個案清單會問,附件分頁不問,之後自動存檔可能蓋掉另一台電腦的新版。選了「用資料夾的版本」後,正在編輯的畫面也會換成新的;在個案清單改名也不會再把它蓋回舊版。
+- **「全部重置」會問要不要一起刪除備份資料夾裡的個案檔。** 以前資料夾裡的檔案留著,之後再選同一個資料夾,刪過的個案會被救回來。只刪本工具建立的個案資料夾和目錄檔;你用「備份」存的全備份、資料夾裡你自己的檔案都不會動。資料夾權限暫時失效時也會問。
+- **同居、喪偶、分居的人按「加子女」,不再多生出一個新配偶。** 以前只認得舊版的線型名稱。
+- **快速建立認得「身故」「離世」,整段描述認得「已故」。** 以前打「爸爸 身故」會被畫成在世。
+- **同時加父系和母系祖父母,四位排在同一排。** 以前外公外婆會被擠到高一層,還掛著橘色警示。
+- **匯出的圖片不再帶出警示。** 橘色重疊圈、紅色的線是編輯時給你看的,不屬於家系圖。
+- **按婚姻線下方箭頭時被系統打斷,不再誤加子女或多胞胎。**
+
+### 看不到但比較穩的地方
+- 「哪些線算親子、哪些算婚姻」收成一處,快速建立的預覽和實際畫出來的結果不會再對不上。
+- 新增 iPad 的使用者旅程測試(Safari 核心、觸控),iPad 上 16 條旅程通過;備份資料夾相關的兩條本來就只有電腦版有。
+- 新增「全部重置只刪個案資料夾」和「第一次打開到快速建立」兩條使用者旅程,電腦版共 18 條。
+
 ## 1.5.1 — 2026-09-07
 
 **English summary:** Household circles can go back to auto-wrapping their members (select → ↺), and a manually shaped circle is drawn dash-dot so you can tell it no longer follows people; double-click the marriage-line handle to reset its height; long-pressing an arrow without dragging now counts as a tap; the canvas suppresses the iOS long-press menu; exporting an image while editing a household no longer includes the handles.

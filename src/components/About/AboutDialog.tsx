@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Modal from '../ui/Modal';
 import { useT } from '../../i18n';
 import { checkForUpdate } from '../../services/pwaUpdate';
+import Icon from '../ui/Icon';
 
 /**
  * 關於 / About 對話框
@@ -138,7 +139,7 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
               opacity: checkingUpdate ? 0.6 : 1,
             }}
           >
-            🔄{' '}
+            <Icon name="refresh" size={14} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: 4 }} />
             {checkingUpdate
               ? t('caseList.updateChecking')
               : t('caseList.checkUpdate')}
@@ -160,14 +161,14 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
           >
             {t('about.openSourceBody')}
           </div>
-          <LinkRow icon="📖" label="GitHub" url={GITHUB_URL} />
+          <LinkRow icon={<Icon name="book" size={16} />} label="GitHub" url={GITHUB_URL} />
         </Section>
 
         {/* Section: Support — 個人免費(抖內) + 組織年費 */}
         <Section title={t('about.supportTitle')}>
           {/* 個人實務 — 免費(抖內按鈕集中在工具列 ☕ 彈窗,About 不重複) */}
           <div style={{ fontSize: 13, fontWeight: 600, color: '#1d1d1f', marginBottom: 4 }}>
-            💚 {t('about.personalTitle')}
+            {t('about.personalTitle')}
           </div>
           <div style={{ fontSize: 12.5, color: '#3a3a3c', lineHeight: 1.55, marginBottom: 16 }}>
             {t('about.personalNote')}
@@ -175,20 +176,20 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
 
           {/* 組織使用 — 邀請以年費表達支持 */}
           <div style={{ fontSize: 13, fontWeight: 600, color: '#1d1d1f', marginBottom: 4 }}>
-            🤝 {t('about.orgTitle')}
+            {t('about.orgTitle')}
           </div>
           <div style={{ fontSize: 12.5, color: '#3a3a3c', lineHeight: 1.55, marginBottom: 8 }}>
             {t('about.orgBody')}
           </div>
           <div style={{ fontSize: 12.5, color: '#3a3a3c', lineHeight: 1.85, marginBottom: 8 }}>
-            🌱 {t('about.orgNonprofit')}
+            {t('about.orgNonprofit')}
             <br />
-            🏢 {t('about.orgForprofit')}
+            {t('about.orgForprofit')}
             <br />
-            🔧 {t('about.orgIntegration')}
+            {t('about.orgIntegration')}
           </div>
           <LinkRow
-            icon="📧"
+            icon={<Icon name="mail" size={16} />}
             label={t('about.emailLabel')}
             url={`mailto:${FEEDBACK_EMAIL}`}
             displayText={FEEDBACK_EMAIL}
@@ -270,7 +271,7 @@ function LinkRow({
   url,
   displayText,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   url: string;
   displayText?: string;

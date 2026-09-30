@@ -1,20 +1,19 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import Canvas from './components/Canvas/Canvas';
 import ViewToolbar from './components/Canvas/ViewToolbar';
+import StartCard from './components/Canvas/StartCard';
 import Inspector from './components/Inspector/Inspector';
 import ConfirmDialog from './components/ConfirmDialog';
 import HoverTooltip from './components/HoverTooltip';
 import CaseList from './components/CaseList/CaseList';
 import { ExportDialog } from './components/CaseList/ExportImportDialog';
-// hasTutorialBeenSeen 暫不使用(教學手冊改為選單觸發)— 需要時從 './components/Tutorial/tutorialSeen' 匯入
 import ScaleDialog from './components/Scales/ScaleDialog';
 import InstallBanner from './components/InstallBanner';
 import AboutDialog from './components/About/AboutDialog';
 import EyeComfortButton from './components/EyeComfort/EyeComfortButton';
-import {
-  SupportAutoPrompt,
-  SupportButton,
-} from './components/About/SupportDialog';
+import { SupportAutoPrompt, SupportDialog } from './components/About/SupportDialog';
+import GuidedTour from './components/Onboarding/GuidedTour';
+import Icon from './components/ui/Icon';
 import { useT } from './i18n';
 import { getScale } from './components/Scales/registry';
 import { db } from './services/database';
@@ -24,7 +23,7 @@ import { loadRootDirHandle, writeCaseJson,
 } from './services/fileSystem';
 import { findNewerInFolder, rescueCasesFromFolder } from './services/folderRescue';
 import { promptNewerInFolder } from './services/folderConflictPrompt';
-import { OPEN_SCALE_PICKER_EVENT } from './services/uiEvents';
+import { OPEN_SCALE_PICKER_EVENT, OPEN_QUICK_BUILD_EVENT } from './services/uiEvents';
 import { modalCount } from './components/ui/modalStack';
 import { createPortal } from 'react-dom';
 import { deleteConfirmSpec } from './services/deleteSelection';
@@ -178,7 +177,7 @@ export default function App() {
     void (async () => {
       try {
         const adopted = await promptNewerInFolder(await findNewerInFolder(cases));
-        if (adopted > 0) await loadCaseList();
+        if (adopted.length > 0) await loadCaseList();
       } catch (err) {
         console.error('newer-in-folder prompt failed:', err);
       }
@@ -255,14 +254,12 @@ export default function App() {
     loadProbandStyle,
   ]);
 
-  // 教學手冊改成「使用者主動從選單觸發」— 不再首次進編輯自動彈
-  // (避免跟首頁隱私歡迎彈窗連續兩次強制 modal,UX 太重)
-  // 想加回自動彈,把下面 useEffect 取消註解即可
-  // useEffect(() => {
-  //   if (!loaded) return;
-  //   if (appMode !== 'edit') return;
-  //   if (!hasTutorialBeenSeen()) setShowTutorial(true);
-  // }, [loaded, appMode, setShowTutorial]);
+  // 「帶著做一次」只在編輯畫面進行;回到清單就結束(1.6.0)
+  const tourActive = useGenogramStore((s) => s.tourActive);
+  const setTourActive = useGenogramStore((s) => s.setTourActive);
+  useEffect(() => {
+    if (appMode !== 'edit' && tourActive) setTourActive(false);
+  }, [appMode, tourActive, setTourActive]);
 
   // 自動儲存(write-through):
   //   1. 寫 IndexedDB(快,必有)
@@ -418,16 +415,18 @@ export default function App() {
             .currentCase?.persons.find((x) => x.id === id);
           if (p) movePerson(id, p.position.x + dx, p.position.y + dy);
         }
-        if (nudgeRef.current.timer !== null)
+        if (nudgeRef.current.timer !== null) {
           window.clearTimeout(nudgeRef.current.timer);
+        }
         nudgeRef.current.timer = window.setTimeout(() => {
           const before = nudgeRef.current.before;
           nudgeRef.current = { before: null, timer: null };
           // 結算前確認還在同一個個案 —— 按完立刻切個案的話,
           // 把舊個案的快照推進新個案的 history 會讓 undo 跨案污染
           const nowCase = useGenogramStore.getState().currentCase;
-          if (before && nowCase && nowCase.id === before.id)
+          if (before && nowCase && nowCase.id === before.id) {
             commitMoveHistory(before);
+          }
         }, 600);
         return;
       }
@@ -513,7 +512,7 @@ export default function App() {
               color: saveIssue === 'db' ? '#cf1322' : '#8a6d3b',
             }}
           >
-            <span>{saveIssue === 'db' ? '🛑' : '⚠️'}</span>
+            <Icon name="warning" size={17} />
             <span style={{ flex: 1 }}>
               {saveIssue === 'db'
                 ? t('alert.saveDbFailed')
@@ -540,7 +539,7 @@ export default function App() {
               color: '#8a6d3b',
             }}
           >
-            <span>⚠️</span>
+            <Icon name="warning" size={17} />
             <span style={{ flex: 1 }}>{t('alert.multiTab')}</span>
             <button
               onClick={() => setMultiTabWarn(false)}
@@ -566,7 +565,7 @@ export default function App() {
               color: '#0c447c',
             }}
           >
-            <span>✨</span>
+            <Icon name="refresh" size={17} />
             <span style={{ flex: 1 }}>{t('alert.updateReady')}</span>
             <button
               onClick={async () => {
@@ -645,6 +644,7 @@ export default function App() {
           <Canvas />
           <Toolbar onBack={() => goToList()} onRename={renameCase} />
           <ViewToolbar />
+          <StartCard />
           <PrivacyMaskBadge />
           <HouseholdQuickAction />
         </div>
@@ -658,6 +658,7 @@ export default function App() {
           <Tutorial onClose={() => setShowTutorial(false)} />
         </Suspense>
       )}
+      {tourActive && <GuidedTour />}
       <SupportAutoPrompt />
     </>
   );
@@ -675,7 +676,6 @@ function Toolbar({
   const redo = useGenogramStore((s) => s.redo);
   const canUndo = useGenogramStore((s) => s.history.past.length > 0);
   const canRedo = useGenogramStore((s) => s.history.future.length > 0);
-  const language = useGenogramStore((s) => s.language);
   const t = useT();
   const [open, setOpen] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -685,6 +685,7 @@ function Toolbar({
   const [activeScaleId, setActiveScaleId] = useState<string | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [quickBuildOpen, setQuickBuildOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const [kinshipOpen, setKinshipOpen] = useState(false);
   const [scalePickerOpen, setScalePickerOpen] = useState(false);
   // 「整理子女排列」:選取的線剛好是一條婚姻線時才可用(新增不再自動排列,想整齊的人自己按)
@@ -701,6 +702,11 @@ function Toolbar({
     const onOpen = () => setScalePickerOpen(true);
     window.addEventListener(OPEN_SCALE_PICKER_EVENT, onOpen);
     return () => window.removeEventListener(OPEN_SCALE_PICKER_EVENT, onOpen);
+  }, []);
+  useEffect(() => {
+    const onOpen = () => setQuickBuildOpen(true);
+    window.addEventListener(OPEN_QUICK_BUILD_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_QUICK_BUILD_EVENT, onOpen);
   }, []);
 
   useEffect(() => {
@@ -734,6 +740,7 @@ function Toolbar({
         position: 'absolute',
         top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
         left: 'calc(env(safe-area-inset-left, 0px) + 12px)',
+        zIndex: 30,
       }}
     >
       <div
@@ -771,6 +778,8 @@ function Toolbar({
         <button
           onClick={() => setOpen((v) => !v)}
           title={t('editor.menu')}
+          aria-label={t('editor.menu')}
+          data-tour="editor-menu"
           style={hamburgerBtnStyle}
         >
           <svg width="18" height="14" viewBox="0 0 18 14">
@@ -779,9 +788,8 @@ function Toolbar({
             <line x1="0" y1="13" x2="18" y2="13" stroke="#1d1d1f" strokeWidth="2" strokeLinecap="round" />
           </svg>
         </button>
-        {/* 護眼 + 支持:緊鄰漢堡,與首頁頂列一致 */}
+        {/* 護眼緊鄰漢堡,與首頁頂列一致;「支持」收進選單(1.6.0:工作區不放) */}
         <EyeComfortButton />
-        <SupportButton />
         {renaming ? (
           <input
             type="text"
@@ -833,6 +841,20 @@ function Toolbar({
             {t('editor.personCount', { n: currentCase?.persons.length ?? 0 })}
           </span>
         )}
+        {!renaming && (
+          <button
+            onClick={() => {
+              if (!currentCase) return;
+              setDraftName(currentCase.caseName);
+              setRenaming(true);
+            }}
+            title={t('editor.renameTip')}
+            aria-label={t('editor.rename')}
+            style={{ ...hamburgerBtnStyle, width: 26, color: '#6e6e73' }}
+          >
+            <Icon name="pencil" size={15} />
+          </button>
+        )}
       </div>
 
       {open && (
@@ -849,7 +871,7 @@ function Toolbar({
           }}
         >
           <MenuItem
-            icon="↺"
+            icon={<Icon name="undo" />}
             label={t('editor.undo')}
             shortcut={`${mod}Z`}
             disabled={!canUndo}
@@ -859,7 +881,7 @@ function Toolbar({
             }}
           />
           <MenuItem
-            icon="↻"
+            icon={<Icon name="redo" />}
             label={t('editor.redo')}
             shortcut={`${mod}⇧Z`}
             disabled={!canRedo}
@@ -869,7 +891,7 @@ function Toolbar({
             }}
           />
           <MenuItem
-            icon="⚡"
+            icon={<Icon name="bolt" />}
             label={t('quickBuild.menuLabel')}
             onClick={() => {
               setQuickBuildOpen(true);
@@ -877,21 +899,8 @@ function Toolbar({
             }}
           />
           <MenuItem
-            icon="↑"
-            label={
-              language === 'zh' ? (
-                <>
-                  輸
-                  <span style={{ color: '#d70015', fontWeight: 700 }}>出</span>
-                  檔案
-                </>
-              ) : (
-                <>
-                  <span style={{ color: '#d70015', fontWeight: 700 }}>Out</span>
-                  put File
-                </>
-              )
-            }
+            icon={<Icon name="exportFile" />}
+            label={t('menu.exportFile')}
             onClick={() => {
               setExportOpen(true);
               setOpen(false);
@@ -903,7 +912,7 @@ function Toolbar({
           <MenuDivider />
           {/* 參考工具:查東西用的,不改個案內容 */}
           <MenuItem
-            icon="📖"
+            icon={<Icon name="shapes" />}
             label={t('menu.symbolGallery')}
             onClick={() => {
               setGalleryOpen(true);
@@ -911,7 +920,7 @@ function Toolbar({
             }}
           />
           <MenuItem
-            icon="👨‍👩‍👧"
+            icon={<Icon name="family" />}
             label={t('kinship.menuLabel')}
             onClick={() => {
               setKinshipOpen(true);
@@ -922,7 +931,7 @@ function Toolbar({
           {/* v1.2.2:原本 7 個分類各自展開子選單,把選單撐得又長又難掃視 → 收成單一彈窗
               (量表版權聲明也一併搬進該彈窗底部) */}
           <MenuItem
-            icon="📋"
+            icon={<Icon name="clipboard" />}
             label={t('menu.assessmentTools')}
             onClick={() => {
               setScalePickerOpen(true);
@@ -930,7 +939,7 @@ function Toolbar({
             }}
           />
           <MenuItem
-            icon="🤝"
+            icon={<Icon name="bringTogether" />}
             label={t('menu.bringSpouses')}
             subtitle={t('menu.bringSpousesHint')}
             disabled={!tidyTarget}
@@ -940,7 +949,7 @@ function Toolbar({
             }}
           />
           <MenuItem
-            icon="🧹"
+            icon={<Icon name="tidy" />}
             label={t('menu.tidyChildren')}
             subtitle={t('menu.tidyChildrenHint')}
             disabled={!tidyTarget}
@@ -949,8 +958,32 @@ function Toolbar({
               setOpen(false);
             }}
           />
-          {/* v1.2.2 拿掉「看基礎教學 / 語言 / 關於」— 三者都是全 app 級設定,首頁漢堡已有;
-              個案內漢堡聚焦在「當前個案操作」。「💾 快照」佔位鈕也一併移除(功能未實作)。 */}
+          {/* 學怎麼用:在這個個案上帶著做一次、按主題查的說明手冊(1.6.0);「支持」從工具列收進這裡 */}
+          <MenuDivider />
+          <MenuItem
+            icon={<Icon name="route" />}
+            label={t('menu.guidedTour')}
+            onClick={() => {
+              setOpen(false);
+              useGenogramStore.getState().setTourActive(true);
+            }}
+          />
+          <MenuItem
+            icon={<Icon name="book" />}
+            label={t('menu.manual')}
+            onClick={() => {
+              setOpen(false);
+              useGenogramStore.getState().setShowTutorial(true);
+            }}
+          />
+          <MenuItem
+            icon={<Icon name="heart" />}
+            label={t('menu.support')}
+            onClick={() => {
+              setOpen(false);
+              setSupportOpen(true);
+            }}
+          />
           <MenuDivider />
           <MenuInfo>{t('editor.lastModified', { time: lastModified })}</MenuInfo>
         </div>
@@ -961,6 +994,7 @@ function Toolbar({
         </Suspense>
       )}
       {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
+      {supportOpen && <SupportDialog onClose={() => setSupportOpen(false)} />}
       {quickBuildOpen && (
         <Suspense fallback={null}>
           <QuickBuildDialog onClose={() => setQuickBuildOpen(false)} />
@@ -1022,7 +1056,7 @@ function MenuItem({
   disabled,
   onClick,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   label: React.ReactNode;
   shortcut?: string;
   subtitle?: string;
@@ -1055,7 +1089,7 @@ function MenuItem({
         e.currentTarget.style.background = 'transparent';
       }}
     >
-      <span style={{ width: 18, textAlign: 'center' }}>{icon}</span>
+      <span style={{ width: 18, display: 'inline-flex', justifyContent: 'center', color: '#3a3a3c' }}>{icon}</span>
       <span style={{ flex: 1 }}>{label}</span>
       {shortcut && (
         <span style={{ color: '#86868b', fontSize: 11 }}>{shortcut}</span>
@@ -1165,7 +1199,8 @@ function PrivacyMaskBadge() {
         userSelect: 'none',
       }}
     >
-      🔒 {t('privacyBadge.masking', { n })}
+      <Icon name="lock" size={13} />
+      {t('privacyBadge.masking', { n })}
     </div>
   );
 }

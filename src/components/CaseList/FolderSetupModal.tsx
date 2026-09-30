@@ -1,6 +1,7 @@
 import Modal from '../ui/Modal';
 import { selectRootFolder } from '../../services/fileSystem';
 import { useT } from '../../i18n';
+import Icon from '../ui/Icon';
 
 /**
  * 「選資料夾」設定畫面
@@ -30,7 +31,7 @@ export default function FolderSetupModal({
       }}
       overlayStyle={{ background: 'rgba(0,0,0,0.5)' }}
     >
-        <div style={{ fontSize: 28, marginBottom: 4 }}>📁</div>
+        <div style={{ marginBottom: 4, color: '#007aff' }}><Icon name="folder" size={30} /></div>
         <div
           style={{
             fontSize: 18,

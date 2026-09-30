@@ -3,6 +3,7 @@ import Modal from '../ui/Modal';
 import { useT } from '../../i18n';
 import { useGenogramStore } from '../../store/genogramStore';
 import { getScalesByCategory } from './registry';
+import Icon from '../ui/Icon';
 
 /**
  * 評估工具彈窗 —— 取代編輯器漢堡選單裡的 7 層巢狀子選單。
@@ -81,7 +82,7 @@ export default function ScalePickerDialog({
           }}
         >
           <div style={{ fontSize: 18, fontWeight: 600, color: '#1d1d1f' }}>
-            📋 {t('menu.assessmentTools')}
+            <Icon name="clipboard" size={18} style={{ display: 'inline-block', verticalAlign: '-3px', marginRight: 6 }} />{t('menu.assessmentTools')}
           </div>
           <button
             onClick={onClose}

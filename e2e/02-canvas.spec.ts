@@ -85,7 +85,7 @@ test('⑥ 彈窗開著時,方向鍵不可以動到畫布(2026-08-31 修的 bug)'
 
 test('⑦ 同一群人只能圈一個同住圈(2026-08-31 修的 bug)', async ({ app }) => {
   await createCase(app, 'E2E 同住圈');
-  await app.locator(`button[title="${UI.addLonePerson}"]`).click();
+  await app.getByRole('button', { name: UI.addLonePerson }).click();
   await expect
     .poll(async () => (await readCaseByName(app, 'E2E 同住圈'))!.persons.length, { timeout: 6000 })
     .toBe(2);

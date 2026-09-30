@@ -584,6 +584,15 @@ export default function MarriageGroup({
             const cleanup = () => {
               document.removeEventListener('pointerup', onUp);
               document.removeEventListener('pointermove', onMove);
+              document.removeEventListener('pointercancel', onCancel);
+            };
+            // 手勢被系統中斷(切 App、多指):整個作廢 —— 不然 1 秒後照樣觸發多胞胎,
+            // 殘留的監聽也可能被下一次按放誤觸發成「加一個子女」
+            const onCancel = (ev: PointerEvent) => {
+              if (ev.pointerId !== pointerId) return;
+              cancelled = true;
+              window.clearTimeout(timer);
+              cleanup();
             };
             const timer = window.setTimeout(() => {
               if (cancelled) return;
@@ -611,6 +620,7 @@ export default function MarriageGroup({
             };
             document.addEventListener('pointerup', onUp);
             document.addEventListener('pointermove', onMove);
+            document.addEventListener('pointercancel', onCancel);
           }}
           style={{ cursor: 'pointer' }}
         >

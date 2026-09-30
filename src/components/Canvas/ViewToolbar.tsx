@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { clampZoom, useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
+import Icon from '../ui/Icon';
 
 /**
  * 浮動在畫布上的檢視工具列(pan/zoom 控制)
@@ -14,6 +15,10 @@ export default function ViewToolbar() {
   const resetView = useGenogramStore((s) => s.resetView);
   const fitView = useGenogramStore((s) => s.fitView);
   const drawMode = useGenogramStore((s) => s.drawMode);
+  const undo = useGenogramStore((s) => s.undo);
+  const redo = useGenogramStore((s) => s.redo);
+  const canUndo = useGenogramStore((s) => s.history.past.length > 0);
+  const canRedo = useGenogramStore((s) => s.history.future.length > 0);
   const setDrawMode = useGenogramStore((s) => s.setDrawMode);
 
   const ref = useRef<HTMLDivElement>(null);
@@ -75,6 +80,13 @@ export default function ViewToolbar() {
         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
       }}
     >
+      <IconBtn title={t('editor.undo')} onClick={undo} disabled={!canUndo}>
+        <Icon name="undo" size={16} />
+      </IconBtn>
+      <IconBtn title={t('editor.redo')} onClick={redo} disabled={!canRedo}>
+        <Icon name="redo" size={16} />
+      </IconBtn>
+      <Divider />
       <IconBtn title={t('view.zoomOut')} onClick={() => zoomByFactor(1 / 1.25)}>
         <Minus />
       </IconBtn>
@@ -160,15 +172,19 @@ function IconBtn({
   children,
   onClick,
   title,
+  disabled,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   title: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       title={title}
+      aria-label={title}
+      disabled={disabled}
       style={{
         width: 28,
         height: 24,
@@ -176,7 +192,8 @@ function IconBtn({
         background: 'transparent',
         border: 'none',
         borderRadius: 4,
-        cursor: 'pointer',
+        cursor: disabled ? 'default' : 'pointer',
+        opacity: disabled ? 0.35 : 1,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

@@ -460,10 +460,11 @@ const spouseOf = (st: BuildState, id: string): DiagramNode | undefined => {
 /** 確保某人有父母(走手足時需要);回傳 [父, 母] */
 function ensureParents(st: BuildState, child: DiagramNode): DiagramNode[] {
   const existing = parentsEdgeOf(st, child.id);
-  if (existing)
+  if (existing) {
     return existing.parents
       .map((pid) => st.nodes.find((n) => n.id === pid))
       .filter((n): n is DiagramNode => !!n);
+  }
   const gen = child.gen - 1;
   // 父母兩人的路徑都推導得出來,所以名牌一開始就是對的(爸爸 / 媽媽、爺爺 / 奶奶)
   const father = place(st, 'male', gen, child.col - 1, -1, [...child.path, 'F'], 'implied');
@@ -500,8 +501,9 @@ export function buildDiagram(path: readonly Step[]): Diagram {
 
     if (step === 'H' || step === 'W') {
       // 我的性別由配偶反推(選「先生」代表我是女性)
-      if (cur.id === me.id && me.role === 'self')
+      if (cur.id === me.id && me.role === 'self') {
         me.gender = spec.gender === 'male' ? 'female' : 'male';
+      }
       const existing = spouseOf(st, cur.id);
       if (existing && existing.gender === spec.gender) {
         cur = existing;

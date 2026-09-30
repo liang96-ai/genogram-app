@@ -47,6 +47,8 @@ export async function exportCanvasImage(
     householdEditing: store.editingHouseholdId,
   };
   store.clearSelection();
+  // 警示(重疊圈、紅色 fork)也是編輯用的,不能被畫進圖裡
+  store.setExporting(true);
 
   try {
     // 等 React 重 render
@@ -229,6 +231,7 @@ export async function exportCanvasImage(
     });
     return blob;
   } finally {
+    useGenogramStore.getState().setExporting(false);
     // 還原選取狀態
     if (prev.person.length > 0) store.selectPersons(prev.person);
     else if (prev.line.length > 0) store.selectLines(prev.line);

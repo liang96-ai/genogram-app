@@ -19,7 +19,7 @@ export function hasAcknowledgedPrivacy(): boolean {
   }
 }
 
-function markAcknowledged() {
+export function markAcknowledged() {
   try {
     localStorage.setItem(ACK_KEY, '1');
   } catch {

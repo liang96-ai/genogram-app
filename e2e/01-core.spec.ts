@@ -32,7 +32,8 @@ test('② 重新載入頁面後,剛才的編輯還在(掉資料的第二大來�
   await expect(app.getByPlaceholder(UI.namePlaceholder)).toHaveValue('陳小明');
 });
 
-test('③ 選了備份資料夾 → 個案真的被寫成 case.json', async ({ app }) => {
+test('③ 選了備份資料夾 → 個案真的被寫成 case.json', async ({ app }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chrome', '備份資料夾只有桌面 Chrome / Edge 支援');
   await app.getByRole('button', { name: UI.newCase }).click();
   // 這次不按「暫時不要」,而是真的選資料夾(骨架已把系統對話框換成替身)。
   // 一定要從彈窗裡面選 —— 首頁橫幅上有同名按鈕,但它被彈窗蓋住點不到。

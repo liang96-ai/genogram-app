@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  STANDARD_PARENT_CHILD_SUBTYPES,
+  SECONDARY_PARENT_SUBTYPES,
+} from '../../services/relationKinds';
+import {
   COLLISION_TOLERANCE,
   GRID_SIZE,
   MARRIAGE_SUBTYPE_SET,
@@ -68,12 +72,7 @@ type HandleDragState = {
 
 // v1.1 改用 store 的共用常數(包含全 14 種婚姻 subType,新增不會漏)
 const MARRIAGE_SUBTYPES = MARRIAGE_SUBTYPE_SET;
-const BIO_SUBTYPES = new Set([
-  'biological',
-  'adopted',
-  'placed-out',
-  'fostered',
-]);
+const BIO_SUBTYPES = STANDARD_PARENT_CHILD_SUBTYPES;
 const DRAG_THRESHOLD = 5;
 
 function distToSegment(
@@ -139,8 +138,9 @@ function personHitsLine(
   line: LineType,
   persons: Person[],
 ): boolean {
-  if (line.fromPersonId === person.id || line.toPersonId === person.id)
+  if (line.fromPersonId === person.id || line.toPersonId === person.id) {
     return false;
+  }
   const from = persons.find((p) => p.id === line.fromPersonId);
   const to = persons.find((p) => p.id === line.toPersonId);
   if (!from || !to) return false;
@@ -211,6 +211,8 @@ export default function Canvas() {
     (s) => s.selectPersonsAndUnits,
   );
   const drawMode = useGenogramStore((s) => s.drawMode);
+  // 匯出圖片時不畫警示(警示是給編輯中的人看的,不屬於家系圖本身)
+  const exporting = useGenogramStore((s) => s.exporting);
   const setDrawMode = useGenogramStore((s) => s.setDrawMode);
   const addEcosystem = useGenogramStore((s) => s.addEcosystem);
   const moveEcosystem = useGenogramStore((s) => s.moveEcosystem);
@@ -508,8 +510,9 @@ export default function Canvas() {
         (t.tagName === 'INPUT' ||
           t.tagName === 'TEXTAREA' ||
           t.isContentEditable)
-      )
+      ) {
         return;
+      }
       e.preventDefault();
       setSpaceHeld(true);
     };
@@ -997,12 +1000,7 @@ export default function Canvas() {
 
   const hasParents = (personId: string) =>
     currentCase.lines.some(
-      (l) =>
-        l.toPersonId === personId &&
-        (l.subType === 'biological' ||
-          l.subType === 'adopted' ||
-          l.subType === 'placed-out' ||
-          l.subType === 'fostered'),
+      (l) => l.toPersonId === personId && STANDARD_PARENT_CHILD_SUBTYPES.has(l.subType),
     );
 
   const countSpousesOnSide = (personId: string, dir: 'left' | 'right') => {
@@ -1010,8 +1008,9 @@ export default function Canvas() {
     if (!person) return 0;
     return currentCase.lines.filter((l) => {
       if (!MARRIAGE_SUBTYPES.has(l.subType)) return false;
-      if (l.fromPersonId !== personId && l.toPersonId !== personId)
+      if (l.fromPersonId !== personId && l.toPersonId !== personId) {
         return false;
+      }
       const otherId =
         l.fromPersonId === personId ? l.toPersonId : l.fromPersonId;
       const other = currentCase.persons.find((p) => p.id === otherId);
@@ -1024,11 +1023,7 @@ export default function Canvas() {
   // 有 outgoing placed-out/fostered/sperm-donor 線 → 出養/寄養父母 / 捐精者,應縮小顯示
   const hasOutgoingPlacedOutOrFostered = (personId: string) =>
     currentCase.lines.some(
-      (l) =>
-        l.fromPersonId === personId &&
-        (l.subType === 'placed-out' ||
-          l.subType === 'fostered' ||
-          l.subType === 'sperm-donor'),
+      (l) => l.fromPersonId === personId && SECONDARY_PARENT_SUBTYPES.has(l.subType),
     );
 
   // Connector 釋放點命中:依序測 person → unit body → ecosystem polygon
@@ -1861,7 +1856,7 @@ export default function Canvas() {
             units={currentCase.networkUnits ?? []}
             ecosystems={currentCase.ecosystems ?? []}
             selected={selectedUnitIds.includes(unit.id)}
-            colliding={collidingUnitIds.has(unit.id)}
+            colliding={!exporting && collidingUnitIds.has(unit.id)}
             draggingConnector={connectorDrag ?? undefined}
             selectedConnectorId={
               selectedConnector?.unitId === unit.id
@@ -2306,7 +2301,7 @@ export default function Canvas() {
           a={g.a}
           b={g.b}
           childBundles={g.childBundles}
-          colliding={collidingMarriageIds.has(g.marriage.id)}
+          colliding={!exporting && collidingMarriageIds.has(g.marriage.id)}
           trunkYOverride={marriageTrunkYOverrides.get(g.marriage.id)}
           route={marriageRoutes.get(g.marriage.id)}
           onBusHandleDown={onBusHandleDown}
@@ -2344,7 +2339,7 @@ export default function Canvas() {
             key={person.id}
             person={person}
             selected={selectedPersonIds.includes(person.id)}
-            colliding={collidingPersonIds.has(person.id)}
+            colliding={!exporting && collidingPersonIds.has(person.id)}
             displayScaleOverride={autoShrink ? 0.7 : undefined}
             onPointerDown={(e) => onPersonPointerDown(e, person.id)}
             onDoubleClick={() => cycleShape(person.id)}

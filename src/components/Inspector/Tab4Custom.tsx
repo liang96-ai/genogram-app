@@ -3,7 +3,7 @@ import Modal from '../ui/Modal';
 import { PlusGlyph } from '../PlusGlyph';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
-import { rescueCasesFromFolder } from '../../services/folderRescue';
+import { syncAfterFolderPick } from '../../services/folderSync';
 import { requestScalePicker } from '../../services/uiEvents';
 import { useDraftField } from '../../hooks/useDraftField';
 import ScaleSummary from './ScaleSummary';
@@ -19,6 +19,7 @@ import {
   getRootDirHandle,
   loadRootDirHandle,
 } from '../../services/fileSystem';
+import Icon from '../ui/Icon';
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -179,12 +180,11 @@ export default function Tab4Custom() {
               const h = await selectRootFolder();
               if (h) {
                 setHasRootDir(true);
-                // 同一顆資料夾也可能藏著還沒進 DB 的個案 —— 順手救回(2026-08-27)
-                rescueCasesFromFolder()
-                  .then((n) => {
-                    if (n > 0) alert(t('caseList.folderRescued', { n }));
-                  })
-                  .catch(() => {});
+                // 跟個案清單同一套:救回 → 問「資料夾較新」→ 寫出其餘個案(services/folderSync)。
+                // 不等它跑完:呼叫端接著要開檔案選擇器,等太久點擊的時效會過,瀏覽器會擋掉
+                void syncAfterFolderPick().then((n) => {
+                  if (n > 0) alert(t('caseList.folderRescued', { n }));
+                });
               }
             }}
             onAddInFolder={(filename, size, mime) =>
@@ -589,7 +589,7 @@ function AttachmentRow({
     }
   };
   const sizeKb = size ? Math.round(size / 1024) : null;
-  const icon = inFolder ? '📎' : '🔗';
+  const icon = inFolder ? 'attach' : 'link';
   return (
     <div
       style={{
@@ -603,7 +603,7 @@ function AttachmentRow({
         fontSize: 12,
       }}
     >
-      <span>{icon}</span>
+      <Icon name={icon} size={15} style={{ color: '#6e6e73' }} />
       <button
         onClick={open}
         style={{

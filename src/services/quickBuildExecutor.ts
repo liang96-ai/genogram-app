@@ -24,8 +24,7 @@ import {
   type ApplyDecisions,
   type GraphOps,
   type GraphPerson,
-  type LinePlan,
-} from './quickBuild';
+  type LinePlan, type ConflictField } from './quickBuild';
 
 const uid = (prefix: string) =>
   `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
@@ -92,7 +91,7 @@ function createStoreGraphOps(): GraphOps {
 /** 該欄位要不要套用:沒衝突 → 一律套;有衝突 → 看使用者勾選(預設勾=取新值) */
 function allowField(
   plan: LinePlan,
-  field: 'name' | 'age' | 'lifeSpan',
+  field: ConflictField,
   decisions: ApplyDecisions,
 ): boolean {
   const hasConflict = plan.conflicts.some((c) => c.field === field);
@@ -118,17 +117,23 @@ function applyAttributes(
 
   // ---- basicInfo(updatePerson 會淺合併,但 phones 是陣列要自己接)----
   const basicInfo: BasicInfo = {};
-  if (parsed.name && allowField(plan, 'name', decisions))
+  if (parsed.name && allowField(plan, 'name', decisions)) {
     basicInfo.name = parsed.name;
+  }
+  if (parsed.education && allowField(plan, 'education', decisions)) {
+    basicInfo.education = parsed.education;
+    if (parsed.educationStatus) basicInfo.educationStatus = parsed.educationStatus;
+  }
   const existingPhones = person.basicInfo?.phones ?? [];
   const addPhones = parsed.phones.filter(
     (v) => !existingPhones.some((e) => e.value === v),
   );
-  if (addPhones.length)
+  if (addPhones.length) {
     basicInfo.phones = [
       ...existingPhones,
       ...addPhones.map((value) => ({ label: '個人', value })),
     ];
+  }
   if (Object.keys(basicInfo).length) patch.basicInfo = basicInfo;
 
   // ---- textInfo(整包覆蓋 → 先讀既有再展開)----
@@ -154,15 +159,17 @@ function applyAttributes(
       decisions[diseaseKey(parsed.lineNo, d)] !== false &&
       !existingConds.some((c) => c.name === d),
   );
-  if (addDiseases.length)
+  if (addDiseases.length) {
     patch.medicalConditions = [
       ...existingConds,
       ...addDiseases.map((name) => ({ id: uid('cond'), name })),
     ];
+  }
 
   // ---- 生命狀態 ----
-  if (parsed.deceased && person.lifeStatus !== 'deceased')
+  if (parsed.deceased && person.lifeStatus !== 'deceased') {
     patch.lifeStatus = 'deceased';
+  }
 
   // ---- 備註 ----
   if (parsed.notes.length) {
@@ -198,7 +205,7 @@ export function executeQuickBuild(
   const store = useGenogramStore;
   const before = store.getState().currentCase;
   const historyBefore = store.getState().history;
-  if (!before)
+  if (!before) {
     return {
       ok: false,
       createdCount: 0,
@@ -206,6 +213,7 @@ export function executeQuickBuild(
       skippedLineNos: [],
       error: 'no-case',
     };
+  }
 
   const ops = createStoreGraphOps();
   const skipped: number[] = [];
@@ -224,8 +232,9 @@ export function executeQuickBuild(
         skipped.push(plan.parsed.lineNo);
         continue;
       }
-      if (plan.parsed.divorced)
+      if (plan.parsed.divorced) {
         applyDivorceIntent(ops, r.targetId, r.marriageLineId);
+      }
 
       // plan 說「新建」而執行也真的建了 → createdCount;否則算更新既有
       if (r.createdIds.includes(r.targetId)) createdCount++;

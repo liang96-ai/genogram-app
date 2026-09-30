@@ -12,6 +12,7 @@ import type {
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import { SYMBOLS } from '../Gallery/symbolData';
+import Icon from '../ui/Icon';
 // LineProperties 已不再嵌入 Tab2 — 線條屬性都在畫布上直接編輯
 // (點兩下改備注、Tab2 關係按鈕改類型、× 按鈕刪線)
 
@@ -452,7 +453,7 @@ export default function Tab2Network({ person, lineTarget }: Props) {
                 }
                 style={{ cursor: 'pointer' }}
               />
-              🔒 {t('privacy.selectAll')}
+              <Icon name="lock" size={13} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: 3 }} />{t('privacy.selectAll')}
             </label>
           );
         })()}

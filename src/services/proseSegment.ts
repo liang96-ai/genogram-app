@@ -1,4 +1,4 @@
-import { RELATION_DICT, BUILTIN_DISEASES } from './quickBuild';
+import { RELATION_DICT, BUILTIN_DISEASES, DECEASED_WORDS_IN_PROSE } from './quickBuild';
 
 /**
  * 段落切分器(2026-09-01 原型)—— 把「一整段訪視敘述」切成「一行一個人」,
@@ -21,8 +21,12 @@ const RELATION_KEYS = Object.keys(RELATION_DICT).sort((a, b) => b.length - a.len
 /** 疾病詞:沿用快速建立的內建清單,同樣長詞優先 */
 const DISEASE_KEYS = [...BUILTIN_DISEASES].sort((a, b) => b.length - a.length);
 
-/** 往生的說法 */
-const DEATH_WORDS = ['往生', '過世', '去世', '歿', '死亡', '身故', '離世'];
+/** 往生的說法:跟快速建立共用同一份(quickBuild.DECEASED_WORDS_IN_PROSE),長詞優先 */
+const DEATH_WORDS = [...DECEASED_WORDS_IN_PROSE].sort((a, b) => b.length - a.length);
+/** 「民國 100 年往生」「100年過世」:年份後面接任一種往生說法 */
+const DEATH_YEAR_RE = new RegExp(
+  `民國\\s*(\\d{2,3})|(\\d{2,3})\\s*年(?=[^\\d]*(?:${DEATH_WORDS.join('|')}))`,
+);
 
 /** 職業線索:出現這些字尾就把整個詞當職業 */
 const JOB_SUFFIX = ['管理員', '工程師', '老師', '司機', '護理師', '醫師', '警察', '工人', '農夫', '店員', '業務', '技師', '設計師', '會計', '主任', '經理'];
@@ -125,9 +129,7 @@ export function segmentProse(input: string): SegmentResult {
     const deathWord = DEATH_WORDS.find((w) => body.includes(w));
     if (deathWord) {
       picked.deceased = true;
-      const roc = body.match(
-        /民國\s*(\d{2,3})|(\d{2,3})\s*年(?=[^\d]*(?:往生|過世|去世|歿|死亡|身故|離世))/,
-      );
+      const roc = body.match(DEATH_YEAR_RE);
       if (roc) {
         const n = Number(roc[1] ?? roc[2]);
         // 小於 130 視為民國年,換算成西元;其餘視為西元年

@@ -363,8 +363,9 @@ export default function Tab1Basic({ person }: Props) {
       <Section
         title={t('tab1.shape')}
         right={
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <label style={tinyCheckLabel}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: 11.5, color: '#86868b' }}>{t('tab1.moreSymbols')}</span>
+            <label style={tinyCheckLabel} title={t('tab1.medicalTip')}>
               <input
                 type="checkbox"
                 checked={medical}
@@ -373,7 +374,7 @@ export default function Tab1Basic({ person }: Props) {
               />
               {t('tab1.medical')}
             </label>
-            <label style={tinyCheckLabel}>
+            <label style={tinyCheckLabel} title={t('tab1.extendedTip')}>
               <input
                 type="checkbox"
                 checked={extended}
@@ -389,7 +390,7 @@ export default function Tab1Basic({ person }: Props) {
               />
               {t('tab1.extended')}
             </label>
-            <label style={tinyCheckLabel}>
+            <label style={tinyCheckLabel} title={t('tab1.geneticTip')}>
               <input
                 type="checkbox"
                 checked={genetic}
@@ -402,18 +403,30 @@ export default function Tab1Basic({ person }: Props) {
         }
       >
         {/* 基本形狀 + (可展開) 亞型/醫療/進階 的 flowing grid */}
+        {/* 「新增人物」獨立一行、有字(1.6.0):以前是形狀那排的第一顆「+」,容易以為是某種形狀 */}
+        <button
+          onClick={() => addPersonAtCenter(person.position.x + 160, person.position.y)}
+          title={t('tab1.addNewPersonTip')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            marginBottom: 8,
+            padding: '5px 12px 5px 8px',
+            background: '#007aff',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: 999,
+            fontSize: 12.5,
+            fontWeight: 600,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          <PlusGlyph size={14} stroke={2.4} />
+          {t('tab1.addNewPerson')}
+        </button>
         <div style={flowGridStyle}>
-          {/* + 新增人物 */}
-          <button
-            onClick={() =>
-              addPersonAtCenter(person.position.x + 160, person.position.y)
-            }
-            style={addPersonBtnStyle}
-            title={t('tab1.addNewPerson')}
-          >
-            <PlusGlyph size={22} stroke={2.8} />
-          </button>
-
           {/* 基本形狀 */}
           {BASIC_ITEMS.map((item) => (
             <MiniSymbolBtn
@@ -465,6 +478,7 @@ export default function Tab1Basic({ person }: Props) {
       </Section>
       )}
 
+      <div data-tour="person-basics">
       <Section
         title={isInstitution ? t('tab1.unitInfo') : t('tab1.identity')}
         inline={<PrivacyMainToggle />}
@@ -642,6 +656,7 @@ export default function Tab1Basic({ person }: Props) {
           </div>
         )}
       </Section>
+      </div>
 
       <Section
         title={t('tab1.personalInfo')}
@@ -665,6 +680,7 @@ export default function Tab1Basic({ person }: Props) {
           placeholder={t('tab1.occupationPlaceholder')}
         />
 
+        <MoreDetails key={person.id} hasData={hasMoreDetails(person)}>
         <LabelWithAdd
           label={t('tab1.contact')}
           onAdd={() => {
@@ -712,6 +728,7 @@ export default function Tab1Basic({ person }: Props) {
 
         {/* 個人屬性(教育/族群/宗教/案件角色/家庭角色/身心障礙/子女來源) */}
         <PersonalAttributes person={person} />
+        </MoreDetails>
       </Section>
 
       <Section title={t('tab1.note')} right={<SectionPrivacyToggle section="note" />}>
@@ -1497,6 +1514,58 @@ function MiniSymbolBtn({
   );
 }
 
+/** 這個人在「更多資料」裡有沒有填過東西 —— 有就預設展開,不讓已經填的資料被收起來看不到 */
+function hasMoreDetails(person: Person): boolean {
+  const b = person.basicInfo;
+  const x = person.textInfo;
+  return !!(
+    b?.phones?.some((p) => p.value) ||
+    x?.location ||
+    x?.income ||
+    b?.education ||
+    b?.ethnicity ||
+    b?.religion ||
+    (b?.familyRoles?.length ?? 0) > 0 ||
+    (b?.disabilities?.length ?? 0) > 0
+  );
+}
+
+/** 「更多資料」:常用欄位以外的收在這裡(1.6.0);一格都不刪,只是先摺起來 */
+function MoreDetails({ hasData, children }: { hasData: boolean; children: React.ReactNode }) {
+  const t = useT();
+  const [open, setOpen] = useState(hasData);
+  return (
+    <div style={{ marginTop: 10 }}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          width: '100%',
+          padding: '7px 10px',
+          background: '#f2f2f5',
+          border: 'none',
+          borderRadius: 8,
+          fontSize: 12.5,
+          color: '#3a3a3c',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          textAlign: 'left',
+        }}
+      >
+        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }}>
+          <path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <span style={{ fontWeight: 600 }}>{open ? t('tab1.moreHide') : t('tab1.moreShow')}</span>
+        {!open && <span style={{ color: '#86868b' }}>{t('tab1.moreList')}</span>}
+      </button>
+      {open && <div>{children}</div>}
+    </div>
+  );
+}
+
 function Section({
   title,
   inline,
@@ -1654,25 +1723,6 @@ const miniBtnStyle: React.CSSProperties = {
 };
 
 // 新增人物 — 藍實心圓 + 白＋(主要動作,跟符號方框按鈕區隔)
-const addPersonBtnStyle: React.CSSProperties = {
-  width: 40,
-  height: 40,
-  padding: 2,
-  background: '#007aff',
-  border: 'none',
-  borderRadius: '50%',
-  cursor: 'pointer',
-  fontFamily: 'inherit',
-  color: '#ffffff',
-  fontSize: 22,
-  fontWeight: 600,
-  lineHeight: 1,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  boxSizing: 'border-box',
-};
-
 const flowGridStyle: React.CSSProperties = {
   display: 'flex',
   gap: 3,

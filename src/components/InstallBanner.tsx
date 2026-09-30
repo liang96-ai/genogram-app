@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useT } from '../i18n';
 import { usePwaInstall } from '../services/pwaInstall';
+import Icon from './ui/Icon';
 
 const STORAGE_KEY = 'genogram_install_banner_dismissed';
 
@@ -61,7 +62,7 @@ export default function InstallBanner() {
           marginBottom: 8,
         }}
       >
-        <span style={{ fontSize: 18 }}>📲</span>
+        <Icon name="install" size={18} />
         <strong style={{ fontSize: 13 }}>{t('install.title')}</strong>
         <div style={{ flex: 1 }} />
         <button

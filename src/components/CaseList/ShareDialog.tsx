@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Modal from '../ui/Modal';
 import QRCode from 'qrcode';
 import { useT } from '../../i18n';
+import Icon from '../ui/Icon';
 
 /**
  * 分享 Dialog —
@@ -96,7 +97,7 @@ export default function ShareDialog({ onClose }: { onClose: () => void }) {
           }}
         >
           <div style={{ fontSize: 18, fontWeight: 600, color: '#1d1d1f' }}>
-            📤 {t('share.title')}
+            <Icon name="share" size={18} style={{ display: 'inline-block', verticalAlign: '-3px', marginRight: 6 }} />{t('share.title')}
           </div>
           <button
             onClick={onClose}
@@ -200,7 +201,7 @@ export default function ShareDialog({ onClose }: { onClose: () => void }) {
                 transition: 'background 0.2s',
               }}
             >
-              {urlCopied ? `✓ ${t('share.copied')}` : `📋 ${t('share.copy')}`}
+              {urlCopied ? `✓ ${t('share.copied')}` : t('share.copy')}
             </button>
           </div>
         </div>
@@ -254,7 +255,7 @@ export default function ShareDialog({ onClose }: { onClose: () => void }) {
             >
               {msgCopied
                 ? `✓ ${t('share.copiedMessage')}`
-                : `📋 ${t('share.copyMessage')}`}
+                : t('share.copyMessage')}
             </button>
             {canNativeShare && (
               <button
@@ -272,7 +273,7 @@ export default function ShareDialog({ onClose }: { onClose: () => void }) {
                 }}
                 title={t('share.nativeShareTitle')}
               >
-                🔗 {t('share.nativeShare')}
+                <Icon name="share" size={15} style={{ display: 'inline-block', verticalAlign: '-2px', marginRight: 4 }} />{t('share.nativeShare')}
               </button>
             )}
           </div>

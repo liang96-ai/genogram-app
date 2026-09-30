@@ -16,12 +16,12 @@ const fmt = (iso: string): string => {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString();
 };
 
-/** @returns 採用了幾筆資料夾版本(呼叫端 >0 時重載個案清單) */
-export async function promptNewerInFolder(pairs?: NewerPair[]): Promise<number> {
+/** @returns 採用了資料夾版本的個案 id(呼叫端有採用時重載清單;正在編輯的那份要換新) */
+export async function promptNewerInFolder(pairs?: NewerPair[]): Promise<string[]> {
   const list = pairs ?? (await findNewerInFolder());
-  if (list.length === 0) return 0;
+  if (list.length === 0) return [];
   const { showConfirm, language } = useGenogramStore.getState();
-  let adopted = 0;
+  const adopted: string[] = [];
   for (const { folder, local } of list) {
     const useFolder = await showConfirm(
       t(language, 'rescue.newerInFolder', {
@@ -33,7 +33,7 @@ export async function promptNewerInFolder(pairs?: NewerPair[]): Promise<number> 
     );
     if (useFolder) {
       await adoptFolderVersion(folder);
-      adopted++;
+      adopted.push(folder.id);
     } else {
       await rememberFolderDecision(folder);
     }

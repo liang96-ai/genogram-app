@@ -516,10 +516,12 @@ export default function PersonShape({
   // 建立懸浮提示(hover tooltip)— 依目前語言渲染
   const tipParts: string[] = [];
   tipParts.push(t(SHAPE_KEY[actualShape]));
-  if (variant && variant !== 'cisgender' && VARIANT_KEY[variant])
+  if (variant && variant !== 'cisgender' && VARIANT_KEY[variant]) {
     tipParts.push(t(VARIANT_KEY[variant]));
-  if (lifeStatus !== 'alive' && LIFE_KEY[lifeStatus])
+  }
+  if (lifeStatus !== 'alive' && LIFE_KEY[lifeStatus]) {
     tipParts.push(t(LIFE_KEY[lifeStatus]));
+  }
   if (person.isProband) tipParts.push(t('tooltip.proband'));
   if (colliding) tipParts.push(t('tooltip.overlap'));
   const tooltip = tipParts.filter(Boolean).join(' · ');

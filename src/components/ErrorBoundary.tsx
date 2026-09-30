@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from 'react';
 import { db } from '../services/database';
 import { buildBackupExport, downloadJSON } from '../services/exportImport';
+import Icon from './ui/Icon';
 
 /**
  * 最外層錯誤防護網(#118)
@@ -76,7 +77,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             textAlign: 'center',
           }}
         >
-          <div style={{ fontSize: 36, marginBottom: 10 }}>⚠️</div>
+          <div style={{ marginBottom: 10, color: '#b25000', display: 'flex', justifyContent: 'center' }}><Icon name="warning" size={36} /></div>
           <div
             style={{
               fontSize: 17,

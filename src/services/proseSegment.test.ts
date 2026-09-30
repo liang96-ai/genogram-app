@@ -84,3 +84,17 @@ describe('切分器的邊界', () => {
     expect(r.segments).toHaveLength(0);
   });
 });
+
+describe('段落切分:往生的說法跟快速建立共用一份', () => {
+  it('「已故」「身故」「離世」都認得', () => {
+    for (const w of ['已故', '身故', '離世']) {
+      const r = segmentProse(`爺爺${w} 奶奶 80`);
+      expect(r.segments.find((s) => s.relation === '爺爺')!.picked.deceased, w).toBe(true);
+    }
+  });
+
+  it('「走了很久」不是過世:整段口語不收「走了」', () => {
+    const r = segmentProse('哥哥 17 走了很久才到學校');
+    expect(r.segments.find((s) => s.relation === '哥哥')!.picked.deceased).toBeUndefined();
+  });
+});
