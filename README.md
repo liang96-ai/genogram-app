@@ -1,4 +1,4 @@
-# Genogram Tool
+# 人人家系圖 RenRen Genogram
 
 > 隱私優先的家系圖協作工具，為社會工作、家庭治療、教育、醫療等領域而設計。
 > Privacy-first collaborative genogram editor for social work, family therapy,

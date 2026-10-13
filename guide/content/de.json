@@ -1,0 +1,198 @@
+{
+  "lang": "de",
+  "htmlLang": "de",
+  "path": "de/",
+  "label": "Deutsch",
+  "langNav": "Sprachen",
+  "title": "RenRen Genogram — Genogramm und Eco-Map kostenlos online erstellen (ohne Anmeldung, Daten bleiben auf Ihrem Gerät)",
+  "description": "RenRen Genogram ist ein kostenloses Online-Werkzeug zum Erstellen von Genogrammen und Eco-Maps für Soziale Arbeit, Beratung, systemische Familientherapie, Pflege, Hausarztpraxis und Studium. Standardsymbole, keine Anmeldung, offline nutzbar, Ihre Daten verlassen nie Ihr Gerät.",
+  "keywords": [
+    "Genogramm",
+    "Genogramm erstellen",
+    "Genogramm kostenlos online",
+    "Genogramm Vorlage",
+    "Genogramm Symbole",
+    "Genogramm Soziale Arbeit",
+    "Eco-Map",
+    "Ecomap"
+  ],
+  "h1": "Genogramm und Eco-Map kostenlos online erstellen",
+  "lead": "RenRen Genogram (人人家系圖) ist ein kostenloses Open-Source-Werkzeug, mit dem Sie Genogramme direkt im Browser erstellen. Es richtet sich an Fachkräfte der Sozialen Arbeit, Beratung und systemischen Familientherapie, an Pflegekräfte, Ärztinnen und Ärzte sowie an Studierende. Ihre Falldaten bleiben auf Ihrem eigenen Gerät: Es wird nichts hochgeladen, Sie brauchen kein Konto, und es funktioniert auch offline.",
+  "cta": "Genogramm erstellen",
+  "ctaNote": "Ohne Anmeldung: klicken und loszeichnen.",
+  "sections": [
+    {
+      "h2": "Was ist ein Genogramm?",
+      "p": [
+        "Ein Genogramm stellt eine Familie über mindestens drei Generationen mit Standardsymbolen dar: Partnerschaften, Kinder, die Qualität der Beziehungen sowie wichtige Informationen wie Krankheiten, Todesfälle und wer in einem Haushalt lebt. Es wird in der Sozialen Arbeit, in der Kinder- und Jugendhilfe, in der Beratung, in der systemischen Familientherapie, in der Hausarztpraxis und in der Palliativversorgung eingesetzt, um den familiären Hintergrund zu verstehen.",
+        "Ein Genogramm geht weit über einen Familienstammbaum hinaus. Der Stammbaum zeigt die Abstammung; das Genogramm ist ein fachliches Werkzeug, das Beziehungen und sich wiederholende Muster über Generationen sichtbar macht."
+      ]
+    },
+    {
+      "h2": "Was RenRen Genogram kann",
+      "ul": [
+        "Tippen Sie auf die Pfeile neben einer Person, um Eltern, Partner oder Kinder hinzuzufügen; die Anordnung ergibt sich automatisch.",
+        "Schnellerstellung: Geben Sie kurze Textzeilen ein und zeichnen Sie eine ganze Familie auf einmal (derzeit mit chinesischen und englischen Verwandtschaftsbegriffen).",
+        "Alle gängigen Symbole: verstorben, Schwangerschaft, Fehlgeburt, Zwillinge, Haustiere, Krankheits- und genetische Merkmale, Behinderung und mehr.",
+        "Beziehungslinien: eng, verschmolzen, distanziert, konflikthaft, Kontaktabbruch, Missbrauch, pflegende Person und mehr. Notizen schreiben Sie direkt auf die Linie.",
+        "Haushaltskreise, auch für wechselnde Wohnsitze, wenn ein älterer Elternteil reihum bei verschiedenen Kindern lebt.",
+        "Hat eine Person mehrere Ehen oder Partnerschaften, werden die Linien automatisch mit 1, 2, 3 nummeriert.",
+        "Eco-Map: Zeichnen Sie Schule, Klinik, soziale Dienste und andere äußere Systeme rund um die Familie.",
+        "Export als PNG, JPG oder SVG mit automatischer Legende; sensible Beziehungsdetails ausblenden oder Namen pseudonymisieren.",
+        "Jederzeit rückgängig machen und wiederherstellen; Fälle als Datei sichern."
+      ]
+    },
+    {
+      "h2": "Ihre Daten bleiben auf Ihrem Gerät",
+      "ul": [
+        "Kein Server und keine Datenbank: Der Entwickler kann keinen Fall einsehen.",
+        "Kein Konto, keine Werbung, kein Tracking.",
+        "Fälle werden im Browser gespeichert. In Chrome und Edge am Computer können Sie zusätzlich einen Sicherungsordner wählen, der eine Kopie behält.",
+        "Auf dem Desktop oder Startbildschirm installieren und ohne Internetverbindung nutzen.",
+        "Der Quellcode ist auf GitHub öffentlich und kann von allen geprüft werden."
+      ]
+    },
+    {
+      "h2": "Genogramm erstellen: Schritt für Schritt",
+      "ol": [
+        "Öffnen Sie RenRen Genogram und legen Sie einen neuen Fall mit einem Kürzel an, oder beginnen Sie mit einer Vorlage.",
+        "Wählen Sie die Indexperson: Pfeil nach oben für die Eltern, Pfeile links und rechts für Partner, Pfeil nach unten für Kinder. Oder tippen Sie die ganze Familie mit der Schnellerstellung ein.",
+        "Tragen Sie im Seitenbereich Alter, Geburtsjahr, Tod und Gesundheitsangaben ein.",
+        "Doppelklicken Sie auf eine Linie, um ein Ereignis zu notieren. Markieren Sie mehrere Personen und umkreisen Sie sie als Haushalt.",
+        "Exportieren Sie das Bild über das Menü für Ihre Dokumentation oder ein Familiengespräch."
+      ]
+    },
+    {
+      "h2": "Genogramm-Symbole",
+      "ul": [
+        "Quadrat = männlich, Kreis = weiblich, Raute = nicht-binär, Dreieck = Schwangerschaft oder Fötus mit unbekanntem Geschlecht.",
+        "Ein Kreuz im Symbol = verstorben.",
+        "Die Indexperson (Klient:in) wird mit einem ausgefüllten Symbol oder einem roten Doppelrahmen markiert; die Darstellung lässt sich in den Einstellungen umschalten.",
+        "Partnerschaftslinien: durchgezogen = Ehe, ein Schrägstrich = Trennung, zwei Schrägstriche = Scheidung, gestrichelt = Verlobung, gestrichelte Doppellinie = Zusammenleben.",
+        "Von der Partnerschaftslinie führen Linien nach unten zu den Kindern; Pflegekinder werden mit einer gepunkteten Linie verbunden.",
+        "Eine gestrichelte Linie um Personen = sie leben in einem Haushalt; ein gepunkteter Kreis = wechselnder Wohnsitz.",
+        "Beziehungslinien: Doppellinie = eng, Dreifachlinie = verschmolzen, gepunktet = distanziert, Zickzack = konflikthaft, Unterbrechungszeichen in der Mitte = Kontaktabbruch."
+      ]
+    },
+    {
+      "h2": "Was ist eine Eco-Map?",
+      "p": [
+        "Die Eco-Map stellt die Familie in die Mitte und zeichnet die äußeren Systeme drumherum — Schule, Klinik, Arbeitsplatz, soziale Dienste, Freundeskreis — mit Linien, die die Verbindungen zeigen. In RenRen Genogram zeichnen Sie Genogramm und Eco-Map auf derselben Fläche."
+      ]
+    },
+    {
+      "h2": "Genogramm-Vorlagen",
+      "p": [
+        "Beim Anlegen eines Falls können Sie mit einer häufigen Familienform beginnen und sie anpassen:"
+      ],
+      "ul": [
+        "Kernfamilie",
+        "Ein-Eltern-Familie",
+        "Aufwachsen bei den Großeltern",
+        "Patchworkfamilie",
+        "Älterer Elternteil wohnt reihum bei den Kindern"
+      ]
+    },
+    {
+      "h2": "Für wen?",
+      "p": [
+        "Fachkräfte der Sozialen Arbeit und der Kinder- und Jugendhilfe, Beratung, systemische Familientherapie, Pflege, Hausarztpraxis, Palliativversorgung, Fallmanagement sowie Studierende dieser Fächer."
+      ]
+    }
+  ],
+  "invite": {
+    "h2": "Brauchen Sie die Oberfläche auf Deutsch?",
+    "p": [
+      "Die Oberfläche ist derzeit auf Englisch und traditionellem Chinesisch. Diese Anleitung gibt es in acht Sprachen.",
+      "Wenn Sie RenRen Genogram auf Deutsch nutzen möchten, schreiben Sie an {email} und nennen Sie Ihr Arbeitsfeld. Ich erstelle gern eine Version für Sie, und Korrekturen zu dieser Seite sind sehr willkommen."
+    ]
+  },
+  "faq": {
+    "h2": "Häufige Fragen",
+    "items": [
+      {
+        "q": "Ist RenRen Genogram kostenlos?",
+        "a": "Ja. Für die persönliche Nutzung ist es kostenlos, ohne Bezahlversion, und exportierte Bilder haben kein Wasserzeichen."
+      },
+      {
+        "q": "Wo werden meine Daten gespeichert? Ist das sicher?",
+        "a": "Nur im Browser des Geräts, das Sie verwenden. Es wird nichts an einen Server gesendet. Exportieren Sie regelmäßig eine Sicherungsdatei oder richten Sie am Computer einen Sicherungsordner ein."
+      },
+      {
+        "q": "Brauche ich ein Konto?",
+        "a": "Nein. Seite öffnen und loszeichnen."
+      },
+      {
+        "q": "Funktioniert es auf dem Handy?",
+        "a": "Am besten am Computer oder iPad. Auf dem Handy lässt es sich öffnen, die Darstellung ist aber noch nicht für kleine Bildschirme ausgelegt."
+      },
+      {
+        "q": "Kann ich das Genogramm in einem Bericht oder einer Hausarbeit verwenden?",
+        "a": "Ja. Exportieren Sie ein PNG- oder SVG-Bild, auf Wunsch mit Legende. In aktuellen Versionen von Word oder PowerPoint fügen Sie das SVG ein und wählen „In Form konvertieren“, um weiter zu bearbeiten."
+      },
+      {
+        "q": "Was ist der Unterschied zwischen Genogramm und Stammbaum?",
+        "a": "Der Stammbaum zeigt die Abstammung. Das Genogramm ist ein fachliches Werkzeug, das zusätzlich emotionale Beziehungen, Gesundheit, Haushalte und wichtige Lebensereignisse darstellt."
+      }
+    ]
+  },
+  "footer": "RenRen Genogram (人人家系圖) · von Liang RenRen · Kontakt: {email}",
+  "moreH2": "Mehr erfahren",
+  "brand": "RenRen Genogram",
+  "heroTitle": "Genogramme zeichnen,\nwie mit Stift und Papier.",
+  "heroSub": "Kostenlos. Ohne Anmeldung. Ihre Daten bleiben auf Ihrem Gerät.",
+  "navCta": "Loslegen",
+  "shotCta": "Klicken und loszeichnen",
+  "shotAlt": "Bildschirm von RenRen Genogram: Genogramm einer Patchworkfamilie, die zwei Ehen der Mutter mit 1 und 2 nummeriert, der Haushalt blau umrandet",
+  "nav": [
+    {
+      "id": "features",
+      "label": "Funktionen"
+    },
+    {
+      "id": "more",
+      "label": "Mehr erfahren"
+    },
+    {
+      "id": "faq",
+      "label": "FAQ"
+    }
+  ],
+  "tiles": {
+    "h2": "Für Fachleute gemacht.",
+    "items": [
+      {
+        "big": "↑ ↓ ← →",
+        "h3": "Familie per Pfeil ergänzen",
+        "p": "Eltern, Partner und Kinder, automatisch angeordnet."
+      },
+      {
+        "big": "0",
+        "h3": "Daten in der Cloud",
+        "p": "Kein Server, kein Konto: Der Entwickler sieht keinen Fall.",
+        "dark": true
+      },
+      {
+        "big": "5",
+        "h3": "Familienvorlagen",
+        "p": "Kernfamilie, Ein-Eltern, Großeltern, Patchwork, wechselnder Wohnsitz."
+      },
+      {
+        "big": "Aa",
+        "h3": "Schnellerstellung per Text",
+        "p": "Kurze Zeilen tippen und die ganze Familie auf einmal zeichnen."
+      },
+      {
+        "big": "PNG · SVG",
+        "h3": "Export mit Legende",
+        "p": "Fertig für Berichte und Familiengespräche."
+      },
+      {
+        "big": "中 · EN",
+        "h3": "Sprachen der Oberfläche",
+        "p": "Derzeit traditionelles Chinesisch und Englisch. Deutsch gewünscht? Schreiben Sie mir.",
+        "dark": true
+      }
+    ]
+  }
+}

@@ -120,6 +120,21 @@ export default function CaseList() {
     await createCase(t('caseList.untitledCase'));
     startTourIfNew();
   };
+  // 從說明頁按「開始畫家系圖」進來(網址帶 ?start=1,1.6.2):直接開一張新圖。
+  // 第一次來的人先看歡迎卡(它的主按鈕做的是同一件事);網址參數先拿掉,重新整理不會再開一張。
+  const startHandledRef = useRef(false);
+  useEffect(() => {
+    if (startHandledRef.current) return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('start') !== '1') return;
+    startHandledRef.current = true;
+    url.searchParams.delete('start');
+    window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+    // 歡迎卡沒開 = 已經看過隱私說明;直接開新圖(不必再動歡迎卡的狀態)
+    if (!welcomeOpen) void createCase(t('caseList.untitledCase')).then(startTourIfNew);
+    // 只在第一次掛載時看一次網址
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // 選資料夾:選單與提醒列共用(選完照固定流程同步,services/folderSync)
   const pickFolder = async (): Promise<boolean> => {
     const h = await selectRootFolder();
@@ -221,6 +236,16 @@ export default function CaseList() {
                   zIndex: 100,
                 }}
               >
+                <HomeMenuItem
+                  icon={<Icon name="globe" />}
+                  label={t('menu.guidePage')}
+                  onClick={() => {
+                    // 多語言說明頁(1.6.2):開新分頁,App 本身不動;安裝成 App 時也會用瀏覽器開
+                    const lang = useGenogramStore.getState().language;
+                    window.open(lang === 'en' ? '/guide/en/' : '/guide/', '_blank', 'noopener');
+                    setMenuOpen(false);
+                  }}
+                />
                 <HomeMenuItem
                   icon={<Icon name="book" />}
                   label={t('menu.manual')}

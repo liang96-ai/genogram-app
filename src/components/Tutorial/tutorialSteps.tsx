@@ -1546,7 +1546,7 @@ export const BASIC_STEPS_ZH: TutorialStep[] = [
     content: (
       <>
         <div style={{ textAlign: 'center', margin: '2px 0 12px' }}>
-          <img src="/brand-mark.png" alt="家系圖工具" style={{ height: 58, width: 'auto' }} />
+          <img src="/brand-mark.png" alt="人人家系圖" style={{ height: 58, width: 'auto' }} />
         </div>
         <P>
           說明手冊到這裡結束。強烈建議把它<Strong>安裝為 App</Strong>:像桌面應用一樣點 icon 就開,
@@ -1850,7 +1850,7 @@ export const BASIC_STEPS_EN: TutorialStep[] = [
     content: (
       <>
         <div style={{ textAlign: 'center', margin: '2px 0 12px' }}>
-          <img src="/brand-mark.png" alt="家系圖工具" style={{ height: 58, width: 'auto' }} />
+          <img src="/brand-mark.png" alt="人人家系圖" style={{ height: 58, width: 'auto' }} />
         </div>
         <P>
           That is the end of the manual. We strongly recommend

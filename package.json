@@ -1,18 +1,19 @@
 {
   "name": "genogram-app",
   "private": true,
-  "version": "1.6.1",
+  "version": "1.6.2",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "node scripts/build-guides.mjs && vite",
+    "build": "node scripts/build-guides.mjs && tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run",
     "preview": "vite preview",
     "e2e": "playwright test --project=chrome",
     "e2e:devices": "playwright test --project=ipad",
     "e2e:iphone": "playwright test --project=iphone",
-    "verify": "npm run lint && npm run build && node scripts/check-external.mjs && sh scripts/check-local.sh && vitest run && playwright test --project=chrome"
+    "verify": "npm run lint && npm run build && node scripts/check-external.mjs && sh scripts/check-local.sh && vitest run && playwright test --project=chrome",
+    "guides": "node scripts/build-guides.mjs"
   },
   "dependencies": {
     "dexie": "^4.4.2",

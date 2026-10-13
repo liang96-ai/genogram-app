@@ -6,6 +6,9 @@ import { join } from 'node:path';
 
 const ALLOW = new Set([
   'www.w3.org', // SVG / XML 命名空間字串,不是請求
+  'schema.org', // 說明頁給搜尋引擎讀的結構化資料標籤(@context),不是請求
+  'www.gnu.org', // 說明頁結構化資料裡的授權條款網址(AGPL),不是請求
+  'www.sitemaps.org', // 網站地圖的命名空間字串,不是請求
   'genogram.liang96.workers.dev', // 自己的網址(分享文案)
   'github.com', 'ko-fi.com', 'p.ecpay.com.tw', 'bit.ly', 'tinyurl.com', // 連結:原始碼 / 支持
   'react.dev', // React 開發版錯誤訊息連結

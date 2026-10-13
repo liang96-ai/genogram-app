@@ -1,0 +1,198 @@
+{
+  "lang": "en",
+  "htmlLang": "en",
+  "path": "en/",
+  "label": "English",
+  "langNav": "Languages",
+  "title": "RenRen Genogram — Free Online Genogram & Ecomap Maker (No Sign-up, Data Stays on Your Device)",
+  "description": "RenRen Genogram is a free online genogram and ecomap maker for social workers, therapists, nurses and students. Standard genogram symbols, no sign-up, works offline, and your data never leaves your device.",
+  "keywords": [
+    "genogram maker",
+    "free genogram maker",
+    "online genogram",
+    "how to make a genogram",
+    "genogram symbols",
+    "genogram template",
+    "ecomap",
+    "ecomap social work"
+  ],
+  "h1": "Free online genogram and ecomap maker",
+  "lead": "RenRen Genogram is a free, open-source genogram maker that runs in your browser. It is built for social workers, family therapists, counselors, nurses, physicians and students. Your case data stays on your own device: nothing is uploaded, no account is needed, and it works offline.",
+  "cta": "Start drawing a genogram",
+  "ctaNote": "No sign-up. Click and start drawing.",
+  "sections": [
+    {
+      "h2": "What is a genogram?",
+      "p": [
+        "A genogram is a family diagram that uses standard symbols to show at least three generations of a family: who is married to whom, who are the children, how people relate emotionally, and important facts such as illness, death and who lives together. Social work, family therapy, counseling, nursing and family medicine use it to understand a client's family context.",
+        "A genogram is not a family tree. A family tree records lineage; a genogram is a professional assessment tool that focuses on relationships and patterns that repeat across generations."
+      ]
+    },
+    {
+      "h2": "What you can do with RenRen Genogram",
+      "ul": [
+        "Tap the arrows next to a person to add parents, a partner or children; the layout arranges itself.",
+        "Quick build: type short lines such as \"father 58\" to draw a whole family at once (Chinese and English kinship words).",
+        "All the common symbols: deceased, pregnancy, miscarriage, twins, pets, illness and genetic markers, disability and more.",
+        "Emotional relationship lines: close, fused, distant, conflict, cut-off, abuse, caregiver and more. You can write notes right on the line.",
+        "Household circles, including rotating stays when an elder lives in turn with different children.",
+        "When one person has several marriages or partnerships, the lines are numbered 1, 2, 3 automatically.",
+        "Ecomap: draw schools, hospitals, agencies and other outside systems around the family.",
+        "Export PNG, JPG or SVG images with an automatic legend; hide sensitive relationship details or de-identify names.",
+        "Undo and redo at any time; export a case to a file as a backup."
+      ]
+    },
+    {
+      "h2": "Your data stays on your device",
+      "ul": [
+        "No server and no database: the developer cannot see any case.",
+        "No account, no ads, no tracking.",
+        "Cases are stored in your browser. On desktop Chrome and Edge you can also choose a backup folder that keeps an extra copy.",
+        "Install it to your desktop or home screen and use it without an internet connection.",
+        "The source code is public on GitHub, so anyone can check it."
+      ]
+    },
+    {
+      "h2": "How to make a genogram",
+      "ol": [
+        "Open RenRen Genogram and click \"New case\". Give it a short code name, or pick a template to start from.",
+        "Select the client, then use the up arrow to add parents, the left and right arrows to add a partner, and the down arrow to add children. Or use Quick build to type the whole family at once.",
+        "Fill in age, birth year, deceased status and health information in the side panel.",
+        "Double-click a relationship line to write an event or note. Select several people and choose \"Circle as household\".",
+        "Use \"Export File\" in the menu to save an image for your report or family session."
+      ]
+    },
+    {
+      "h2": "Genogram symbols",
+      "ul": [
+        "Square = male, circle = female, diamond = non-binary, triangle = pregnancy or fetus of unknown sex.",
+        "A cross inside the symbol = deceased.",
+        "The client (identified patient) is marked with a filled symbol or a red double frame; you can switch the style in settings.",
+        "Partner lines: solid = married, one slash = separated, two slashes = divorced, dashed = engaged, dashed double line = living together.",
+        "Lines down from the partner line lead to the children; foster children are shown with a dotted line.",
+        "A dashed circle around people = they live together; a dotted circle = rotating stay.",
+        "Relationship lines: double line = close, triple line = fused, dotted = distant, zigzag = conflict, a break mark in the middle = cut-off."
+      ]
+    },
+    {
+      "h2": "Ecomap",
+      "p": [
+        "An ecomap places the family in the center and draws the outside systems around it — school, hospital, workplace, social services, friends — with lines showing how they connect. RenRen Genogram lets you draw the genogram and the ecomap on the same canvas."
+      ]
+    },
+    {
+      "h2": "Genogram templates",
+      "p": [
+        "When you create a case you can start from a common family structure and edit it:"
+      ],
+      "ul": [
+        "Nuclear family",
+        "Single-parent family",
+        "Raised by grandparents",
+        "Stepfamily",
+        "Rotating elder care"
+      ]
+    },
+    {
+      "h2": "Who uses it",
+      "p": [
+        "Social workers, psychologists, counselors, family therapists, nurses, family physicians, case managers, and students in social work, psychology and nursing."
+      ]
+    }
+  ],
+  "invite": {
+    "h2": "Need the app in your language?",
+    "p": [
+      "The interface is currently available in English and Traditional Chinese. This guide is available in eight languages.",
+      "If you would like to use RenRen Genogram in your own language, email {email} and tell me your language and field of work. I am happy to make a version for you, and corrections to this page are very welcome."
+    ]
+  },
+  "faq": {
+    "h2": "Frequently asked questions",
+    "items": [
+      {
+        "q": "Is RenRen Genogram free?",
+        "a": "Yes. It is free for personal use with no paid tier, and exported images have no watermark."
+      },
+      {
+        "q": "Where is my data stored? Is it safe?",
+        "a": "Only in the browser on the device you use. Nothing is uploaded to any server. Export a backup file regularly, or set a backup folder on desktop."
+      },
+      {
+        "q": "Do I need an account?",
+        "a": "No. Open the page and start drawing."
+      },
+      {
+        "q": "Does it work on a phone?",
+        "a": "A computer or iPad works best. It opens on phones, but the layout is not designed for small screens yet."
+      },
+      {
+        "q": "Can I put the genogram in a report or assignment?",
+        "a": "Yes. Export a PNG or SVG image, with a legend if you like. In recent versions of Word or PowerPoint, insert the SVG and choose \"Convert to Shape\" to keep editing it."
+      },
+      {
+        "q": "What is the difference between a genogram and a family tree?",
+        "a": "A family tree records ancestry. A genogram is a professional assessment tool that also shows emotional relationships, health, who lives together and major life events."
+      }
+    ]
+  },
+  "footer": "RenRen Genogram (人人家系圖) · by Liang RenRen · Contact: {email}",
+  "moreH2": "Learn more",
+  "brand": "RenRen Genogram",
+  "heroTitle": "Draw genograms\nlike pen on paper.",
+  "heroSub": "Free. No sign-up. Your data stays on your device.",
+  "navCta": "Start",
+  "shotCta": "Click to start drawing",
+  "shotAlt": "RenRen Genogram screen: a stepfamily genogram with the mother's two marriages numbered 1 and 2 and the household circled in blue",
+  "nav": [
+    {
+      "id": "features",
+      "label": "Features"
+    },
+    {
+      "id": "more",
+      "label": "Learn more"
+    },
+    {
+      "id": "faq",
+      "label": "FAQ"
+    }
+  ],
+  "tiles": {
+    "h2": "Built for professionals.",
+    "items": [
+      {
+        "big": "↑ ↓ ← →",
+        "h3": "Tap arrows to add family",
+        "p": "Parents, partners and children, laid out for you."
+      },
+      {
+        "big": "0",
+        "h3": "Data uploaded to the cloud",
+        "p": "No server, no account. The developer can't see any case.",
+        "dark": true
+      },
+      {
+        "big": "5",
+        "h3": "Family templates",
+        "p": "Nuclear, single-parent, grandparents, stepfamily, rotating care. One tap to start."
+      },
+      {
+        "big": "Aa",
+        "h3": "Quick build by typing",
+        "p": "Type short lines and draw the whole family at once."
+      },
+      {
+        "big": "PNG · SVG",
+        "h3": "Export with a legend",
+        "p": "Ready for reports and family sessions."
+      },
+      {
+        "big": "中 · EN",
+        "h3": "Interface languages",
+        "p": "Traditional Chinese and English for now. Need your language? Email me.",
+        "dark": true
+      }
+    ]
+  }
+}

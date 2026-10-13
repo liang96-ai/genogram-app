@@ -40,6 +40,7 @@ const dict: Record<Lang, Record<string, string>> = {
     // ===== 主選單 =====
     'menu.symbolGallery': '符號圖例',
     'menu.tutorialBasic': '看基礎教學',
+    'menu.guidePage': '人人家系圖介紹(多語言)',
     'menu.manual': '說明手冊',
     'menu.guidedTour': '帶著做一次',
     'menu.folderCurrent': '備份資料夾:{name}',
@@ -138,7 +139,7 @@ const dict: Record<Lang, Record<string, string>> = {
 
     // ===== 安裝為 App(兩段式:先問要不要,再給步驟)=====
     'install.confirm':
-      '要把「家系圖工具」安裝成 App 嗎?\n\n• 從桌面/主畫面直接開啟,不用記網址\n• 完全離線可用\n• 你的個案資料不會有任何變動',
+      '要把「人人家系圖」安裝成 App 嗎?\n\n• 從桌面/主畫面直接開啟,不用記網址\n• 完全離線可用\n• 你的個案資料不會有任何變動',
     'install.yes': '安裝',
     'install.later': '稍後再說',
     'install.stepsIOS':
@@ -604,7 +605,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'eco.clickToName': '點兩下命名',
 
     // ===== Case List =====
-    'caseList.title': '家系圖工具',
+    'caseList.title': '人人家系圖',
     'caseList.untitledCase': '未命名個案',
     'welcome.title': '你的資料只存在這台裝置',
     'welcome.point1': '沒有伺服器,開發者看不到任何個案',
@@ -677,7 +678,7 @@ const dict: Record<Lang, Record<string, string>> = {
       '備份資料夾「{folder}」裡的個案檔沒有全部刪掉,可能是沒有權限。\n請自己打開這個資料夾,刪除 case_ 開頭的資料夾和 _目錄.txt。',
 
     // ===== Share Dialog =====
-    'share.title': '分享家系圖工具',
+    'share.title': '分享人人家系圖',
     'share.qrHint': '掃 QR Code 直接開啟,或右鍵儲存圖片',
     'share.urlLabel': '網址',
     'share.copy': '複製',
@@ -687,9 +688,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'share.copiedMessage': '已複製文案',
     'share.nativeShare': '系統分享',
     'share.nativeShareTitle': '用作業系統內建分享功能(手機常用)',
-    'share.shareTitle': '家系圖工具',
+    'share.shareTitle': '人人家系圖',
     'share.template':
-      '家系圖工具\n{url}\n\n特色:\n✓ 只要按上下左右、拉動線條,快速畫,好上手。\n✓ 100% 在地儲存,個案資料不上雲端,離線可用。\n✓ 方便交流傳送,可傳送完整檔其他人接手,或是隱匿個資傳送。\n✓ 符號字典、互動關係線、醫療資訊、附件好存放。',
+      '人人家系圖\n{url}\n\n特色:\n✓ 只要按上下左右、拉動線條,快速畫,好上手。\n✓ 100% 在地儲存,個案資料不上雲端,離線可用。\n✓ 方便交流傳送,可傳送完整檔其他人接手,或是隱匿個資傳送。\n✓ 符號字典、互動關係線、醫療資訊、附件好存放。',
     'caseList.addCase': '新增個案',
     'caseList.import': '匯入',
     'caseList.backupTitle': '全備份(包含所有個案 + 設定)',
@@ -795,7 +796,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'support.entryLong': '請我喝飲料',
     'support.heading': '如果它幫你省了一點時間',
     // v3(2026-06-17):故事框 + 設定列卡片;金額自填不寫數字,讓故事帶出畫面
-    'support.story': '我是梁人人,這個家系圖工具是我一個人做的。沒有廣告,不收你的資料,個人使用永遠免費。\n如果它讓你少熬一點夜、多一點時間陪個案,願意的話請我喝杯咖啡,我會繼續把它做得更好。',
+    'support.story': '我是梁人人,人人家系圖是我一個人做的。沒有廣告,不收你的資料,個人使用永遠免費。\n如果它讓你少熬一點夜、多一點時間陪個案,願意的話請我喝杯咖啡,我會繼續把它做得更好。',
     'support.footer': '贊助完全自由,不贊助也可以一直用下去。付款只在綠界或 Ko-fi 的頁面完成,這個工具看不到任何付款資料。',
     'donate.rowCoffeeTitle': '在台灣:用綠界 ECPay 贊助',
     'donate.rowCoffeeSub': '綠界是台灣的金流公司,很多實況主收抖內都用它。金額自己填,多少都是心意。',
@@ -835,6 +836,7 @@ const dict: Record<Lang, Record<string, string>> = {
     // ===== Main menu =====
     'menu.symbolGallery': 'Symbol Legend',
     'menu.tutorialBasic': 'Basic Tutorial',
+    'menu.guidePage': 'About RenRen Genogram (guide)',
     'menu.manual': 'Manual',
     'menu.guidedTour': 'Walk me through it',
     'menu.folderCurrent': 'Backup folder: {name}',
@@ -936,7 +938,7 @@ const dict: Record<Lang, Record<string, string>> = {
 
     // ===== Install as App =====
     'install.confirm':
-      'Install Genogram Tool as an app?\n\n• Open it straight from your desktop / home screen\n• Works fully offline\n• Your case data is not affected',
+      'Install RenRen Genogram as an app?\n\n• Open it straight from your desktop / home screen\n• Works fully offline\n• Your case data is not affected',
     'install.yes': 'Install',
     'install.later': 'Maybe later',
     'install.stepsIOS':
@@ -1403,7 +1405,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'eco.clickToName': 'Double-click to name',
 
     // ===== Case List =====
-    'caseList.title': 'Genogram Tool',
+    'caseList.title': 'RenRen Genogram',
     'caseList.untitledCase': 'Untitled case',
     'welcome.title': 'Your data stays on this device',
     'welcome.point1': 'No server; the developer cannot see any case',
@@ -1476,7 +1478,7 @@ const dict: Record<Lang, Record<string, string>> = {
       'Some case files in the backup folder "{folder}" could not be deleted, possibly due to permissions.\nOpen the folder yourself and delete the folders starting with case_ and _目錄.txt.',
 
     // ===== Share Dialog =====
-    'share.title': 'Share Genogram Tool',
+    'share.title': 'Share RenRen Genogram',
     'share.qrHint': 'Scan QR code to open, or right-click to save image',
     'share.urlLabel': 'URL',
     'share.copy': 'Copy',
@@ -1486,9 +1488,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'share.copiedMessage': 'Message copied',
     'share.nativeShare': 'Native Share',
     'share.nativeShareTitle': 'Use OS built-in share (common on mobile)',
-    'share.shareTitle': 'Genogram Tool',
+    'share.shareTitle': 'RenRen Genogram',
     'share.template':
-      'Genogram Tool\n{url}\n\nFeatures:\n✓ Click the arrows, drag the lines — quick to draw, easy to learn.\n✓ 100% local storage, never uploaded, works offline.\n✓ Easy to share — send the full file for handoff, or strip private data first.\n✓ Built-in symbol dictionary, relation lines, medical info, and attachments.',
+      'RenRen Genogram\n{url}\n\nFeatures:\n✓ Click the arrows, drag the lines — quick to draw, easy to learn.\n✓ 100% local storage, never uploaded, works offline.\n✓ Easy to share — send the full file for handoff, or strip private data first.\n✓ Built-in symbol dictionary, relation lines, medical info, and attachments.',
     'caseList.addCase': 'New case',
     'caseList.import': 'Import',
     'caseList.backupTitle': 'Full backup (all cases + settings)',

@@ -3,6 +3,23 @@
 給使用者看的版本說明。技術細節請見 git 歷史。
 User-facing release notes; see git history for technical details.
 
+## 1.6.2 — 2026-10-13
+
+**English summary:** The app is now called RenRen Genogram (人人家系圖). New guide pages in eight languages (Traditional Chinese, English, Japanese, Korean, Simplified Chinese, French, Spanish, German) explain what a genogram is, how to draw one, the symbols, and how your data stays on your device; each page invites you to email if you need the app in your language. The "Start drawing" button opens a new genogram right away, and the home menu links back to the guide. The guide pages are separate from the app, so everyday use is unchanged. Search engines and AI assistants can now read them, and shared links show a preview image.
+
+### 新功能
+- **改名為「人人家系圖」(RenRen Genogram)。** App 名稱、安裝後的名稱、分享文字都換成新名字。
+- **八種語言的說明頁。** 繁體中文、英文、日文、韓文、簡體中文、法文、西班牙文、德文,說明家系圖是什麼、怎麼畫、常用符號、範本,以及資料只存在你的裝置。用的是各國社工真正在用的說法,例如日文ジェノグラム、韓文가계도。每頁都邀請大家寫信,需要自己的語言就幫忙做一版。
+- **說明頁和 App 分開。** 說明頁在 /guide/,平常打開 App 完全看不到,使用方式不變。
+- **說明頁照 Apple 產品頁的風格設計。** 一行大標題「畫家系圖,就像用紙筆一樣。」、App 實際畫面的大截圖、「為專業而做。」重點卡片;較長的說明和常見問題收合起來,頁面短、好讀。
+- **按「開始畫家系圖」直接開一張新圖。** 說明頁上的按鈕、截圖、頂端的「開始使用」都會直接開新圖並帶著做一次教學,不用再按新增個案。
+- **App 首頁選單多一項「人人家系圖介紹(多語言)」,**隨時可以回到說明頁。
+- **說明頁自動用你習慣的語言。** 日本的瀏覽器看到日文版、韓國看到韓文版,其他語言看到英文版;在頁尾手動選過語言就照你的選擇。從外語說明頁按「開始」,App 直接用英文介面(App 介面目前是繁體中文和英文)。
+
+### 改進
+- 搜尋引擎和 AI 現在讀得到網站:加上網站地圖、給爬蟲的說明檔、各語言互相標註。
+- 用 LINE、Facebook 分享網址時,會出現預覽圖和介紹。
+
 ## 1.6.1 — 2026-10-13
 
 **English summary:** The app now updates itself when you are not drawing: on launch, when you return to the case list, or when you come back to it from the background. A "Check update" button sits next to the version number on the home page. New: start a case from a template (nuclear, single parent, raised by grandparents, stepfamily, rotating elder care); several marriages of one person are numbered 1, 2, 3 on the lines; notes are written right on relationship lines with a white outline; exported images can include a legend of the symbols used; a household can be marked as a rotating stay (dotted line). Household circles are now blue, the same as circles drawn with the pen.

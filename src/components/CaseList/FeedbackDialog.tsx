@@ -41,7 +41,7 @@ export default function FeedbackDialog({ onClose }: { onClose: () => void }) {
 
   const handleSubmit = () => {
     const typeLabel = t(typeLabels[type].key);
-    const subject = `[家系圖工具] ${typeLabel}`;
+    const subject = `[人人家系圖] ${typeLabel}`;
     const body = `${t('feedback.bodyTypeLabel')}: ${typeLabel}
 
 ${t('feedback.bodyDescLabel')}:

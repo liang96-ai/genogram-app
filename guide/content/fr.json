@@ -1,0 +1,198 @@
+{
+  "lang": "fr",
+  "htmlLang": "fr",
+  "path": "fr/",
+  "label": "Français",
+  "langNav": "Langues",
+  "title": "RenRen Genogram — Créer un génogramme et une écocarte gratuitement (sans inscription, données sur votre appareil)",
+  "description": "RenRen Genogram est un outil gratuit en ligne pour créer des génogrammes et des écocartes, destiné aux travailleurs sociaux, thérapeutes familiaux, infirmières et étudiants. Symboles standards, sans inscription, utilisable hors ligne, vos données ne quittent jamais votre appareil.",
+  "keywords": [
+    "génogramme",
+    "créateur de génogramme gratuit",
+    "comment créer un génogramme",
+    "symboles génogramme",
+    "écocarte",
+    "génogramme travail social",
+    "modèle de génogramme",
+    "génogramme en ligne"
+  ],
+  "h1": "Créer un génogramme et une écocarte en ligne, gratuitement",
+  "lead": "RenRen Genogram (人人家系圖) est un créateur de génogramme gratuit et open source qui fonctionne dans le navigateur. Il est conçu pour les travailleurs sociaux, thérapeutes familiaux et systémiques, psychologues, infirmières, médecins et étudiants. Les données de vos dossiers restent sur votre appareil : rien n'est envoyé, aucun compte n'est nécessaire et l'outil fonctionne hors ligne.",
+  "cta": "Commencer un génogramme",
+  "ctaNote": "Sans inscription : cliquez et commencez à dessiner.",
+  "sections": [
+    {
+      "h2": "Qu'est-ce qu'un génogramme ?",
+      "p": [
+        "Le génogramme est une représentation graphique de la famille sur au moins trois générations, à l'aide de symboles standards : unions, enfants, qualité des relations, et informations importantes comme les maladies, les décès ou les personnes qui vivent ensemble. Il est utilisé en travail social, en thérapie familiale et systémique, en soins infirmiers orientés vers la famille et en médecine pour comprendre le contexte familial d'une personne.",
+        "Le génogramme n'est pas un simple arbre généalogique. L'arbre généalogique retrace la filiation ; le génogramme est un outil d'évaluation professionnel centré sur les relations et les schémas qui se répètent d'une génération à l'autre."
+      ]
+    },
+    {
+      "h2": "Ce que vous pouvez faire avec RenRen Genogram",
+      "ul": [
+        "Touchez les flèches à côté d'une personne pour ajouter ses parents, un partenaire ou des enfants ; la mise en page se fait toute seule.",
+        "Création rapide : tapez de courtes lignes de texte pour dessiner toute une famille d'un coup (termes de parenté en chinois et en anglais pour l'instant).",
+        "Tous les symboles courants : décès, grossesse, fausse couche, jumeaux, animaux, maladies et marqueurs génétiques, handicap, etc.",
+        "Liens relationnels : proche, fusionnel, distant, conflictuel, rupture, maltraitance, aidant, etc. Vous pouvez écrire une note directement sur le lien.",
+        "Cercles de la maisonnée, y compris l'hébergement alterné quand un parent âgé vit tour à tour chez ses enfants.",
+        "Quand une personne a plusieurs unions, les liens sont numérotés 1, 2, 3 automatiquement.",
+        "Écocarte : placez l'école, l'hôpital, les services sociaux et les autres systèmes extérieurs autour de la famille.",
+        "Exportez en PNG, JPG ou SVG avec une légende automatique ; masquez les détails sensibles ou anonymisez les noms.",
+        "Annulez et rétablissez à tout moment ; exportez un dossier dans un fichier de sauvegarde."
+      ]
+    },
+    {
+      "h2": "Vos données restent sur votre appareil",
+      "ul": [
+        "Pas de serveur ni de base de données : le développeur ne voit aucun dossier.",
+        "Pas de compte, pas de publicité, pas de pistage.",
+        "Les dossiers sont enregistrés dans votre navigateur. Sur Chrome et Edge pour ordinateur, vous pouvez aussi choisir un dossier de sauvegarde qui garde une copie.",
+        "Installez-le sur votre bureau ou votre écran d'accueil pour l'utiliser sans connexion.",
+        "Le code source est public sur GitHub : chacun peut le vérifier."
+      ]
+    },
+    {
+      "h2": "Comment créer un génogramme étape par étape",
+      "ol": [
+        "Ouvrez RenRen Genogram et créez un nouveau dossier avec un nom de code, ou partez d'un modèle.",
+        "Sélectionnez la personne concernée : flèche du haut pour les parents, flèches gauche et droite pour un partenaire, flèche du bas pour les enfants. Vous pouvez aussi tout taper d'un coup avec la création rapide.",
+        "Renseignez l'âge, l'année de naissance, le décès et les informations de santé dans le panneau latéral.",
+        "Double-cliquez sur un lien pour noter un événement. Sélectionnez plusieurs personnes pour les entourer comme maisonnée.",
+        "Exportez l'image depuis le menu pour votre dossier ou un entretien familial."
+      ]
+    },
+    {
+      "h2": "Symboles du génogramme",
+      "ul": [
+        "Carré = homme, cercle = femme, losange = personne non binaire, triangle = grossesse ou fœtus de sexe inconnu.",
+        "Une croix dans le symbole = personne décédée.",
+        "La personne concernée (patient désigné) est indiquée par un symbole plein ou un double cadre rouge, au choix dans les réglages.",
+        "Liens d'union : trait plein = mariage, une barre oblique = séparation, deux barres = divorce, pointillés = fiançailles, double ligne pointillée = vie commune.",
+        "Les lignes qui descendent de l'union mènent aux enfants ; l'enfant placé en famille d'accueil est relié par une ligne en pointillés fins.",
+        "Un cercle en pointillés autour de personnes = elles vivent ensemble ; un cercle à points = hébergement alterné.",
+        "Liens relationnels : double trait = proche, triple trait = fusionnel, pointillés = distant, zigzag = conflictuel, marque de coupure au milieu = rupture."
+      ]
+    },
+    {
+      "h2": "Qu'est-ce qu'une écocarte ?",
+      "p": [
+        "L'écocarte place la famille au centre et dessine autour d'elle les systèmes extérieurs — école, hôpital, travail, services sociaux, amis — avec des lignes qui montrent les liens. RenRen Genogram permet de dessiner le génogramme et l'écocarte sur la même page."
+      ]
+    },
+    {
+      "h2": "Modèles de génogramme",
+      "p": [
+        "En créant un dossier, vous pouvez partir d'une structure familiale courante puis la modifier :"
+      ],
+      "ul": [
+        "Famille nucléaire",
+        "Famille monoparentale",
+        "Enfant élevé par ses grands-parents",
+        "Famille recomposée",
+        "Parent âgé hébergé tour à tour par ses enfants"
+      ]
+    },
+    {
+      "h2": "Pour qui ?",
+      "p": [
+        "Travailleurs sociaux, assistants de service social, thérapeutes familiaux, psychologues, infirmières, médecins généralistes, médiateurs familiaux et étudiants de ces disciplines."
+      ]
+    }
+  ],
+  "invite": {
+    "h2": "Besoin de l'interface en français ?",
+    "p": [
+      "L'interface est pour l'instant en anglais et en chinois traditionnel. Ce guide existe en huit langues.",
+      "Si vous souhaitez utiliser RenRen Genogram en français, écrivez à {email} en précisant votre domaine. Je serai heureux de préparer une version pour vous, et toute correction de cette page est la bienvenue."
+    ]
+  },
+  "faq": {
+    "h2": "Questions fréquentes",
+    "items": [
+      {
+        "q": "RenRen Genogram est-il gratuit ?",
+        "a": "Oui. Il est gratuit pour un usage personnel, sans version payante, et les images exportées n'ont pas de filigrane."
+      },
+      {
+        "q": "Où sont stockées mes données ? Sont-elles en sécurité ?",
+        "a": "Uniquement dans le navigateur de l'appareil que vous utilisez. Rien n'est envoyé à un serveur. Exportez régulièrement une sauvegarde, ou choisissez un dossier de sauvegarde sur ordinateur."
+      },
+      {
+        "q": "Faut-il créer un compte ?",
+        "a": "Non. Ouvrez la page et commencez à dessiner."
+      },
+      {
+        "q": "Fonctionne-t-il sur téléphone ?",
+        "a": "Un ordinateur ou un iPad est préférable. La page s'ouvre sur téléphone, mais l'affichage n'est pas encore adapté aux petits écrans."
+      },
+      {
+        "q": "Puis-je utiliser le génogramme dans un rapport ou un devoir ?",
+        "a": "Oui. Exportez une image PNG ou SVG, avec légende si vous le souhaitez. Dans les versions récentes de Word ou PowerPoint, insérez le SVG puis choisissez « Convertir en forme » pour continuer à le modifier."
+      },
+      {
+        "q": "Quelle différence entre un génogramme et un arbre généalogique ?",
+        "a": "L'arbre généalogique retrace l'ascendance. Le génogramme est un outil d'évaluation professionnel qui montre aussi les relations affectives, la santé, la vie commune et les grands événements."
+      }
+    ]
+  },
+  "footer": "RenRen Genogram (人人家系圖) · par Liang RenRen · Contact : {email}",
+  "moreH2": "En savoir plus",
+  "brand": "RenRen Genogram",
+  "heroTitle": "Vos génogrammes,\ncomme sur papier.",
+  "heroSub": "Gratuit. Sans inscription. Vos données restent sur votre appareil.",
+  "navCta": "Commencer",
+  "shotCta": "Cliquez pour commencer",
+  "shotAlt": "Écran de RenRen Genogram : génogramme d'une famille recomposée, les deux unions de la mère numérotées 1 et 2, la maisonnée entourée en bleu",
+  "nav": [
+    {
+      "id": "features",
+      "label": "Fonctionnalités"
+    },
+    {
+      "id": "more",
+      "label": "En savoir plus"
+    },
+    {
+      "id": "faq",
+      "label": "FAQ"
+    }
+  ],
+  "tiles": {
+    "h2": "Conçu pour les professionnels.",
+    "items": [
+      {
+        "big": "↑ ↓ ← →",
+        "h3": "Ajoutez la famille avec les flèches",
+        "p": "Parents, partenaires et enfants, mis en page pour vous."
+      },
+      {
+        "big": "0",
+        "h3": "Donnée envoyée dans le cloud",
+        "p": "Ni serveur ni compte : le développeur ne voit aucun dossier.",
+        "dark": true
+      },
+      {
+        "big": "5",
+        "h3": "Modèles de famille",
+        "p": "Nucléaire, monoparentale, grands-parents, recomposée, hébergement alterné."
+      },
+      {
+        "big": "Aa",
+        "h3": "Création rapide par texte",
+        "p": "Tapez quelques lignes et dessinez toute la famille d'un coup."
+      },
+      {
+        "big": "PNG · SVG",
+        "h3": "Export avec légende",
+        "p": "Prêt pour vos rapports et entretiens familiaux."
+      },
+      {
+        "big": "中 · EN",
+        "h3": "Langues de l'interface",
+        "p": "Chinois traditionnel et anglais pour l'instant. Besoin du français ? Écrivez-moi.",
+        "dark": true
+      }
+    ]
+  }
+}

@@ -1361,6 +1361,18 @@ export const useGenogramStore = create<GenogramStore>((set, get) => ({
 
   loadLanguage: async () => {
     try {
+      // 從說明頁進來(網址帶 ?lang=en|zh,1.6.2):照說明頁的語言開,並記住;參數用完就拿掉
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        const fromGuide = url.searchParams.get('lang');
+        if (fromGuide === 'zh' || fromGuide === 'en') {
+          url.searchParams.delete('lang');
+          window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+          set({ language: fromGuide });
+          db.settings.put({ key: 'language', value: fromGuide }).catch(() => undefined);
+          return;
+        }
+      }
       const rec = await db.settings.get('language');
       if (rec && typeof rec === 'object' && 'value' in rec) {
         const saved = (rec as { value: unknown }).value;

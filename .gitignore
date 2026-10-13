@@ -32,3 +32,7 @@ SESSION_PLAN.md
 /test-results/
 /playwright-report/
 /blob-report/
+
+# 說明頁由 scripts/build-guides.mjs 在建置時產生
+public/guide/
+public/sitemap.xml

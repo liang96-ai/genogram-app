@@ -1,0 +1,198 @@
+{
+  "lang": "es",
+  "htmlLang": "es",
+  "path": "es/",
+  "label": "Español",
+  "langNav": "Idiomas",
+  "title": "RenRen Genogram — Crear genograma y ecomapa gratis en línea (sin registro, tus datos se quedan en tu dispositivo)",
+  "description": "RenRen Genogram es una herramienta gratuita en línea para crear genogramas y ecomapas, pensada para trabajo social, medicina familiar, enfermería, terapia familiar y estudiantes. Símbolos estándar, sin registro, funciona sin conexión y tus datos nunca salen de tu dispositivo.",
+  "keywords": [
+    "genograma",
+    "crear genograma gratis",
+    "genograma en línea",
+    "genograma trabajo social",
+    "genograma y ecomapa",
+    "símbolos del genograma",
+    "ecomapa",
+    "plantilla de genograma"
+  ],
+  "h1": "Crear genograma y ecomapa en línea, gratis",
+  "lead": "RenRen Genogram (人人家系圖) es una herramienta gratuita y de código abierto para hacer genogramas desde el navegador. Está pensada para profesionales de trabajo social, medicina familiar, enfermería, psicología y terapia familiar, y para estudiantes. Los datos de tus casos se quedan en tu propio dispositivo: no se sube nada, no necesitas cuenta y funciona sin conexión.",
+  "cta": "Empezar un genograma",
+  "ctaNote": "Sin registro: haz clic y empieza a dibujar.",
+  "sections": [
+    {
+      "h2": "¿Qué es un genograma?",
+      "p": [
+        "El genograma es una representación gráfica de la familia de al menos tres generaciones con símbolos estándar: uniones, hijos, calidad de las relaciones e información importante como enfermedades, fallecimientos y quiénes conviven. Se usa en trabajo social, medicina familiar, enfermería y terapia familiar para comprender el contexto familiar de una persona.",
+        "El genograma no es un árbol genealógico. El árbol genealógico registra la ascendencia; el genograma es una herramienta de evaluación profesional centrada en las relaciones y en los patrones que se repiten entre generaciones."
+      ]
+    },
+    {
+      "h2": "Qué puedes hacer con RenRen Genogram",
+      "ul": [
+        "Toca las flechas junto a una persona para agregar padres, pareja o hijos; la distribución se ordena sola.",
+        "Creación rápida: escribe líneas cortas de texto para dibujar toda la familia de una vez (por ahora con términos de parentesco en chino e inglés).",
+        "Todos los símbolos habituales: fallecimiento, embarazo, aborto espontáneo, gemelos, mascotas, enfermedades y marcadores genéticos, discapacidad y más.",
+        "Vínculos relacionales: cercano, fusionado, distante, conflictivo, ruptura, abuso, cuidador y más. Puedes escribir una nota directamente sobre la línea.",
+        "Círculos del hogar, incluida la convivencia rotativa cuando una persona mayor vive por turnos con distintos hijos.",
+        "Cuando una persona tiene varias uniones, las líneas se numeran 1, 2, 3 automáticamente.",
+        "Ecomapa: dibuja la escuela, el hospital, los servicios sociales y otros sistemas externos alrededor de la familia.",
+        "Exporta imágenes PNG, JPG o SVG con leyenda automática; oculta detalles sensibles o anonimiza los nombres.",
+        "Deshaz y rehaz en cualquier momento; exporta un caso a un archivo como copia de seguridad."
+      ]
+    },
+    {
+      "h2": "Tus datos se quedan en tu dispositivo",
+      "ul": [
+        "Sin servidor ni base de datos: el desarrollador no puede ver ningún caso.",
+        "Sin cuenta, sin anuncios, sin rastreo.",
+        "Los casos se guardan en tu navegador. En Chrome y Edge de escritorio también puedes elegir una carpeta de respaldo con una copia extra.",
+        "Instálalo en el escritorio o la pantalla de inicio y úsalo sin conexión.",
+        "El código fuente es público en GitHub, así que cualquiera puede revisarlo."
+      ]
+    },
+    {
+      "h2": "Cómo hacer un genograma",
+      "ol": [
+        "Abre RenRen Genogram y crea un caso nuevo con un nombre clave, o empieza desde una plantilla.",
+        "Selecciona a la persona índice: flecha de arriba para los padres, flechas laterales para la pareja y flecha de abajo para los hijos. También puedes escribir toda la familia de una vez con la creación rápida.",
+        "Completa la edad, el año de nacimiento, el fallecimiento y los datos de salud en el panel lateral.",
+        "Haz doble clic en una línea para anotar un evento. Selecciona varias personas para marcar que conviven en el mismo hogar.",
+        "Exporta la imagen desde el menú para tu informe o una sesión con la familia."
+      ]
+    },
+    {
+      "h2": "Símbolos del genograma",
+      "ul": [
+        "Cuadrado = hombre, círculo = mujer, rombo = persona no binaria, triángulo = embarazo o feto de sexo desconocido.",
+        "Una cruz dentro del símbolo = persona fallecida.",
+        "La persona índice (paciente identificado) se marca con el símbolo relleno o con un doble marco rojo; el estilo se cambia en la configuración.",
+        "Líneas de unión: línea continua = matrimonio, una barra = separación, dos barras = divorcio, línea discontinua = compromiso, doble línea discontinua = convivencia.",
+        "Las líneas que bajan de la unión llevan a los hijos; el acogimiento familiar se muestra con línea punteada.",
+        "Un círculo discontinuo alrededor de personas = viven juntas; un círculo de puntos = convivencia rotativa.",
+        "Vínculos: doble línea = cercano, triple línea = fusionado, punteada = distante, zigzag = conflictivo, marca de corte en el centro = ruptura."
+      ]
+    },
+    {
+      "h2": "¿Qué es un ecomapa?",
+      "p": [
+        "El ecomapa sitúa a la familia en el centro y dibuja a su alrededor los sistemas externos —escuela, hospital, trabajo, servicios sociales, amistades— con líneas que muestran cómo se relacionan. En RenRen Genogram puedes dibujar el genograma y el ecomapa en el mismo lienzo."
+      ]
+    },
+    {
+      "h2": "Plantillas de genograma",
+      "p": [
+        "Al crear un caso puedes partir de una estructura familiar frecuente y editarla:"
+      ],
+      "ul": [
+        "Familia nuclear",
+        "Familia monoparental",
+        "Crianza a cargo de los abuelos",
+        "Familia reconstituida",
+        "Persona mayor que rota entre los hogares de sus hijos"
+      ]
+    },
+    {
+      "h2": "Para quién es",
+      "p": [
+        "Trabajadores sociales, médicos de familia, enfermeras y enfermeros, psicólogos, terapeutas familiares, gestores de casos y estudiantes de estas disciplinas."
+      ]
+    }
+  ],
+  "invite": {
+    "h2": "¿Necesitas la interfaz en español?",
+    "p": [
+      "Por ahora la interfaz está en inglés y chino tradicional. Esta guía está disponible en ocho idiomas.",
+      "Si quieres usar RenRen Genogram en español, escribe a {email} y cuéntame tu campo de trabajo. Con gusto prepararé una versión para ti, y cualquier corrección a esta página es bienvenida."
+    ]
+  },
+  "faq": {
+    "h2": "Preguntas frecuentes",
+    "items": [
+      {
+        "q": "¿RenRen Genogram es gratis?",
+        "a": "Sí. Es gratuito para uso personal, sin versión de pago, y las imágenes exportadas no llevan marca de agua."
+      },
+      {
+        "q": "¿Dónde se guardan mis datos? ¿Es seguro?",
+        "a": "Solo en el navegador del dispositivo que usas. No se envía nada a ningún servidor. Exporta una copia de seguridad con regularidad o configura una carpeta de respaldo en la computadora."
+      },
+      {
+        "q": "¿Necesito una cuenta?",
+        "a": "No. Abre la página y empieza a dibujar."
+      },
+      {
+        "q": "¿Funciona en el celular?",
+        "a": "Es mejor en computadora o iPad. Se abre en el celular, pero la pantalla todavía no está adaptada a pantallas pequeñas."
+      },
+      {
+        "q": "¿Puedo usar el genograma en un informe o una tarea?",
+        "a": "Sí. Exporta una imagen PNG o SVG, con leyenda si quieres. En versiones recientes de Word o PowerPoint, inserta el SVG y elige «Convertir en forma» para seguir editándolo."
+      },
+      {
+        "q": "¿En qué se diferencia un genograma de un árbol genealógico?",
+        "a": "El árbol genealógico registra la ascendencia. El genograma es una herramienta de evaluación profesional que además muestra los vínculos afectivos, la salud, la convivencia y los acontecimientos importantes."
+      }
+    ]
+  },
+  "footer": "RenRen Genogram (人人家系圖) · por Liang RenRen · Contacto: {email}",
+  "moreH2": "Más información",
+  "brand": "RenRen Genogram",
+  "heroTitle": "Dibuja genogramas\ncomo en papel.",
+  "heroSub": "Gratis. Sin registro. Tus datos se quedan en tu dispositivo.",
+  "navCta": "Empezar",
+  "shotCta": "Haz clic para empezar",
+  "shotAlt": "Pantalla de RenRen Genogram: genograma de una familia reconstituida, las dos uniones de la madre numeradas 1 y 2 y el hogar rodeado en azul",
+  "nav": [
+    {
+      "id": "features",
+      "label": "Funciones"
+    },
+    {
+      "id": "more",
+      "label": "Más información"
+    },
+    {
+      "id": "faq",
+      "label": "Preguntas frecuentes"
+    }
+  ],
+  "tiles": {
+    "h2": "Hecho para profesionales.",
+    "items": [
+      {
+        "big": "↑ ↓ ← →",
+        "h3": "Agrega familia con las flechas",
+        "p": "Padres, pareja e hijos, ordenados por ti."
+      },
+      {
+        "big": "0",
+        "h3": "Datos subidos a la nube",
+        "p": "Sin servidor ni cuenta: el desarrollador no ve ningún caso.",
+        "dark": true
+      },
+      {
+        "big": "5",
+        "h3": "Plantillas de familia",
+        "p": "Nuclear, monoparental, abuelos, reconstituida, convivencia rotativa."
+      },
+      {
+        "big": "Aa",
+        "h3": "Creación rápida con texto",
+        "p": "Escribe líneas cortas y dibuja toda la familia de una vez."
+      },
+      {
+        "big": "PNG · SVG",
+        "h3": "Exporta con leyenda",
+        "p": "Listo para informes y sesiones con la familia."
+      },
+      {
+        "big": "中 · EN",
+        "h3": "Idiomas de la interfaz",
+        "p": "Por ahora chino tradicional e inglés. ¿Necesitas español? Escríbeme.",
+        "dark": true
+      }
+    ]
+  }
+}
