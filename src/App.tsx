@@ -33,6 +33,9 @@ import { flushDrafts } from './services/draftFlush';
 import { setupPwaInstallListener } from './services/pwaInstall';
 import {
   applyUpdate,
+  shouldAutoApply,
+  readLastAutoApplyAt,
+  markAutoApplied,
   getNeedRefresh,
   onNeedRefreshChange,
 } from './services/pwaUpdate';
@@ -309,6 +312,31 @@ export default function App() {
   useEffect(() => {
     return onNeedRefreshChange(() => setUpdateReady(true));
   }, []);
+
+  // 1.6.1:不在畫圖時自動換新版(剛打開、回到個案清單、從背景切回來)。
+  // 有彈窗開著就等它關掉;每 2 秒看一次條件,換之前先把存檔寫完。
+  useEffect(() => {
+    if (!updateReady || appMode === 'edit') return;
+    let started = false;
+    const tryApply = () => {
+      if (started) return;
+      const ok = shouldAutoApply({
+        updateReady: true,
+        editing: false,
+        dialogOpen: !!document.querySelector('[role="dialog"]'),
+        visible: document.visibilityState === 'visible',
+        lastAutoApplyAt: readLastAutoApplyAt(),
+        now: Date.now(),
+      });
+      if (!ok) return;
+      started = true;
+      markAutoApplied();
+      void flushPendingSave().finally(() => applyUpdate());
+    };
+    tryApply();
+    const id = window.setInterval(tryApply, 2000);
+    return () => window.clearInterval(id);
+  }, [updateReady, appMode, flushPendingSave]);
 
   // 關閉分頁 / 切到背景 → 立即把排隊中的儲存寫出(#117)
   useEffect(() => {
@@ -1228,17 +1256,20 @@ function HouseholdQuickAction() {
         gap: 6,
         padding: '7px 16px',
         background: '#ffffff',
-        border: '1px solid #d2d2d7',
+        border: '1px solid #007aff',
         borderRadius: 999,
         boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
         fontSize: 13,
-        fontWeight: 500,
-        color: '#1d1d1f',
+        fontWeight: 600,
+        color: '#007aff',
         cursor: 'pointer',
         fontFamily: 'inherit',
       }}
     >
-      ⭕ {t('household.create', { n: selectedPersonIds.length })}
+      <svg width={16} height={16} viewBox="0 0 16 16" aria-hidden>
+        <circle cx={8} cy={8} r={6.2} fill="rgba(0,122,255,0.08)" stroke="#007aff" strokeWidth={1.6} strokeDasharray="3 2.2" />
+      </svg>
+      {t('household.create', { n: selectedPersonIds.length })}
     </button>
   );
 }

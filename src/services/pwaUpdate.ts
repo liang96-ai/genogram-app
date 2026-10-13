@@ -8,7 +8,8 @@
 //   - initPwaUpdate()        main.tsx 啟動呼叫一次
 //   - onNeedRefreshChange()  App 橫幅訂閱「有新版就緒」
 //   - applyUpdate()          使用者按「立即更新」→ skipWaiting + 重載(plugin 處理競態)
-//   - checkForUpdate()       首頁「檢查更新」鈕用,回「真實狀態」不再賭秒數
+//   - checkForUpdate()       首頁、關於頁的「檢查更新」鈕用,回「真實狀態」不再賭秒數
+//   - shouldAutoApply()      1.6.1:不在畫圖時自動套用(見下方說明)
 //
 // 為何信任 plugin 的 updateSW(true):vite-plugin-pwa 在 prompt 模式產的 sw.js 內含
 // SKIP_WAITING message listener,updateSW(true) 會 postMessage 後監聽 controllerchange
@@ -121,4 +122,45 @@ export async function checkForUpdate(): Promise<
   // update() 後若有 SW 正在裝 / 等待 → 有新版;裝好會觸發 onNeedRefresh → 橫幅
   if (reg.installing || reg.waiting || needRefresh) return 'update-found';
   return 'latest';
+}
+
+/**
+ * 1.6.1:什麼時候可以「不問就換新版」。
+ *
+ * 1.6.0 上線後有使用者一直停在舊版:prompt 模式要按橫幅才換,沒看到或按了「稍後」就不會換;
+ * 裝在 iPad / 手機主畫面的 App 很少被完全關掉,等待中的新版永遠輪不到。
+ * 規則:不在編輯畫面、沒有彈窗開著、畫面看得到,就自動套用(換之前呼叫端先寫完存檔)。
+ * 保底:剛自動套用過(上一次重載還沒換成功)就不再自動,留給橫幅,避免一直重載。
+ */
+export const AUTO_APPLY_COOLDOWN_MS = 60_000;
+const AUTO_APPLY_KEY = 'genogram_auto_update_at';
+
+export function shouldAutoApply(s: {
+  updateReady: boolean;
+  editing: boolean;
+  dialogOpen: boolean;
+  visible: boolean;
+  lastAutoApplyAt: number | null;
+  now: number;
+}): boolean {
+  if (!s.updateReady || s.editing || s.dialogOpen || !s.visible) return false;
+  if (s.lastAutoApplyAt !== null && s.now - s.lastAutoApplyAt < AUTO_APPLY_COOLDOWN_MS) return false;
+  return true;
+}
+
+export function readLastAutoApplyAt(): number | null {
+  try {
+    const v = Number(sessionStorage.getItem(AUTO_APPLY_KEY));
+    return Number.isFinite(v) && v > 0 ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function markAutoApplied(now: number = Date.now()): void {
+  try {
+    sessionStorage.setItem(AUTO_APPLY_KEY, String(now));
+  } catch {
+    // 私密模式等無法寫入:最壞情況是冷卻失效,applyUpdate 本身仍有保底
+  }
 }

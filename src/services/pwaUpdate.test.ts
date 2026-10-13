@@ -47,3 +47,23 @@ describe('applyUpdate 的重載保底(1.3.1 實測:橫幅按了沒反應)', () =
     expect(reload2).toHaveBeenCalledTimes(1); // 保底 timer 已清掉,不重載第二次
   });
 });
+
+describe('shouldAutoApply:不在畫圖時才自動換新版(1.6.1)', () => {
+  const base = { updateReady: true, editing: false, dialogOpen: false, visible: true, lastAutoApplyAt: null, now: 1_000_000 };
+  it('在個案清單、沒有彈窗、畫面看得到 → 自動換', async () => {
+    const { shouldAutoApply } = await import('./pwaUpdate');
+    expect(shouldAutoApply(base)).toBe(true);
+  });
+  it('正在畫圖、有彈窗、在背景、沒有新版 → 都不換', async () => {
+    const { shouldAutoApply } = await import('./pwaUpdate');
+    expect(shouldAutoApply({ ...base, editing: true })).toBe(false);
+    expect(shouldAutoApply({ ...base, dialogOpen: true })).toBe(false);
+    expect(shouldAutoApply({ ...base, visible: false })).toBe(false);
+    expect(shouldAutoApply({ ...base, updateReady: false })).toBe(false);
+  });
+  it('一分鐘內剛自動換過(上次沒換成功)→ 不再自動,避免一直重載', async () => {
+    const { shouldAutoApply, AUTO_APPLY_COOLDOWN_MS } = await import('./pwaUpdate');
+    expect(shouldAutoApply({ ...base, lastAutoApplyAt: base.now - 1000 })).toBe(false);
+    expect(shouldAutoApply({ ...base, lastAutoApplyAt: base.now - AUTO_APPLY_COOLDOWN_MS })).toBe(true);
+  });
+});

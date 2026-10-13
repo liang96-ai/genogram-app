@@ -32,6 +32,7 @@ import HouseholdPolygon from './HouseholdPolygon';
 import { resolveArrowDrop, type ArrowDir } from '../../services/arrowDrop';
 import TwinDialog from './TwinDialog';
 import { useT } from '../../i18n';
+import { marriageOrderBadges } from '../../services/marriageOrder';
 
 type DragState =
   | {
@@ -612,6 +613,8 @@ export default function Canvas() {
   if (!currentCase) return null;
 
   // ==================== 聚合計算 ====================
+  // 多段婚姻序號(1.6.1)
+  const marriageBadges = marriageOrderBadges(currentCase.persons, currentCase.lines);
   const marriageLines = currentCase.lines.filter((l) =>
     MARRIAGE_SUBTYPES.has(l.subType),
   );
@@ -2304,6 +2307,7 @@ export default function Canvas() {
           colliding={!exporting && collidingMarriageIds.has(g.marriage.id)}
           trunkYOverride={marriageTrunkYOverrides.get(g.marriage.id)}
           route={marriageRoutes.get(g.marriage.id)}
+          orderBadge={marriageBadges.get(g.marriage.id)}
           onBusHandleDown={onBusHandleDown}
           onBusHandleReset={onBusHandleReset}
           crossingSegments={crossingSegmentsFor(g.marriage.id)}

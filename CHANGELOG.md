@@ -3,6 +3,22 @@
 給使用者看的版本說明。技術細節請見 git 歷史。
 User-facing release notes; see git history for technical details.
 
+## 1.6.1 — 2026-10-13
+
+**English summary:** The app now updates itself when you are not drawing: on launch, when you return to the case list, or when you come back to it from the background. A "Check update" button sits next to the version number on the home page. New: start a case from a template (nuclear, single parent, raised by grandparents, stepfamily, rotating elder care); several marriages of one person are numbered 1, 2, 3 on the lines; notes are written right on relationship lines with a white outline; exported images can include a legend of the symbols used; a household can be marked as a rotating stay (dotted line). Household circles are now blue, the same as circles drawn with the pen.
+
+### 新功能
+- **範本。** 新增個案時可以選核心家庭、單親家庭、隔代教養、重組家庭、長輩輪住,直接從畫好的圖開始;空白畫布的起步卡也能套用。範本只有稱謂和年齡,沒有真實姓名。
+- **多段婚姻自動標序號。** 同一個人有兩段以上伴侶關係時,線上標 1、2、3,順序照畫布上伴侶由左到右;想調順序就把伴侶拖到另一邊。
+- **字寫在線上。** 關係線的備註直接壓在線的中間,加上白色外框,線穿過也讀得清楚;弧線照弧的中點擺。婚姻線、親子線的備註也加上白框。
+- **匯出附圖例。** 匯出圖片多一個「附圖例」選項,預設勾選並記住你的選擇;只列這張圖用到的符號,畫法和符號圖例一致。勾了「隱藏關係細節」時,圖例不列線的種類。
+- **輪住的同住圈。** 選取同住圈後多一個「輪住」開關:改畫點線,標籤加上「輪住」。同一個人可以同時在好幾個圈裡。
+
+### 改進
+- **自動更新。** 以前要按橫幅的「立即更新」才會換新版,沒按就一直停在舊版。現在不在畫圖時會自動換:剛打開、回到個案清單、從背景切回來時;換之前先存好,有視窗開著時不換。首頁右下角版本號旁多一顆「檢查更新」。
+- **同住圈改成藍色**,和畫筆畫的生態圈同色;「圈成同住」按鈕也改成藍色。
+- 匯出勾「隱藏關係細節」時,線上的備註一律拿掉,不再靠文字大小猜。
+
 ## 1.6.0 — 2026-09-30
 
 **English summary:** A calmer, clearer interface. First launch is a single welcome card instead of four dialogs, and a one-minute walkthrough teaches the tool on your own case (add parents, add a spouse or child, fill a detail, quick build, export). The old 12-step tutorial became a Manual. Quick Build now fills in education: school names, levels, grades, and whether the person graduated, is attending, or dropped out. Emoji icons were replaced by one set of line icons; the home header keeps only the menu, eye comfort, language, and the privacy badge; the side panel folds rarely used fields under “More details”; undo and redo sit on the bottom bar; an empty canvas offers two ways to start. This release also includes the data-safety fixes: renaming a case is no longer reverted by undo; choosing a backup folder from the attachments tab now asks which version to keep when the folder has a newer copy; full reset asks whether to delete the case folders in the backup folder too (your own backups and files are never touched); adding a child to someone who is cohabiting or widowed no longer creates a new spouse; Quick Build recognizes more ways to say someone has died; adding grandparents on both sides keeps all four on the same generation row; exported images no longer include overlap warnings; an interrupted press on the marriage-line arrow no longer adds a child.

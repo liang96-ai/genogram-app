@@ -24,6 +24,9 @@ import WelcomeCard from '../Onboarding/WelcomeCard';
 import { hasSeenGuidedTour } from '../Onboarding/tourSeen';
 import FolderSetupModal from './FolderSetupModal';
 import AboutDialog from '../About/AboutDialog';
+import VersionUpdateButton from './VersionUpdateButton';
+import TemplatePicker, { type TemplateChoice } from './TemplatePicker';
+import { applyTemplate } from '../../services/caseTemplates';
 import { SupportDialog } from '../About/SupportDialog';
 import Icon, { BrandMark } from '../ui/Icon';
 import EyeComfortButton from '../EyeComfort/EyeComfortButton';
@@ -813,9 +816,10 @@ export default function CaseList() {
 
       {showNew && (
         <NewCaseDialog
-          onCreate={async (name) => {
+          onCreate={async (name, template) => {
             setShowNew(false);
             await createCase(name);
+            if (template !== 'blank') applyTemplate(template, useGenogramStore.getState().language);
             // 第一次新建個案 → 在這個個案上帶著做一次(只自動開一次)
             startTourIfNew();
           }}
@@ -904,23 +908,8 @@ export default function CaseList() {
         />
       )}
 
-      {/* 版本號 — 固定右下角,來源 = package.json(vite define 注入),不擋任何操作 */}
-      <div
-        aria-hidden
-        style={{
-          position: 'fixed',
-          right: 'calc(env(safe-area-inset-right, 0px) + 12px)',
-          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)',
-          fontSize: 11,
-          color: '#86868b',
-          letterSpacing: 0.2,
-          pointerEvents: 'none',
-          userSelect: 'none',
-          zIndex: 1,
-        }}
-      >
-        v{__APP_VERSION__}
-      </div>
+      {/* 版本號 + 檢查更新(1.6.1) — 固定右下角 */}
+      <VersionUpdateButton />
     </div>
   );
 }
@@ -1232,11 +1221,12 @@ function NewCaseDialog({
   onCreate,
   onCancel,
 }: {
-  onCreate: (name: string) => void;
+  onCreate: (name: string, template: TemplateChoice) => void;
   onCancel: () => void;
 }) {
   const t = useT();
   const [name, setName] = useState('');
+  const [template, setTemplate] = useState<TemplateChoice>('blank');
   return (
     <div
       style={{
@@ -1257,7 +1247,11 @@ function NewCaseDialog({
           padding: 24,
           borderRadius: 12,
           minWidth: 320,
+          width: 480,
           maxWidth: 'calc(100vw - 40px)',
+          maxHeight: 'calc(100vh - 40px)',
+          overflowY: 'auto',
+          boxSizing: 'border-box',
           boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
         }}
       >
@@ -1288,7 +1282,7 @@ function NewCaseDialog({
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => {
             if (e.nativeEvent.isComposing) return;
-            if (e.key === 'Enter' && name.trim()) onCreate(name);
+            if (e.key === 'Enter' && name.trim()) onCreate(name, template);
             if (e.key === 'Escape') onCancel();
           }}
           placeholder={t('caseList.caseNamePlaceholder')}
@@ -1303,6 +1297,10 @@ function NewCaseDialog({
             marginBottom: 18,
           }}
         />
+        <div style={{ fontSize: 12, color: '#86868b', marginBottom: 6 }}>{t('template.title')}</div>
+        <div style={{ marginBottom: 18 }}>
+          <TemplatePicker includeBlank value={template} onPick={setTemplate} />
+        </div>
         <div
           style={{
             display: 'flex',
@@ -1326,7 +1324,7 @@ function NewCaseDialog({
             {t('common.cancel')}
           </button>
           <button
-            onClick={() => onCreate(name)}
+            onClick={() => onCreate(name, template)}
             disabled={!name.trim()}
             style={{
               padding: '8px 18px',

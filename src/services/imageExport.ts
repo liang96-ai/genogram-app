@@ -1,5 +1,6 @@
 import type { Genogram } from '../types/genogram';
 import { useGenogramStore } from '../store/genogramStore';
+import { legendCodes, legendHeight, renderLegendSvg } from './exportLegend';
 
 export type ImageFormat = 'png' | 'jpg' | 'svg';
 export type ImageRange = 'auto' | 'view';
@@ -11,6 +12,8 @@ export interface ImageExportOptions {
   hideDotGrid: boolean;
   /** 隱藏關係細節:全部線變實線/不畫 mid-symbol/不顯示線備注 */
   simplifyLines: boolean;
+  /** 圖下方附上用到的符號(1.6.1)。沒給 = 不附 */
+  includeLegend?: boolean;
 }
 
 const todayString = (): string => {
@@ -164,6 +167,8 @@ export async function exportCanvasImage(
       // 安全做法:移除所有有 transform="translate(midX, midY)" 的小 g 內的 line/polygon
       // 但這太脆。簡化版:這次先 skip mid-symbol 移除,只去 dasharray + note。
       // 線備注:font-size 11 的 text(只在線/婚姻線中段)— 直接清掉所有 fontSize 11 / fill #6e6e73 的 text
+      // 1.6.1:線上的備註都帶 data-line-note,直接拿掉(下方舊規則保留當保險)
+      cloned.querySelectorAll('[data-line-note]').forEach((t) => t.remove());
       cloned.querySelectorAll('text').forEach((t) => {
         const fs = t.getAttribute('font-size');
         const fill = t.getAttribute('fill');
@@ -177,6 +182,29 @@ export async function exportCanvasImage(
           }
         }
       });
+    }
+
+    // 5b. 附圖例(1.6.1):放在圖的下方,圖片跟著變高。
+    //     在「隱藏關係細節」處理之後才加,圖例自己的虛線不會被拿掉;隱藏時圖例也不列線的種類。
+    if (opts.includeLegend) {
+      const codes = legendCodes(genogram, { withLines: !opts.simplifyLines });
+      if (codes.length > 0) {
+        const LEG_PAD = 24;
+        const legW = Math.max(vbW - LEG_PAD * 2, 150);
+        const legH = legendHeight(codes.length, legW);
+        const markup = renderLegendSvg(codes, {
+          lang: store.language,
+          probandStyle: store.probandStyle,
+          width: legW,
+        });
+        const legendTop = vbY + vbH;
+        const sep = `<line x1="${vbX + LEG_PAD}" y1="${legendTop}" x2="${vbX + vbW - LEG_PAD}" y2="${legendTop}" stroke="#d2d2d7" stroke-width="1"/>`;
+        const g = `<g transform="translate(${vbX + LEG_PAD}, ${legendTop + 14})">${markup}</g>`;
+        cloned.insertAdjacentHTML('beforeend', sep + g);
+        vbH += legH + 14 + LEG_PAD;
+        cloned.setAttribute('viewBox', `${vbX} ${vbY} ${vbW} ${vbH}`);
+        cloned.setAttribute('height', String(vbH));
+      }
     }
 
     // 6. 序列化 SVG

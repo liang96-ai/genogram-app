@@ -1,4 +1,5 @@
-// 同住圈 = ZonePolygon 的橘色版(1.5.0 起與生態圈共用手勢)。
+// 同住圈 = ZonePolygon(1.5.0 起與生態圈共用手勢)。1.6.1 改成藍色,和畫筆畫的生態圈同色,靠 🏠 區分。
+// 輪住(1.6.1):點線 + 標籤「輪住」,選取後可開關。
 // 沒有自訂頂點時圈自動包住成員(不能整圈拖,拖了會脫離成員);拖過把手後固定形狀,之後與生態圈相同。
 // 固定形狀的圈改畫點虛線(提醒它不再跟著成員走),選取後 × 旁有 ↺ 可回到自動(1.5.1)。
 import type { Household, Person } from '../../types/genogram';
@@ -15,6 +16,8 @@ type Props = {
   onEdgeDown: (e: React.PointerEvent, hh: Household, points: { x: number; y: number }[], edgeIdx: number) => void;
 };
 
+export const HOUSEHOLD_COLOR = '#007aff';
+
 export default function HouseholdPolygon({ household, persons, onStartDrag, onVertexDown, onEdgeDown }: Props) {
   const t = useT();
   const removeHousehold = useGenogramStore((s) => s.removeHousehold);
@@ -26,15 +29,24 @@ export default function HouseholdPolygon({ household, persons, onStartDrag, onVe
   const isEditing = useGenogramStore((s) => s.editingHouseholdId === household.id);
   const points = householdPoints(household, persons);
   const detached = !!household.points && household.points.length >= 3;
+  const rotating = !!household.rotating;
   return (
     <ZonePolygon
       id={household.id}
       points={points}
       label={household.label}
       labelPrefix="🏠"
-      color="#ff9500"
-      fill="rgba(255,149,0,0.04)"
-      dash={detached ? "10 4 2 4" : "6 4"}
+      labelSuffix={rotating ? t('household.rotating') : undefined}
+      color={HOUSEHOLD_COLOR}
+      fill="rgba(0,122,255,0.04)"
+      dash={rotating ? '0.5 5' : detached ? '10 4 2 4' : '6 4'}
+      lineCap={rotating ? 'round' : undefined}
+      toggle={{
+        text: t('household.rotating'),
+        title: t('household.rotatingTip'),
+        active: rotating,
+        onToggle: () => updateHousehold(household.id, { rotating: rotating ? undefined : true }),
+      }}
       selected={selected}
       isEditing={isEditing}
       canDrag={detached}

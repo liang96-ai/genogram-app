@@ -1,10 +1,13 @@
 // 空白畫布的起步卡(1.6.0):個案只有案主一個人時,告訴使用者下一步有兩條路。
 // 有第二個人就消失;按 × 也可以收起(這個個案這次不再出現)。
+// 1.6.1:多一條「用範本開始」,點了直接在這個個案套用。
 import { useState } from 'react';
 import { useGenogramStore } from '../../store/genogramStore';
 import { useT } from '../../i18n';
 import { requestQuickBuild } from '../../services/uiEvents';
 import Icon from '../ui/Icon';
+import TemplatePicker from '../CaseList/TemplatePicker';
+import { applyTemplate } from '../../services/caseTemplates';
 
 export default function StartCard() {
   const t = useT();
@@ -12,6 +15,8 @@ export default function StartCard() {
   const personCount = useGenogramStore((s) => s.currentCase?.persons.length ?? 0);
   const tourActive = useGenogramStore((s) => s.tourActive);
   const [dismissedFor, setDismissedFor] = useState<string | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const language = useGenogramStore((s) => s.language);
   if (!caseId || personCount > 1 || tourActive || dismissedFor === caseId) return null;
   const selectProband = () => {
     const c = useGenogramStore.getState().currentCase;
@@ -60,6 +65,20 @@ export default function StartCard() {
           <span style={hint}>{t('start.quickBuildHint')}</span>
         </button>
       </div>
+      <button
+        onClick={() => setShowTemplates((v) => !v)}
+        aria-expanded={showTemplates}
+        style={{ justifySelf: 'start', padding: 0, background: 'transparent', border: 'none', color: '#007aff', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+      >
+        {t('start.template')}
+      </button>
+      {showTemplates && (
+        <TemplatePicker
+          onPick={(c) => {
+            if (c !== 'blank') applyTemplate(c, language);
+          }}
+        />
+      )}
     </div>
   );
 }

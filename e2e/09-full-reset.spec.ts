@@ -36,10 +36,22 @@ test('⑰ 全部重置選「一起刪除」:只刪個案資料夾,備份與使�
   await app.getByRole('button', { name: '一起刪除' }).click();
   await expect(app.getByRole('button', { name: UI.newCase })).toBeVisible({ timeout: 15000 });
   // 4. 資料夾:個案資料夾與目錄檔沒了,其他都在
+  // 全部重置最後會重新整理頁面:讀到一半頁面重載就算這次沒讀到,再試一次
+  const readFolder = async () => {
+    try {
+      return (await listFolder(app)).join('\n');
+    } catch {
+      return null;
+    }
+  };
   await expect
-    .poll(async () => (await listFolder(app)).join('\n'), { timeout: 8000 })
-    .not.toMatch(/case_case_/);
-  const files = (await listFolder(app)).join('\n');
+    .poll(async () => {
+      const f = await readFolder();
+      return f !== null && f.includes('_backups/full.json') && !/case_case_/.test(f);
+    }, { timeout: 10000 })
+    .toBe(true);
+  await app.waitForLoadState('load');
+  const files = (await readFolder()) ?? '';
   expect(files).not.toContain('_目錄.txt');
   expect(files).toContain('case_訪視紀錄.docx');
   expect(files).toContain('case_2024/筆記.txt');

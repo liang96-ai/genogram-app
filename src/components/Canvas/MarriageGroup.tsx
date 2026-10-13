@@ -40,6 +40,8 @@ type Props = {
   /** 雙擊把手:拿掉手動高度,回到自動(1.5.1) */
   onBusHandleReset?: (lineId: string) => void;
   /** 別段婚姻的結構線段:本段的水平線跟它們交叉的地方鼓小弧(交叉跳線,1.5.0) */
+  /** 多段婚姻序號(1.6.1):這條線是 personId 的第 n 段伴侶關係 */
+  orderBadge?: { personId: string; n: number };
   crossingSegments?: Seg[];
 };
 
@@ -138,6 +140,7 @@ export default function MarriageGroup({
   onBusHandleDown,
   onBusHandleReset,
   crossingSegments = [],
+  orderBadge,
 }: Props) {
   const t = useT();
   const updateLine = useGenogramStore((s) => s.updateLine);
@@ -336,6 +339,32 @@ export default function MarriageGroup({
         </foreignObject>
       )}
 
+      {/* 多段婚姻序號(1.6.1):標在線上、那個人與中點之間,白底小圓壓在線上 */}
+      {orderBadge && !marriageDragging && (() => {
+        const onLeft = orderBadge.personId === left.id;
+        const edgeX = isU
+          ? (onLeft ? left.position.x : right.position.x)
+          : (onLeft ? lineStart.x : lineEnd.x);
+        const bx = (edgeX + midX) / 2;
+        return (
+          <g data-marriage-order={orderBadge.n} style={{ pointerEvents: 'none' }}>
+            <circle cx={bx} cy={busTopY} r={7.5} fill="#ffffff" stroke={mColor} strokeWidth={1.3} />
+            <text
+              x={bx}
+              y={busTopY}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={10}
+              fontWeight={600}
+              fill={mColor}
+              style={{ userSelect: 'none' }}
+            >
+              {orderBadge.n}
+            </text>
+          </g>
+        );
+      })()}
+
       {/* 備註文字(婚姻線上方) */}
       {m.note && !marriageDragging && !editingNote && (() => {
         const lines = m.note.split('\n').slice(0, 10).map((l) =>
@@ -344,11 +373,16 @@ export default function MarriageGroup({
         if (lines.length === 0) return null;
         return (
           <text
+            data-line-note=""
             x={midX}
             y={busTopY - 16}
             textAnchor="middle"
             fontSize={11}
             fill="#6e6e73"
+            stroke="#ffffff"
+            strokeWidth={4}
+            strokeLinejoin="round"
+            paintOrder="stroke"
             style={{ userSelect: 'none', pointerEvents: 'none' }}
           >
             {lines.map((l, i) => (
@@ -507,12 +541,17 @@ export default function MarriageGroup({
                   );
                   return (
                     <text
+                      data-line-note=""
                       x={noteX}
                       y={noteY}
                       textAnchor="start"
                       dominantBaseline="middle"
                       fontSize={11}
                       fill="#6e6e73"
+                      stroke="#ffffff"
+                      strokeWidth={4}
+                      strokeLinejoin="round"
+                      paintOrder="stroke"
                       style={{ userSelect: 'none', pointerEvents: 'none' }}
                     >
                       {lines.map((l, i) => (

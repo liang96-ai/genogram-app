@@ -337,6 +337,8 @@ export type Household = {
   };
   label?: string;
   note?: string;
+  /** 輪住(1.6.1):長輩輪流住在不同子女家。畫成點線,預設標籤「輪住」;同一人可同時在好幾個圈。選填,舊檔照讀。 */
+  rotating?: boolean;
 };
 
 // ==================== 4. Custom Field ====================

@@ -696,27 +696,41 @@ export default function Line({
           />
         </foreignObject>
       )}
-      {/* 非編輯模式 — 顯示 line.note 文字
-          所有行都往上排,最後一行離線 18px(不貼線);多行往上累加 */}
+      {/* 非編輯模式 — line.note 直接寫在線上(1.6.1):文字中心壓在線的中點,
+          白色外框蓋掉底下那段線,線穿過去也讀得清楚。弧線用弧的中點(t=0.5)。
+          data-line-note:匯出「隱藏關係細節」靠它把備註拿掉。 */}
       {!editingNote && line.note && !dragging && (() => {
         const lines = line.note.split('\n').slice(0, 10).map((l) =>
           l.length > 20 ? l.slice(0, 19) + '…' : l,
         );
         if (lines.length === 0) return null;
         const lineHeight = 14;
-        const gapAboveLine = 18;
-        const startY = midY - gapAboveLine - (lines.length - 1) * lineHeight;
+        // 斷絕 / 修復的符號畫在正中央,字往起點挪,不蓋住符號
+        const tt = line.subType === 'cutoff' || line.subType === 'cutoff-repaired' ? 0.3 : 0.5;
+        const noteX = arcEnabled
+          ? (1 - tt) ** 2 * startX + 2 * (1 - tt) * tt * arcCtrlX + tt ** 2 * endX
+          : startX + (endX - startX) * tt;
+        const noteY = arcEnabled
+          ? (1 - tt) ** 2 * startY + 2 * (1 - tt) * tt * arcCtrlY + tt ** 2 * endY
+          : startY + (endY - startY) * tt;
+        const firstY = noteY - ((lines.length - 1) * lineHeight) / 2;
         return (
           <text
-            x={midX}
-            y={startY}
+            data-line-note=""
+            x={noteX}
+            y={firstY}
             textAnchor="middle"
+            dominantBaseline="central"
             fontSize={11}
             fill="#6e6e73"
+            stroke="#ffffff"
+            strokeWidth={4}
+            strokeLinejoin="round"
+            paintOrder="stroke"
             style={{ userSelect: 'none', pointerEvents: 'none' }}
           >
             {lines.map((l, i) => (
-              <tspan key={i} x={midX} dy={i === 0 ? 0 : lineHeight}>
+              <tspan key={i} x={noteX} dy={i === 0 ? 0 : lineHeight}>
                 {l || ' '}
               </tspan>
             ))}

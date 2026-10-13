@@ -102,6 +102,8 @@ export function ExportDialog({
   const [imgSimplifyLines, setImgSimplifyLines] = useState(
     imgPrefs.simplifyLines === true,
   );
+  // 附圖例(1.6.1):預設勾選,記住上次的選擇
+  const [imgLegend, setImgLegend] = useState(imgPrefs.includeLegend !== false);
   const [imgBusy, setImgBusy] = useState(false);
   const [imgError, setImgError] = useState<string | null>(null);
 
@@ -197,6 +199,7 @@ export function ExportDialog({
           range: imgRange,
           hideDotGrid: imgHideDotGrid,
           simplifyLines: imgSimplifyLines,
+          includeLegend: imgLegend,
         });
         downloadBlob(blob, suggestImageFilename(currentCase, imgFormat));
         emitTourEvent('imageExported');
@@ -216,6 +219,7 @@ export function ExportDialog({
           range: imgRange,
           hideDotGrid: imgHideDotGrid,
           simplifyLines: imgSimplifyLines,
+          includeLegend: imgLegend,
         }),
       );
     } catch {
@@ -422,6 +426,11 @@ export function ExportDialog({
                   checked={imgSimplifyLines}
                   onChange={() => setImgSimplifyLines((v) => !v)}
                   label={t('export.hidePrivate')}
+                />
+                <Check
+                  checked={imgLegend}
+                  onChange={() => setImgLegend((v) => !v)}
+                  label={t('export.legend')}
                 />
               </ImgRow>
 

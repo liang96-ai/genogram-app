@@ -11,9 +11,13 @@ export type ZonePolygonProps = {
   points: ZonePoint[];
   label?: string;
   labelPrefix?: string;
+  /** 接在標籤後面、不能改名的固定字(同住圈的「輪住」,1.6.1) */
+  labelSuffix?: string;
   color: string;
   fill: string;
   dash: string;
+  /** 'round' + 很短的虛線 = 點線(輪住) */
+  lineCap?: 'round';
   selected: boolean;
   isEditing: boolean;
   /** 自動包住成員的同住圈不能整圈拖(拖了會脫離成員) */
@@ -30,6 +34,8 @@ export type ZonePolygonProps = {
   /** 有值時,選取後 × 旁多一顆 ↺(同住圈:回到自動包住成員,1.5.1) */
   resetTitle?: string;
   onReset?: () => void;
+  /** 有值時,選取後再多一顆開關(同住圈:輪住,1.6.1) */
+  toggle?: { text: string; title: string; active: boolean; onToggle: () => void };
 };
 
 export default function ZonePolygon(p: ZonePolygonProps) {
@@ -45,6 +51,9 @@ export default function ZonePolygon(p: ZonePolygonProps) {
   const labelX = topPts.reduce((s, q) => s + q.x, 0) / Math.max(1, topPts.length);
   const labelY = minY - 10;
   const attrs = { [p.dataAttr]: p.id } as Record<string, string>;
+  const shownLabel =
+    p.label && p.labelSuffix ? `${p.label}・${p.labelSuffix}` : p.label || p.labelSuffix;
+  const toggleX = labelX + (p.onReset ? 84 : 62);
   const commitLabel = () => {
     p.onRename(labelDraft.trim());
     setEditing(false);
@@ -58,6 +67,7 @@ export default function ZonePolygon(p: ZonePolygonProps) {
         stroke={p.color}
         strokeWidth={p.selected ? 2.5 : 1.5}
         strokeDasharray={p.selected ? undefined : p.dash}
+        strokeLinecap={p.lineCap}
         strokeLinejoin="round"
         opacity={p.selected ? 0.95 : 0.6}
         style={{ pointerEvents: 'none' }}
@@ -158,7 +168,7 @@ export default function ZonePolygon(p: ZonePolygonProps) {
             }}
           />
         </foreignObject>
-      ) : p.label ? (
+      ) : shownLabel ? (
         <text
           x={labelX}
           y={labelY}
@@ -166,6 +176,10 @@ export default function ZonePolygon(p: ZonePolygonProps) {
           fontSize={11}
           fill={p.color}
           fontWeight={500}
+          stroke="#ffffff"
+          strokeWidth={3}
+          strokeLinejoin="round"
+          paintOrder="stroke"
           style={{ cursor: 'pointer', userSelect: 'none' }}
           onDoubleClick={() => {
             setLabelDraft(p.label ?? '');
@@ -173,7 +187,7 @@ export default function ZonePolygon(p: ZonePolygonProps) {
           }}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          {p.labelPrefix ? `${p.labelPrefix} ${p.label}` : p.label}
+          {p.labelPrefix ? `${p.labelPrefix} ${shownLabel}` : shownLabel}
         </text>
       ) : p.selected ? (
         <text
@@ -230,6 +244,41 @@ export default function ZonePolygon(p: ZonePolygonProps) {
             style={{ userSelect: 'none', pointerEvents: 'none' }}
           >
             ↺
+          </text>
+        </g>
+      )}
+      {/* 選中時的開關(同住圈:輪住) */}
+      {p.selected && !editing && p.toggle && (
+        <g
+          data-action="zone-toggle"
+          transform={`translate(${toggleX}, ${labelY - 5})`}
+          style={{ cursor: 'pointer' }}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            p.toggle?.onToggle();
+          }}
+        >
+          <title>{p.toggle.title}</title>
+          <rect
+            x={-8}
+            y={-9}
+            width={36}
+            height={18}
+            rx={9}
+            fill={p.toggle.active ? p.color : '#ffffff'}
+            stroke={p.color}
+            strokeWidth={1.5}
+          />
+          <text
+            x={10}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize={10.5}
+            fontWeight={600}
+            fill={p.toggle.active ? '#ffffff' : p.color}
+            style={{ userSelect: 'none', pointerEvents: 'none' }}
+          >
+            {p.toggle.text}
           </text>
         </g>
       )}
