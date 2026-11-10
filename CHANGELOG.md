@@ -3,6 +3,15 @@
 給使用者看的版本說明。技術細節請見 git 歷史。
 User-facing release notes; see git history for technical details.
 
+## 1.6.3 — 2026-11-10
+
+**English summary:** Smaller downloads and better search visibility. App icons were compressed, so the offline copy the app keeps is about 1.3 MB smaller. Guide page titles and descriptions are shorter so search results show them in full, the sitemap now tells search engines when pages changed, and the home page carries a short description for crawlers that do not run JavaScript.
+
+### 改進
+- **安裝後少下載約 1.3 MB。** App 圖示壓縮後,離線備份的圖片從約 1.5 MB 降到約 0.2 MB,iPad 用行動網路也不吃流量。
+- **搜尋結果看得完整。** 八種語言說明頁的標題和描述縮短,Google 不會再把後半截掉。
+- **讓搜尋引擎更懂這個網站。** 網站地圖加上更新日期;首頁加一段給不執行程式的搜尋引擎與 AI 讀的簡介,一般使用者看不到。
+
 ## 1.6.2 — 2026-10-13
 
 **English summary:** The app is now called RenRen Genogram (人人家系圖). New guide pages in eight languages (Traditional Chinese, English, Japanese, Korean, Simplified Chinese, French, Spanish, German) explain what a genogram is, how to draw one, the symbols, and how your data stays on your device; each page invites you to email if you need the app in your language. The "Start drawing" button opens a new genogram right away, and the home menu links back to the guide. The guide pages are separate from the app, so everyday use is unchanged. Search engines and AI assistants can now read them, and shared links show a preview image.

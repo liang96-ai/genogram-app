@@ -306,12 +306,14 @@ ${rich(c.footer)} · <a href="${REPO}">GitHub</a> · AGPL-3.0
 
 export function renderSitemap(all) {
   const urls = [{ loc: SITE + '/', alt: false }, ...all.map((c) => ({ loc: pageUrl(c), alt: true }))];
-  const altLinks = all
-    .map((o) => `<xhtml:link rel="alternate" hreflang="${o.lang}" href="${pageUrl(o)}"/>`)
-    .join('');
+  const xDefault = all.find((o) => o.lang === 'en') ?? all[0];
+  const altLinks =
+    all.map((o) => `<xhtml:link rel="alternate" hreflang="${o.lang}" href="${pageUrl(o)}"/>`).join('') +
+    `<xhtml:link rel="alternate" hreflang="x-default" href="${pageUrl(xDefault)}"/>`;
+  const lastmod = new Date().toISOString().slice(0, 10); // 建置日期:告訴搜尋引擎內容何時更新
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
-${urls.map((u) => `<url><loc>${u.loc}</loc>${u.alt ? altLinks : ''}</url>`).join('\n')}
+${urls.map((u) => `<url><loc>${u.loc}</loc><lastmod>${lastmod}</lastmod>${u.alt ? altLinks : ''}</url>`).join('\n')}
 </urlset>
 `;
 }

@@ -1,7 +1,7 @@
 {
   "name": "genogram-app",
   "private": true,
-  "version": "1.6.2",
+  "version": "1.6.3",
   "type": "module",
   "scripts": {
     "dev": "node scripts/build-guides.mjs && vite",

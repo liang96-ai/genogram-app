@@ -6,9 +6,6 @@
     <meta name="theme-color" content="#007aff" />
     <meta name="description" content="人人家系圖 RenRen Genogram:免費的線上家系圖、生態圖繪製工具。資料只存在你的裝置,不上傳、免註冊、可離線。Free online genogram and ecomap maker — no sign-up, data stays on your device." />
     <link rel="canonical" href="https://genogram.liang96.workers.dev/" />
-    <!-- 多語言說明頁(1.6.2):給搜尋引擎與 AI 讀;平常使用 App 看不到 -->
-    <link rel="alternate" hreflang="zh-Hant" href="https://genogram.liang96.workers.dev/guide/" />
-    <link rel="alternate" hreflang="en" href="https://genogram.liang96.workers.dev/guide/en/" />
     <!-- 分享預覽(LINE、Facebook、X) -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="人人家系圖 RenRen Genogram" />
@@ -32,6 +29,15 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- 給不執行 JavaScript 的搜尋引擎與 AI 讀的簡介(1.6.3);一般使用者看不到 -->
+    <noscript>
+      <main style="max-width:640px;margin:48px auto;padding:0 16px;font-family:-apple-system,'PingFang TC',sans-serif;line-height:1.7">
+        <h1>人人家系圖 RenRen Genogram</h1>
+        <p>免費的線上家系圖、生態圖繪製工具,給社工、心理師、護理師與學生使用。資料只存在你的裝置,不上傳、免註冊、可離線。這個工具需要開啟 JavaScript 才能使用。</p>
+        <p>A free genogram and ecomap maker for social workers, therapists and nurses. Your data stays on your device. Please enable JavaScript to use it.</p>
+        <p><a href="/guide/">說明(繁體中文)</a> · <a href="/guide/en/">Guide (English)</a> · <a href="/guide/ja/">日本語</a> · <a href="/guide/ko/">한국어</a> · <a href="/guide/zh-hans/">简体中文</a> · <a href="/guide/fr/">Français</a> · <a href="/guide/es/">Español</a> · <a href="/guide/de/">Deutsch</a></p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
